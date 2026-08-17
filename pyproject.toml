@@ -1,24 +1,26 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "kirby-cost"
-version = "0.2.0"
+version = "0.2.1"
 description = "Read HERO Designer's own .hdt templates and .hdc characters, and reproduce its point-cost arithmetic exactly."
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.10"
 authors = [{ name = "Peter D Bethke" }]
 keywords = ["hero-system", "champions", "hero-designer", "rpg", "tabletop"]
 
-# PolyForm Noncommercial 1.0.0 is source-available, NOT OSI-approved, so no
-# OSI classifier applies and no SPDX expression is asserted. See LICENSE.
-license = { file = "LICENSE" }
+# PolyForm Noncommercial 1.0.0 is source-available, NOT OSI-approved, so it has
+# no SPDX short identifier — LicenseRef- is the SPDX form for exactly that case.
+# `license = { file = "LICENSE" }` inlined the whole licence text into the
+# metadata instead of naming it, which is what 0.2.0 published.
+license = "LicenseRef-PolyForm-Noncommercial-1.0.0"
+license-files = ["LICENSE"]
 
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: Other/Proprietary License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
