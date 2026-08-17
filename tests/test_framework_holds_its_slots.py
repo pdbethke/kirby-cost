@@ -1,4 +1,4 @@
-"""A framework knows its own slots, not just the slots their parent.
+"""A framework knows its own slots, not merely the slots knowing their parent.
 
 `List.objects` is Java's `getObjects()` and several rules read it. The loader
 linked children upward (`child.parent = framework`) but never populated the

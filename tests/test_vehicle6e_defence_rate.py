@@ -1,25 +1,30 @@
-"""A Vehicle6E character's PD/ED cost the base rate, not the template's.
+"""A Vehicle6E character's PD/ED cost the template's rate, not Main6E's.
 
-Root cause of the WARLORD - THE FLYING FORTRESS oracle failure (two
-COMPOUNDPOWER mismatches, 42 vs 28 and 24 vs 16 -- each exactly 1.5x).
+`Vehicle6E.hdt` prices PD and ED at `LVLCOST=3, LVLVAL=2` — 1.5 CP per point —
+where `Main6E.hdt` uses `1, 1`. WARLORD - THE FLYING FORTRESS buys 10 of each,
+so the template rate is 15 and the Main6E rate is 10.
 
-Vehicle6E.hdt and Base6E.hdt define PD/ED with LVLCOST=3, LVLVAL=2 (1.5 CP per
-point) where Main6E.hdt uses LVLCOST=1, LVLVAL=1. The loader honoured that via
-_apply_vehicle6e_overrides.
+**This file previously asserted the exact opposite**, and the reasoning is worth
+keeping because it was careful and still wrong.
 
-Hero Designer does not. Measured over all 655 oracle fixtures, the oracle's PD
-(level_cost, level_value) is (1.0, 1.0) for EVERY character regardless of
-template:
+It said Hero Designer ignores the template here, and backed it with a
+measurement across all 655 fixtures: the oracle recorded PD at
+`(level_cost, level_value) = (1.0, 1.0)` for every character on every template
+— Automaton6E 16, Heroic6E 238, Superheroic6E 300, Vehicle6E 4, no-template 11
+— with not one instance at `(3, 2)`. On that basis the loader's
+`_apply_vehicle6e_overrides` was gutted for diverging from the oracle.
 
-    Automaton6E 16    Heroic6E 238    Superheroic6E 300
-    Vehicle6E    4    (no template) 11
+The measurement was real and the conclusion was wrong, because the oracle was
+wrong. The headless HD fork could not resolve any `builtIn.` template name, so
+it costed every character against its Main6E bootstrap no matter what the file
+declared — which is precisely why PD looked like `(1, 1)` everywhere, including
+on the four Vehicle6E characters. Fixed 2026-08-17; the oracle now says
+`(3.0, 2.0)` for this character, and the engine agrees because it resolves the
+declared template.
 
-Not one instance uses (3, 2). The engine's override therefore diverged from the
-Java oracle, and parity with the oracle is the engine's contract.
-
-The divergence was invisible on characteristics -- test_oracle_fixtures compares
-powers/skills/perks/talents/martial_arts but NOT characteristics -- and only
-surfaced where PD/ED were bought as sub-powers of a COMPOUNDPOWER.
+The assertion below compares engine to oracle rather than to a literal, which
+is why it survived the reversal unchanged. That is the useful shape: assert the
+relationship, not the number you expect today.
 """
 import json
 import glob
@@ -32,7 +37,7 @@ FIXTURE = glob.glob("tests/fixtures/oracle/*WARLORD*FLYING*.json")
 
 
 @pytest.mark.skipif(not FIXTURE, reason="WARLORD oracle fixture not present")
-def test_vehicle6e_pd_costs_the_base_rate():
+def test_vehicle6e_pd_matches_the_oracle():
     fx = json.load(open(FIXTURE[0]))
     import pathlib
     if not pathlib.Path(fx["hdc_path"]).exists():
@@ -48,8 +53,8 @@ def test_vehicle6e_pd_costs_the_base_rate():
         o = oracle[c.xmlid]
         assert (c._level_cost, c._level_value) == (o["level_cost"], o["level_value"]), (
             f"{c.xmlid}: engine ({c._level_cost}, {c._level_value}) vs oracle "
-            f"({o['level_cost']}, {o['level_value']}). Hero Designer uses the base "
-            "rate for PD/ED on every template, including Vehicle6E."
+            f"({o['level_cost']}, {o['level_value']}). A character is costed "
+            "against the template it declares, and Vehicle6E prices PD/ED at 3 per 2."
         )
         assert c.total_cost == o["total_cost"], (
             f"{c.xmlid}: engine {c.total_cost} vs oracle {o['total_cost']}"

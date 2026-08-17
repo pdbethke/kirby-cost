@@ -1,20 +1,9 @@
-# Core dependencies
-typing-extensions>=4.8.0
+# Runtime dependencies. setup.py is the source of truth; this file exists so
+# `pip install -r requirements.txt` works for anyone who reaches for it first.
+#
+# Install the package itself with `pip install -e .`, and the development
+# tooling with `pip install -e ".[dev]"` (pytest, pytest-cov, mypy, black,
+# flake8) rather than from here.
 
-# For decimal precision (rounding)
-# decimal is built-in, no package needed
-
-# For XML parsing (when we get to I/O)
-lxml>=4.9.0
-
-# For testing
-pytest>=7.4.0
-pytest-cov>=4.1.0
-
-# For type checking
-mypy>=1.5.0
-
-# For development
-black>=23.0.0
-flake8>=6.0.0
-
+typing-extensions>=4.8.0   # typing back-ports for 3.10
+lxml>=4.9.0                # parses the .hdt templates and .hdc characters
