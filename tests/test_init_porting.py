@@ -1,8 +1,8 @@
 """Oracle-driven integration tests for init porting fixes.
 
 Requires:
-- Java HD6 CLI at the HD oracle harness/hd6cli.sh
-- HDC resource files at the character-pack checkout/resources/
+- the Java HD6 comparison CLI (KIRBY_COST_HD6CLI)
+- a directory of .hdc character files (KIRBY_COST_CORPUS)
 Tests skip gracefully when unavailable.
 """
 from tests.corpus import hd6cli, corpus_root

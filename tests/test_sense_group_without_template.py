@@ -16,7 +16,7 @@ during a template load.
 
 **But the 1-of-1 was an artifact of a broken oracle.** The headless HD fork
 could not resolve any ``builtIn.`` template name (fixed in
-the HD oracle harness, 2026-08-17). Characters silently kept the Main6E
+the comparison harness, 2026-08-17). Characters silently kept the Main6E
 bootstrap, and Main6E itself loaded *without the parent chain that registers
 the sense groups*. The oracle's "no template" reading was really "template
 loaded incompletely", and a rule was written into the engine to reproduce it.

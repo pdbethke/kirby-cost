@@ -8,7 +8,7 @@ This is the ultimate validation — if these tests pass, the Python port
 matches the real Hero Designer exactly.
 
 Fixture generation:
-  cd the HD oracle harness
+  cd <the HD comparison harness>
   ./hd6cli.sh /path/to/character.hdc > <repo>/tests/fixtures/character_costs.json
 """
 
