@@ -84,11 +84,12 @@ python -m pytest tests/                        # full suite, including parity
 ```
 
 Without the corpus the suite still runs and still tests the engine — the parity tests
-simply skip:
+simply skip. Measured on this machine, with each input withheld in turn:
 
 ```
-590 passed, 45 skipped        # no corpus, no character files
-1289 passed                   # with your own corpus generated
+  372 passed, 159 skipped     # the code alone: no templates, no corpus
+  456 passed,  75 skipped     # your templates, no corpus
+1,289 passed                  # templates + a corpus you generated
 ```
 
 The generator resolves the CLI as a workspace sibling and reads the character packs from
@@ -124,10 +125,17 @@ and apply the framework's own slot-cost rules.
 
 ## Status
 
-- **100% parity with HERO Designer** across 28,593 cost calculations, verified against
-  the Java application's own output.
-- ~1,215 tests, including a fixture suite that pins every calculation to HD's answer.
+- **100% parity with HERO Designer.** Every one of 655 published characters matches the
+  Java application's own output on every object and on character totals — 27,019 objects
+  and 82,367 individual cost values, with zero mismatches.
+- **1,289 tests.** 372 of them need nothing but the code; the rest need your own
+  templates, and the parity suite needs a corpus you generate locally.
 - Pure code — no database, no web framework, no network access.
+
+Parity is measured against HERO Designer's own engine, run headless over the same
+character files. Both halves of that comparison have been wrong before and been
+corrected: the figure means "every value the corpus compares", and the corpus is
+described above so you can judge what that covers.
 
 ## Provenance
 
@@ -137,8 +145,9 @@ The **HERO Designer Source Code** package is an official product Hero Games sell
 precisely so people can build software that works with HD. Its product page says so
 directly: *"many potential software projects for the HERO System could make use of
 portions of the source code which drives HERO Designer. It is for this reason that we are
-pleased to offer access to HD's source code."* The purchase and the product page are
-archived in [`legal/`](legal/). It provides:
+pleased to offer access to HD's source code."* The purchase receipt and the product page
+are retained by the maintainer; they are deliberately not in this repository, which
+carries no Hero Games material of any kind. It provides:
 
 - The HERO Designer Java source, updated as the application updates
 - The Eclipse project definitions
