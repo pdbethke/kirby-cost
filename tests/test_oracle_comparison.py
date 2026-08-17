@@ -8,8 +8,8 @@ This is the ultimate validation — if these tests pass, the Python port
 matches the real Hero Designer exactly.
 
 Fixture generation:
-  cd kirby-hd-oracle
-  ./hd6cli.sh /path/to/character.hdc > ../hero-designer-python/tests/fixtures/character_costs.json
+  cd the HD oracle harness
+  ./hd6cli.sh /path/to/character.hdc > <repo>/tests/fixtures/character_costs.json
 """
 
 import json

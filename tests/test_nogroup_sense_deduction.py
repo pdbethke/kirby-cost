@@ -26,7 +26,7 @@ deduct for — and it shipped. It was wrong.
 `builtIn.` template name, so Main6E loaded without the parent chain that
 registers the sense groups. The LICH's 32 was never HD's answer; it was the
 answer of an HD that had failed to finish loading its template. Fixed in
-kirby-hd-oracle on 2026-08-17, the oracle says **31** — the engine's
+the HD oracle harness on 2026-08-17, the oracle says **31** — the engine's
 original, unmodified answer, before any of (1), (2) or (3) were attempted.
 
 Three of the four hypotheses were tested against the corpus and one of them

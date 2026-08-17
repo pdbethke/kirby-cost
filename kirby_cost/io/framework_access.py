@@ -1,14 +1,20 @@
 """Read-only accessors over the loaded framework + AVAD model.
 
-The build engine already computes all of this.  Downstream consumers
-(kirby-combat) read framework kind / reserve / slot-variable-flag / AVAD
-alternate-defense through this module instead of reaching into object
-internals.  No cost paths are touched here.
+The build engine already computes all of this. Consumers read framework kind /
+reserve / slot-variable-flag / AVAD alternate-defense through this module
+instead of reaching into object internals. No cost paths are touched here.
 
 Design notes (discovered from real HDC loads):
-- The HDCLoader does NOT populate ``framework.objects``; slots are linked
-  via ``slot.parent = framework`` and remain in the flat ``hero.powers``
-  list.  Use ``framework_slots(hero, fw)`` to enumerate them.
+- Slots are linked both ways: ``slot.parent = framework``, and the framework
+  holds them in ``framework.objects`` (Java's ``List.getObjects()``). They also
+  remain in the flat ``hero.powers`` list, and ``framework_slots(hero, fw)``
+  enumerates them from there.
+
+  This note used to say the loader did NOT populate ``framework.objects``.
+  That was true and load-bearing: nothing filled the container, so
+  ``Charges.parentUsesEND()`` — which asks a reserve's slots whether they use
+  END, because a reserve never does itself — always answered no and clamped
+  the modifier away. Fixed 2026-08-17.
 - ``column1_suffix(slot)`` on Multipower returns ``"u"`` for Ultra slots
   and ``"m"`` (or ``"f"``/``"v"`` in 6E mode) for Variable slots.  A slot
   is variable when the suffix is NOT the ultra marker ("u" / "f").
@@ -173,7 +179,7 @@ def vpp_restriction_text(framework) -> str:
     framework is not a VPP or carries no descriptive restriction.
 
     Categories are NOT a cost concern — this only surfaces text for the
-    kirby-api extractor to read. No cost math here.
+    a consumer extractor to read. No cost math here.
     """
     if not is_vpp(framework):
         return ""

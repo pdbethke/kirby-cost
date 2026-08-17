@@ -49,27 +49,35 @@ class ChartEntry:
         return hash(self._display)
 
 
-def _load_language_chart() -> list:
-    """Load language similarity chart from data file."""
-    import json
-    from pathlib import Path
-    data_path = Path(__file__).parent.parent.parent / "data" / "language_chart.json"
-    if not data_path.exists():
+def load_language_chart(provider) -> list:
+    """Build the similarity chart from a template provider.
+
+    The chart says which languages are similar to which, and at what distance,
+    which is what decides a Language's cost. It is Hero Games' table and it
+    lives in the user's own ``.hdt`` under ``<LANGUAGES>``.
+
+    It used to ship as ``kirby_cost/data/language_chart.json`` — 161 KB
+    extracted from Main6E.hdt, loaded at import time, and included in the wheel
+    via ``package_data``. That was the same mistake as the old
+    ``template_6e.json``, wearing a filename that did not look like template
+    data, and it survived a repository audit because of it. Removed 2026-08-17.
+
+    Returns [] when the provider offers no chart, which leaves every language
+    unrelated to every other — the cost floor, never a discount the character
+    has not paid for.
+    """
+    getter = getattr(provider, "get_language_chart", None)
+    if getter is None:
         return []
-    try:
-        with open(data_path) as f:
-            entries = json.load(f)
-        chart = []
-        for e in entries:
-            ce = ChartEntry(display=e.get("display", ""), family=e.get("family", ""))
-            ce.level1 = e.get("level1", [])
-            ce.level2 = e.get("level2", [])
-            ce.level3 = e.get("level3", [])
-            ce.level4 = e.get("level4", [])
-            chart.append(ce)
-        return chart
-    except (OSError, json.JSONDecodeError, ValueError, KeyError):
-        return []
+    chart = []
+    for e in getter() or []:
+        ce = ChartEntry(display=e.get("display", ""), family=e.get("family", ""))
+        ce.level1 = e.get("level1", [])
+        ce.level2 = e.get("level2", [])
+        ce.level3 = e.get("level3", [])
+        ce.level4 = e.get("level4", [])
+        chart.append(ce)
+    return chart
 
 
 class Language(Skill, xmlid="LANGUAGES"):
@@ -77,8 +85,9 @@ class Language(Skill, xmlid="LANGUAGES"):
 
     _roll_based_default = False
 
-    # Static chart loaded from data file
-    chart: List[ChartEntry] = _load_language_chart()
+    # Populated by the HDC loader from the character's template; see
+    # load_language_chart. Empty until then.
+    chart: List[ChartEntry] = []
     global_exclude: Optional[str] = None
     number_languages_purchased: int = 0
     

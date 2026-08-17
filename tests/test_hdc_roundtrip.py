@@ -6,12 +6,20 @@ This is the definitive test — if this passes, the Python port matches
 Hero Designer exactly.
 """
 
+from tests.corpus import hd6cli, corpus_root
 import json
 import subprocess
 import pytest
 from pathlib import Path
 
-HD6CLI = str(Path(__file__).parent.parent.parent / "kirby-hd-oracle" / "hd6cli.sh")
+HD6CLI = str(hd6cli() or "/nonexistent/hd6cli.sh")
+
+# The comparison harness wraps licensed HERO Designer source and is not public.
+# Point KIRBY_COST_HD6CLI at it to run these; without it they skip.
+pytestmark = pytest.mark.skipif(
+    hd6cli() is None,
+    reason="HD6 comparison CLI not configured (set KIRBY_COST_HD6CLI)",
+)
 
 
 def load_oracle(hdc_path: str) -> dict:
@@ -35,18 +43,21 @@ def load_python(hdc_path: str):
     return loader.load_file(hdc_path)
 
 
-WIPEOUT = str(Path(__file__).parent.parent.parent /
-    "Champions Legacy/thowback/champions-rules-db/successful_exports/Wipeout_100percent.hdc")
+# A maintainer-only character, not part of any pack. KIRBY_COST_WIPEOUT_HDC
+# points at it; without it the tests that use it skip.
+import os as _os
+WIPEOUT = _os.environ.get("KIRBY_COST_WIPEOUT_HDC", "/nonexistent/Wipeout.hdc")
 
-HORSE = str(Path(__file__).parent.parent.parent /
-    "champions-campaign-manager/resources/bestiary/"
-    "HERO_System_Bestiary_6th_Edition_Character_Pack/HSB HD Files/"
-    "CHAPTER_6/HORSES/RIDING_HORSE_HSB.hdc")
+_CORPUS = corpus_root() or Path("/nonexistent")
+HORSE = str(_CORPUS / "bestiary"
+            / "HERO_System_Bestiary_6th_Edition_Character_Pack"
+            / "HSB HD Files" / "CHAPTER_6" / "HORSES"
+            / "RIDING_HORSE_HSB.hdc")
 
-CROC = str(Path(__file__).parent.parent.parent /
-    "champions-campaign-manager/resources/bestiary/"
-    "HERO_System_Bestiary_6th_Edition_Character_Pack/HSB HD Files/"
-    "CHAPTER_6/CROCODILE_ALLIGATOR_HSB.hdc")
+CROC = str(_CORPUS / "bestiary"
+           / "HERO_System_Bestiary_6th_Edition_Character_Pack"
+           / "HSB HD Files" / "CHAPTER_6"
+           / "CROCODILE_ALLIGATOR_HSB.hdc")
 
 
 class TestHDCLoader:
@@ -58,11 +69,15 @@ class TestHDCLoader:
         assert len(hero.characteristics) > 0
         assert len(hero.powers) > 0
 
+    @pytest.mark.skipif(not Path(WIPEOUT).exists(),
+                        reason="maintainer-only character file absent")
     def test_load_wipeout(self):
         hero = load_python(WIPEOUT)
         assert hero.name == "Wipeout"
 
 
+@pytest.mark.skipif(not Path(WIPEOUT).exists(),
+                    reason="maintainer-only character file absent")
 class TestHDCWipeoutRoundtrip:
     """Wipeout is the hardest test — complex Multipower, CompoundPower, modifiers."""
 

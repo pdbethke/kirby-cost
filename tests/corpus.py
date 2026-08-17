@@ -8,9 +8,9 @@ cleanly when they cannot.
 Two roots, both overridable, both optional:
 
 ``KIRBY_COST_CORPUS``
-    A directory of ``.hdc`` files laid out like the champions-campaign-manager
-    ``resources/`` tree (``bestiary/``, ``villains/``, ``rulebooks/``).
-    Defaults to that sibling checkout when the workspace has one.
+    A directory of ``.hdc`` files, laid out in whatever subdirectories you
+    like. Unset by default: there is no sensible guess to make, and guessing
+    at a sibling checkout only worked on one machine.
 
 ``KIRBY_COST_HERO_DOCS``
     A HERO Designer document store — the sort of folder HD saves into, holding
@@ -38,12 +38,18 @@ def _from_env(var: str) -> Optional[Path]:
 
 def corpus_root() -> Optional[Path]:
     """The `resources/` tree of .hdc packs, or None."""
-    explicit = _from_env("KIRBY_COST_CORPUS")
-    if explicit is not None:
-        return explicit
-    sibling = Path(__file__).resolve().parent.parent.parent / \
-        "champions-campaign-manager" / "resources"
-    return sibling if sibling.is_dir() else None
+    return _from_env("KIRBY_COST_CORPUS")
+
+
+def hd6cli() -> Optional[Path]:
+    """The HERO Designer comparison CLI, or None.
+
+    ``KIRBY_COST_HD6CLI`` points at the wrapper script for a headless build of
+    HERO Designer, used to compare this engine's numbers against HD's own. That
+    harness wraps licensed source and is not public, so the tests that drive it
+    skip for everyone but the maintainer.
+    """
+    return _from_env("KIRBY_COST_HD6CLI")
 
 
 def hero_docs_root() -> Optional[Path]:

@@ -1,0 +1,35 @@
+name: Tests
+
+# Runs the tests that need nothing but the code.
+#
+# The parity suite is not here and cannot be: it compares against HERO
+# Designer's own engine over commercial character packs, and neither the
+# harness nor the corpus is redistributable. Those tests skip when their
+# inputs are absent, which on CI is always. See the README.
+#
+# Publishing is deliberately not wired up in this repository.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install
+        run: |
+          pip install -e .
+          pip install pytest
+      - name: Run the suite
+        run: pytest -q --tb=short

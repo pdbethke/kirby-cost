@@ -15,7 +15,7 @@ its own docstring had already found to be half wrong.
 the other end. The headless fork could not resolve `builtIn.` names, so it
 silently kept the Main6E bootstrap for every character, and the fixtures agreed
 with an engine that also ignored the attribute. Fixing the oracle
-(kirby-hd-oracle, 2026-08-17) moved 8 of 655 fixtures and exposed this.
+(the HD oracle harness, 2026-08-17) moved 8 of 655 fixtures and exposed this.
 
 Resolution follows HD: `builtIn.X.hdt` names one of the templates shipped with
 the application, which live together in one directory, so it resolves to the

@@ -8,7 +8,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 setup(
     name="kirby-cost",
     version="0.1.40",
-    author="Your Name",
+    author="Peter D Bethke",
     description="HERO System 6th Edition character build and cost engine",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -18,15 +18,11 @@ setup(
     # with a consumer's own, and the oracle suite they contain is
     # meaningless without fixtures the wheel deliberately does not ship.
     packages=find_packages(exclude=["tests", "tests.*"]),
-    # data/ is referenced at runtime by the cost engine + HDC loader
-    # (language_chart.json backs the Language skill). It lives next to the
-    # source tree as plain JSON, so list it explicitly under the parent
-    # package. No HERO Designer template data ships here: templates come from
-    # the user's own .hdt (see HDTTemplateProvider).
-    package_data={
-        "kirby_cost": ["data/*.json"],
-    },
-    include_package_data=True,
+    # No package data. The engine ships no Hero Games content of any kind:
+    # templates, the language similarity chart and the oracle corpus all come
+    # from the user's own licensed HERO Designer installation. A
+    # language_chart.json extracted from Main6E.hdt shipped here until
+    # 2026-08-17; it is gone, and nothing replaced it.
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",

@@ -1,6 +1,6 @@
 """Tests for kirby_cost.io.framework_access — read-only build-model accessors.
 
-These tests confirm that downstream consumers (kirby-combat) can reach
+These tests confirm that downstream consumers (a downstream consumer) can reach
 framework kind / reserve / slot-variable-flag / AVAD alternate-defense through
 the accessor module without reaching into object internals.
 """
