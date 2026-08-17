@@ -1,0 +1,20 @@
+# Core dependencies
+typing-extensions>=4.8.0
+
+# For decimal precision (rounding)
+# decimal is built-in, no package needed
+
+# For XML parsing (when we get to I/O)
+lxml>=4.9.0
+
+# For testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# For type checking
+mypy>=1.5.0
+
+# For development
+black>=23.0.0
+flake8>=6.0.0
+
