@@ -138,6 +138,46 @@ def test_the_declared_runtime_dependencies_are_the_expected_two():
     assert names == ["typing-extensions", "lxml"], names
 
 
+def test_the_version_is_written_in_exactly_one_place():
+    """pyproject.toml owns the number; __init__ reads it from the metadata.
+
+    A literal in __init__.py drifted silently: it still said 0.1.0 while PyPI
+    served 0.2.0 and then 0.2.1, so a consumer version-gating on
+    ``kirby_cost.__version__`` was told the wrong thing by an installed wheel.
+    Two places to write a number is one place too many.
+    """
+    import re
+
+    text = (ROOT / "kirby_cost" / "__init__.py").read_text()
+    literal = re.search(r'^__version__\s*=\s*["\']', text, re.M)
+    assert not literal, (
+        "__version__ is restated as a literal in kirby_cost/__init__.py — "
+        "read it from importlib.metadata instead, or it will drift again"
+    )
+
+    import kirby_cost
+    from importlib.metadata import version
+
+    assert kirby_cost.__version__ == version("kirby-cost")
+
+
+def test_py_typed_marker_ships():
+    """The `Typing :: Typed` classifier is a promise the wheel has to keep.
+
+    PEP 561: a type checker ignores an *installed* package's inline annotations
+    unless a py.typed marker sits in the package directory. 0.2.0 and 0.2.1
+    both carried the classifier and shipped no marker, so every consumer's mypy
+    silently treated the engine as untyped.
+    """
+    assert (ROOT / "kirby_cost" / "py.typed").is_file(), "py.typed marker missing"
+
+    text = (ROOT / "pyproject.toml").read_text()
+    assert 'kirby_cost = ["py.typed"]' in text, (
+        "py.typed exists but pyproject does not declare it as package-data, so "
+        "include-package-data = false will leave it out of the wheel"
+    )
+
+
 def test_database_package_is_gone():
     assert not (ROOT / "kirby_cost" / "database").exists()
 
