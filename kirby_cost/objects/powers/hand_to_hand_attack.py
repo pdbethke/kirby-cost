@@ -57,7 +57,7 @@ class HandToHandAttack(Power, xmlid="HANDTOHANDATTACK"):
                 minus_one_pip = True
         
         # Add standard effect if enabled
-        if self.set_use_standard_effect():
+        if self.uses_standard_effect():
             n = 0
             if plus_one_pip:
                 n = 1

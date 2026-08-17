@@ -93,7 +93,7 @@ class KillingAttackHTH(Power, xmlid="HKA"):
             damage_str = damage_str + f"-{n4}"
         
         # Add standard effect if enabled
-        if self.set_use_standard_effect():
+        if self.uses_standard_effect():
             if self.does_body:
                 damage_str += f" (standard effect: {n7}"
                 if n7 != n8:

@@ -227,6 +227,26 @@ class GenericObject(CostMixin, ModifierMixin, SerializationMixin, ABC):
                 if opt.base_cost != 0 and self.orig_base_cost == 0:
                     self._base_cost = opt.base_cost
 
+                # Record the option as an object, not just its numbers. Java
+                # keeps the chosen OPTION as an Adder and reads it back through
+                # getSelectedOption(); the port consumed the costs here and
+                # dropped the option on the floor, leaving _selected_option
+                # None for every template-driven choice. Roughly twenty display
+                # methods dereference it — CombatLevels.column2_output raised
+                # AttributeError on a plain CSL as a result — and three cost
+                # paths read it too (Language's similarity floor, Skill's
+                # automaton NOSTUN check, KnowledgeSkill's UAA check).
+                if self._selected_option is None:
+                    from kirby_cost.objects.adder import Adder as _Adder
+                    chosen = _Adder()
+                    chosen.xmlid = opt.xmlid
+                    chosen._display = opt.display
+                    chosen._alias = opt.display
+                    chosen._base_cost = opt.base_cost
+                    chosen._selected = True
+                    chosen.parent = self
+                    self._selected_option = chosen
+
         # Base template values — only when option didn't set them
         if not option_set_lc:
             if tmpl.level_cost != 0:
@@ -603,6 +623,100 @@ class GenericObject(CostMixin, ModifierMixin, SerializationMixin, ABC):
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}(xmlid={self.xmlid}, id={self._id})>"
+
+    @property
+    def sorting_value(self) -> str:
+        """Java ``GenericObject.getSortingValue()`` (line 2737): ``toString()``.
+
+        The port kept only ``Sense``'s override and dropped the base, so every
+        caller that sorted a mixed adder list — ``Sense.adder_string`` above
+        all — raised AttributeError the moment an adder was not a Sense.
+        SenseAdder extends Power, not Sense, which is exactly that case.
+        """
+        return str(self)
+
+    @property
+    def alias_for_vector(self) -> str:
+        """One object's contribution to an adder string.
+
+        Java spells this as ``Adder.addAliasToVector(vec)`` (Adder.java:561),
+        which appends to a caller-owned list and recurses; a property that
+        returns this object's own text composes better in Python, and
+        ``adder_string`` below does the recursion.
+        """
+        parts = []
+        alias = (self.alias or "").strip()
+        if alias:
+            parts.append(alias)
+        option = self._selected_option
+        if option is not None:
+            option_alias = (option.alias or "").strip()
+            if option_alias:
+                parts.append(option_alias)
+        if self.input and self.input.strip():
+            parts.append(self.input.strip())
+        if self._levels > 0 and "[LVL]" not in (self._display or ""):
+            if self.level_power != 1:
+                total = self.level_multiplier * (self.level_power ** self._levels)
+                parts.append(f"x{int(total)}")
+            else:
+                parts.append(f"+{self._levels * self.level_multiplier}")
+        return " ".join(parts)
+
+    @property
+    def modifier_string(self) -> str:
+        """Unported. Returns "" — a stub, deliberately, not a port.
+
+        Java's ``getModifierString()`` (line 2062) sorts the assigned modifiers
+        by total value, pulls in the parent framework's common limitations,
+        splits advantages from limitations, and renders each through
+        ``Modifier.getColumn2Output()``. None of that display layer exists
+        here: the port's ``Modifier`` has neither ``column2_output`` nor
+        ``is_limitation``, so a partial port would emit confidently wrong
+        strings.
+
+        Twelve subclasses already stub this the same way; the base did not
+        have it at all, so Money and EnvironmentalMovement — which define no
+        override — raised AttributeError from ``column2_output``. Costs are
+        unaffected: nothing in the cost chain reads a modifier string.
+        """
+        return ""
+
+    @property
+    def adder_string(self) -> str:
+        """Java ``GenericObject.getAdderString()`` (line 1185).
+
+        Adders that are themselves groups, or that offer sub-adders, sort into
+        a separate list that prints first; everything else follows. Both lists
+        sort case-insensitively, and blank entries drop out.
+
+        Subclasses override this freely (Sense sorts ANALYZE after
+        DISCRIMINATORY, several others return ""), but the base existed in
+        Java and did not here, so Money and EnvironmentalMovement — which
+        inherit it — raised AttributeError from ``column2_output``.
+        """
+        group_aliases: List[str] = []
+        plain_aliases: List[str] = []
+
+        def collect(adder: 'GenericObject', into: List[str]) -> None:
+            # display_in_string lives on Adder; a non-Adder child defaults to shown.
+            if getattr(adder, 'is_selected', True) and getattr(adder, 'display_in_string', True):
+                text = adder.alias_for_vector
+                if text.strip():
+                    into.append(text.strip())
+            for sub in adder.assigned_adders:
+                collect(sub, into)
+
+        for adder in self.assigned_adders:
+            is_group = bool(adder.available_adders) or getattr(adder, 'is_group', False)
+            if is_group and getattr(adder, 'is_selected', True):
+                collect(adder, group_aliases)
+            else:
+                collect(adder, plain_aliases)
+
+        group_aliases.sort(key=str.upper)
+        plain_aliases.sort(key=str.upper)
+        return ", ".join(group_aliases + plain_aliases)
 
     def _init(self, element) -> None:
         """
