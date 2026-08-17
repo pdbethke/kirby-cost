@@ -175,8 +175,11 @@ class SenseGroup(Power):
                         _check_object(sub)
 
         if sense_id is None:
+            # `hero`, not `has_hero` — the latter was never defined, so this
+            # raised NameError on the method's own default argument. It had no
+            # callers, which is the only reason nothing noticed.
             self._sense_adders_saver = result
-            self._sense_adders_has_hero = has_hero
+            self._sense_adders_has_hero = hero is not None
 
         return result
     
