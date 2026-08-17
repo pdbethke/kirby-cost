@@ -174,8 +174,12 @@ Quoted from the product page:
   templates and licence to run at all.
 - It is **noncommercial** — offered under PolyForm Noncommercial 1.0.0, not for sale —
   so the third condition's "intended for sale" case is not engaged.
-- **Distribution is gated on the second condition.** Before this code is distributed,
-  the licensing conversation with HERO Games happens first, not afterwards.
+- **The second condition is acknowledged, not hidden.** This repository is public, which
+  the terms treat as distribution. The project is built to sit inside those terms rather
+  than at their edge: the source was bought, nothing of Hero Games' is redistributed —
+  not the templates, not the character packs, not the test corpus derived from them —
+  and the library cannot create a character. Hero Games describe the licensing terms as
+  "exceedingly easy", and if they want that arrangement formalised, see below.
 
 If Hero Games, or the owner of the HERO Designer source, sees any of this differently,
 we want to hear it — contact the maintainer and it will be acted on.
