@@ -96,15 +96,21 @@ contact the maintainer.
 ## Installation
 
 ```bash
+pip install kirby-cost
+```
+
+or from a clone, for development:
+
+```bash
 python3 -m venv venv
 source venv/bin/activate
-pip install -e .
+pip install -e ".[dev]"
 ```
 
 ## Usage
 
 ```python
-from kirby_cost.io.hdc_loader import HDCLoader
+from kirby_cost.io import HDCLoader
 
 # reads the .hdt named by KIRBY_COST_HDT
 hero = HDCLoader().load_file("MyCharacter.hdc")
@@ -112,12 +118,17 @@ hero = HDCLoader().load_file("MyCharacter.hdc")
 print(hero.name, hero.total_points, hero.available_points)
 
 for power in hero.powers:
-    print(power.alias, power.total_cost, power.active_cost, power.real_cost)
+    print(f"{power.name or power.alias}: {power.real_cost}")
 ```
 
 `hero` also exposes `characteristics`, `skills`, `perks`, `talents` and `martial_arts`.
-Framework containers (Multipower, VPP, Elemental Control) carry their slots as children
-and apply the framework's own slot-cost rules.
+
+`hero.powers` is flat and holds framework containers alongside their slots, the way HD
+writes them. A Multipower or VPP appears as an object in its own right, its slots carry
+`slot.parent`, and the container also holds them in `container.objects`. Slot costs
+follow the framework's rules — a Multipower slot is a fraction of the reserve, and a
+power inside a VPP costs nothing at all, because the pool already paid for it. Grouping
+containers HD creates for the character sheet appear too, costed at zero.
 
 ## Status
 
