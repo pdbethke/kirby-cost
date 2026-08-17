@@ -1,0 +1,192 @@
+"""
+ReducedEND modifier for kirby-cost.
+
+Converted from com.hero.objects.modifiers.ReducedEND.java
+
+ReducedEND modifier with custom getColumn2Output() and included() methods.
+Formats END cost reduction. Cannot be applied with Increased END.
+"""
+
+from kirby_cost.objects.modifier import Modifier
+from kirby_cost.objects.base import GenericObject
+
+
+class ReducedEND(Modifier, xmlid="REDUCEDEND"):
+    """
+    ReducedEND modifier.
+    
+    Reduces END cost.
+    
+    Has custom formatting for END cost reduction. Cannot be applied with Increased END.
+    """
+    
+    def __init__(self, element=None):
+        """Initialize a ReducedEND modifier."""
+        super().__init__()
+        self.xmlid = self.XMLID
+        if element is not None:
+            self._init(element)
+    
+    @property
+    def column2_output(self) -> str:
+        """
+        Get column 2 output string.
+        
+        Custom formatting for ReducedEND modifier.
+        """
+        string = ""
+        string2 = ""
+        string2 = string2 + self._alias
+        d = self.total_value
+        string2 = string2 + " ("
+        
+        # Add selected option
+        if self._selected_option is not None:
+            string2 = string2 + self._selected_option.alias
+        
+        # Add input
+        if self.input and self.input.strip():
+            if string2.strip() and not string2.endswith("("):
+                string2 = string2 + " "
+            string2 = string2 + self.input
+        
+        string2 = string2.strip()
+        
+        # Add assigned modifiers
+        for modifier in self.assigned_modifiers:
+            string2 = string2 + ", " + modifier.alias
+        
+        # Count parentheses for proper closing
+        n = 0
+        n2 = 0
+        while string2.find("(", n) >= 0:
+            n2 += 1
+            n = string2.find("(", n) + 1
+        
+        n = 0
+        while string2.find(")", n) >= 0:
+            n2 -= 1
+            n = string2.find(")", n) + 1
+        
+        string2 = string2 + " (" if n2 <= 0 else string2 + "; "
+        
+        # Add adders
+        for adder in self.assigned_adders:
+            if not adder.is_selected or not adder.column2_output.strip():
+                continue
+            string2 = string2 + adder.column2_output.strip() + "; "
+        
+        # Add comments
+        if self.comments.strip():
+            string2 = string2 + self.comments + "; "
+        
+        # Apply min/max limits
+        if d > self._max_cost and self.max_set:
+            d = self._max_cost
+        if d < self._minimum_cost and self.min_set:
+            d = self._minimum_cost
+        
+        string2 = string2 + self.fraction(d) + ")"
+        n2 -= 1
+        
+        # Close remaining parentheses
+        while n2 > 0:
+            string2 = string2 + ")"
+            n2 -= 1
+        
+        # Append adders string (if any)
+        if string.strip():
+            if string2.strip():
+                string2 = string2 + ", "
+            string2 = string2 + string
+        
+        return string2
+    
+    @property
+    def total_value(self) -> float:
+        """
+        Get total value of this modifier.
+        
+        Doubles value if parent has Autofire.
+        """
+        d = super().total_value
+        
+        if self.parent is not None:
+            if GenericObject.find_object_by_id(
+                self.parent.assigned_modifiers, "AUTOFIRE") is not None:
+                d *= 2.0
+        
+        return d
+    
+    def included(self, generic_object: GenericObject) -> str:
+        """
+        Check if this modifier can be applied to the given object.
+        
+        Args:
+            generic_object: The object to check
+            
+        Returns:
+            Empty string if allowed, error message if not
+        """
+        result = super().included(generic_object)
+        if result and result.strip():
+            return result
+        
+        if self.force_allow:
+            return result
+        
+        # Clone object to check without affecting original
+        # Note: Would need proper clone() method
+        generic_object = generic_object  # For now, use directly
+        
+        # Cannot be applied with Increased END
+        if GenericObject.find_object_by_id(
+            generic_object.assigned_modifiers, "INCREASEDEND") is not None:
+            return f"{self._display} cannot be applied to an ability with the Increased END Limitation."
+        
+        # Cannot be applied with Costs END
+        if GenericObject.find_object_by_id(
+            generic_object.assigned_modifiers, "COSTSEND") is not None:
+            return f"{self._display} cannot be applied to an ability with the Costs END Limitation."
+        
+        # Cannot be applied with Costs END Only To Activate
+        if GenericObject.find_object_by_id(
+            generic_object.assigned_modifiers, "COSTSENDONLYTOACTIVATE") is not None:
+            return f"{self._display} cannot be applied to an ability with Costs END Only To Activate."
+        
+        # Cannot be applied with Costs END To Maintain
+        if GenericObject.find_object_by_id(
+            generic_object.assigned_modifiers, "COSTSENDTOMAINTAIN") is not None:
+            return f"{self._display} cannot be applied to an ability with Costs END To Maintain."
+        
+        # Can be applied to Multipower or ElementalControl
+        from kirby_cost.objects.frameworks.multipower import Multipower
+        from kirby_cost.objects.frameworks.elemental_control import ElementalControl
+        if isinstance(generic_object, (Multipower, ElementalControl)):
+            return ""
+        
+        # Can be applied to NakedModifier or CustomPower with APPerEnd
+        from kirby_cost.objects.powers.naked_modifier import NakedModifier
+        from kirby_cost.objects.powers.custom_power import CustomPower
+        if isinstance(generic_object, (NakedModifier, CustomPower)):
+            if generic_object.ap_per_end != 0:
+                return ""
+        
+        # Check if power costs END (excluding Charges)
+        charges_mod = GenericObject.find_object_by_id(
+            generic_object.assigned_modifiers, "CHARGES")
+        
+        # For Characteristics, check base END usage
+        from kirby_cost.objects.characteristics.characteristic import Characteristic
+        if isinstance(generic_object, Characteristic):
+            # Would need HeroDesigner.getActiveHero() check
+            # For now, check directly
+            if generic_object.end_usage == 0:
+                return f"{generic_object.display} does not cost END."
+            return ""
+        
+        # For other objects, check END usage
+        if generic_object.end_usage == 0:
+            return f"{generic_object.display} does not cost END."
+        
+        return ""
