@@ -102,7 +102,7 @@ class KillingAttackRanged(Power, xmlid="RKA"):
         n2 += n5
         
         # Add standard effect if enabled
-        if self.set_use_standard_effect():
+        if self.uses_standard_effect():
             if self.does_body:
                 damage_str += f" (standard effect: {n}"
                 if n != n2:

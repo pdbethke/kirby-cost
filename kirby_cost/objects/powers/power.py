@@ -55,14 +55,28 @@ class Power(CharAffectingObject):
         """Check if standard effect is allowed for this power."""
         return self.standard_effect_allowed
     
-    def use_standard_effect(self) -> bool:
-        """Check if standard effect should be used."""
+    def uses_standard_effect(self) -> bool:
+        """Whether Standard Effect applies — Java ``Power.useStandardEffect()``.
+
+        NOT named ``use_standard_effect``: ``__init__`` sets an attribute of
+        that name, which shadows any method sharing it, so the original was
+        dead code that returned itself. Four powers called a
+        ``set_use_standard_effect()`` that was never written at all, and their
+        ``damage_display`` raised AttributeError as a result.
+
+        Java gates the field on two things (Power.java:320)::
+
+            if (!standardEffectAllowed) return false;
+            if (activeHero != null && !rules.isStandardEffectAllowed()) return false;
+            return useStandardEffect;
+
+        The rules check needs campaign rules the engine does not model, so it
+        is omitted rather than guessed; the two conditions that can be answered
+        are answered.
+        """
         if not self.standard_effect_allowed:
             return False
-        # This would check rules - stub for now
-        # if hero and not hero.get_rules().is_standard_effect_allowed():
-        #     return False
-        return self.use_standard_effect
+        return bool(self.use_standard_effect)
     
     @property
     def summable(self) -> bool:
@@ -99,7 +113,7 @@ class Power(CharAffectingObject):
                 pip_count += 1
         
         # Add standard effect if applicable
-        if self.set_use_standard_effect():
+        if self.uses_standard_effect():
             points = self._levels * 3 + pip_count
             point_str = "point" if points == 1 else "points"
             damage_str += f" (standard effect: {points} {point_str})"
