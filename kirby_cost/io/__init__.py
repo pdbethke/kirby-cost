@@ -12,12 +12,12 @@ build_json/hdc_loader, so the cycle never forms.
 """
 
 from kirby_cost.io.xml_utility import XMLUtility
-from kirby_cost.io.hdc_parser import HDCParser
 
 __all__ = [
-    # Legacy / HDC parsing (always eagerly available)
+    # Always eagerly available (no cycle risk)
     'XMLUtility',
-    'HDCParser',
+    # The primary entry point: read an .hdc into costed objects
+    'HDCLoader',
     # Spec-1: build doc (JSON) <-> build engine
     'build_from_json',
     'to_build_json',
@@ -39,6 +39,7 @@ _LAZY = {
     'extract_costs':   ('kirby_cost.io.build_cost', 'extract_costs'),
     'CostResult':      ('kirby_cost.io.build_cost', 'CostResult'),
     'BuildNode':       ('kirby_cost.io.hdc_loader', 'BuildNode'),
+    'HDCLoader':       ('kirby_cost.io.hdc_loader', 'HDCLoader'),
 }
 
 

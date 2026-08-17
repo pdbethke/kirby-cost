@@ -86,8 +86,8 @@ something this repository lets you re-run. The tests that ship exercise the engi
 logic and pass without any of it:
 
 ```
-  372 passed, 159 skipped     # the code alone: no templates, no corpus
-  456 passed,  75 skipped     # your templates, no corpus
+  375 passed, 159 skipped     # the code alone: no templates, no corpus
+  416 passed, 118 skipped     # your templates, no corpus
 ```
 
 If you own the HERO Designer source package and want to reproduce the full comparison,
@@ -124,7 +124,7 @@ and apply the framework's own slot-cost rules.
 - **100% parity with HERO Designer.** Every one of 655 published characters matches the
   Java application's own output on every object and on character totals — 27,019 objects
   and 82,367 individual cost values, with zero mismatches.
-- **1,289 tests.** 372 of them need nothing but the code; the rest need your own
+- **1,290 tests.** 375 of them need nothing but the code; the rest need your own
   templates, and the parity suite needs a corpus you generate locally.
 - Pure code — no database, no web framework, no network access.
 
