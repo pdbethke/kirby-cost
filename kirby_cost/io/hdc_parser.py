@@ -1091,8 +1091,11 @@ class HDCParser:
             if equip_obj:
                 hero.equipment.append(equip_obj)
         
-        # Set as active hero
-        EngineContext.active_hero(hero)
+        # set_active_hero, not active_hero — the latter is the getter and takes
+        # no argument, so this raised TypeError for every caller. HDCParser is
+        # exported from the package root; nothing inside the package uses it,
+        # which is why a broken public entry point went unnoticed.
+        EngineContext.set_active_hero(hero)
         
         return hero
     

@@ -803,12 +803,13 @@ class HDCLoader:
             hero.eye_color = info.get("EYE_COLOR", "")
 
             # Biography text fields (child elements)
-            for field in ("BACKGROUND", "PERSONALITY", "QUOTE", "TACTICS",
-                          "CAMPAIGN_USE", "APPEARANCE",
-                          "NOTES1", "NOTES2", "NOTES3", "NOTES4", "NOTES5"):
-                elem = info.find(field)
+            # Not `field` — that shadows the dataclasses import used above.
+            for tag in ("BACKGROUND", "PERSONALITY", "QUOTE", "TACTICS",
+                        "CAMPAIGN_USE", "APPEARANCE",
+                        "NOTES1", "NOTES2", "NOTES3", "NOTES4", "NOTES5"):
+                elem = info.find(tag)
                 if elem is not None and elem.text:
-                    setattr(hero, field.lower(), elem.text)
+                    setattr(hero, tag.lower(), elem.text)
 
         # Basic configuration (point totals)
         basic_config = root.find("BASIC_CONFIGURATION")

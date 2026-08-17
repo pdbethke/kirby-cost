@@ -44,9 +44,13 @@ class PowerInstance:
         # If no JSON behavior or it requires fallback, use Python class
         self._python_instance: Optional['Power'] = None
         if self._behavior_engine is None:
-            power_class = power_class(self.xmlid)
-            if power_class:
-                self._python_instance = power_class()
+            # NOT `power_class = power_class(...)`. Assigning to the name makes
+            # it local for the whole function, so the call on the right-hand
+            # side raises UnboundLocalError and this fallback — the one the
+            # module docstring advertises — could never run.
+            cls = power_class(self.xmlid)
+            if cls:
+                self._python_instance = cls()
                 self._apply_character_data_to_instance()
         
         # Track which implementation we're using
