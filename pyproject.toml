@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kirby-cost"
-version = "0.2.1"
+version = "0.2.2"
 description = "Read HERO Designer's own .hdt templates and .hdc characters, and reproduce its point-cost arithmetic exactly."
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.10"
@@ -57,10 +57,18 @@ include = ["kirby_cost*"]
 exclude = ["tests*"]
 
 [tool.setuptools]
-# No package data. The engine ships no Hero Games content: templates, the
+# No *content* data. The engine ships no Hero Games material: templates, the
 # language similarity chart and the oracle corpus all come from the user's own
 # licensed HERO Designer installation.
 include-package-data = false
+
+[tool.setuptools.package-data]
+# The one exception, and it is not data: py.typed is the PEP 561 marker that
+# tells a consumer's type checker these annotations are real. Without it the
+# `Typing :: Typed` classifier is a claim the wheel does not honour — mypy
+# ignores an installed package's inline types unless the marker is present,
+# which is what 0.2.0 and 0.2.1 shipped.
+kirby_cost = ["py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

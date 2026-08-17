@@ -5,7 +5,18 @@ A Python library for HERO System 6E build and cost calculation.
 Provides cost calculations, power system, and character management.
 """
 
-__version__ = "0.1.0"
+# Read from the installed distribution rather than restated here. A literal
+# drifted: it still said 0.1.0 across the 0.2.0 and 0.2.1 releases, so anything
+# version-gating on kirby_cost.__version__ was told the wrong thing by PyPI.
+# pyproject.toml is now the only place the number is written.
+from importlib.metadata import PackageNotFoundError, version as _dist_version
+
+try:
+    __version__ = _dist_version("kirby-cost")
+except PackageNotFoundError:  # running from a source tree that was never installed
+    __version__ = "0.0.0.dev0"
+
+del _dist_version, PackageNotFoundError
 
 # Core system
 from kirby_cost.core.context import EngineContext
