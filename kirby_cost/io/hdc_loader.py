@@ -444,7 +444,7 @@ class HDCLoader:
             ``HDTTemplateProvider`` (reads the user's own ``.hdt``, resolved
             from ``KIRBY_COST_HDT``).  Pass any other implementation of the
             ``TemplateProvider`` protocol to drive lookups from elsewhere —
-            a consumer's relational catalogue, say.
+            a relational catalogue, say.
         strict: if True, a registered class that fails to construct raises
             instead of silently falling back to ``_FallbackObject``.  Defaults
             to False (the failure is logged at ERROR but loading continues).
@@ -771,6 +771,13 @@ class HDCLoader:
         self._active_provider = (
             switch(hero.template_name) if switch is not None else self._provider
         )
+
+        # The language similarity chart is template data too, and Language
+        # reads it off the class. Refresh it for whichever template this
+        # character resolved to; it used to be a JSON extract shipped in the
+        # package (see load_language_chart).
+        from kirby_cost.objects.skills.language import Language, load_language_chart
+        Language.chart = load_language_chart(self._provider_in_use)
         # Sense GROUPS are defined by the template. A character file with no
         # TEMPLATE has none, so Java cannot resolve e.g. SMELLGROUP as a group
         # and charges the single-sense rate. Recorded here for

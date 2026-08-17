@@ -90,7 +90,7 @@ def test_engine_imports_no_orm_or_web_framework():
 def test_engine_never_imports_kirby_api():
     """The real defect (2026-08-15 pure-code spec) was an upward
     dependency: the engine (kirby-cost) importing from its own consumer
-    (kirby-api's `kirby.*` package). Duplicate table declarations were a
+    (a consumer's own package). Duplicate table declarations were a
     *symptom* of that upward dependency, not the invariant itself — so
     assert the root cause directly, not just its side effect.
 
@@ -102,9 +102,9 @@ def test_engine_never_imports_kirby_api():
     for path in _tracked_py_files():
         for mod in _top_level_imports(path):
             if mod == "kirby":
-                offenders.append(f"{path.relative_to(ROOT)}: imports kirby (kirby-api)")
+                offenders.append(f"{path.relative_to(ROOT)}: imports kirby.* (a consumer package)")
     assert not offenders, (
-        "kirby_cost/ must never import kirby.* (kirby-api) — that is the "
+        "kirby_cost/ must never import kirby.* — that is the "
         "upward dependency this gate exists to prevent:\n" + "\n".join(offenders)
     )
 

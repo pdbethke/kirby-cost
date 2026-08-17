@@ -336,6 +336,7 @@ class HDTTemplateProvider:
         # Providers for sibling templates, shared across the family — see
         # for_template().
         self._peers: dict[str, "HDTTemplateProvider"] = {}
+        self._languages: Optional[list[dict]] = None
         # Load order is child-before-parent throughout, because indexing is
         # first-wins: whatever is loaded first owns the xmlid.
         #
@@ -556,6 +557,69 @@ class HDTTemplateProvider:
             self._peers[key] = cached
             self._peers.setdefault(str(self.path.resolve()), self)
         return cached
+
+    def get_language_chart(self) -> list[dict]:
+        """The template's language similarity chart.
+
+        `<LANGUAGES>` carries a `<LANGUAGE TYPE="Indo-European" DISPLAY="Kafiri">`
+        per language, each listing the languages it is similar to at one, two,
+        three or four points::
+
+            <LANGUAGE TYPE="Indo-European" DISPLAY="Kafiri">
+              <TWOPOINTSIMILARITY>KASHMIRI</TWOPOINTSIMILARITY>
+              <ONEPOINTSIMILARITY>PALI</ONEPOINTSIMILARITY>
+
+        That table decides what a Language costs, so it is rules data and it is
+        Hero Games'. It shipped as a 161 KB `data/language_chart.json` extract
+        until 2026-08-17 — the same mistake as the old `template_6e.json`, in a
+        file whose name did not look like template data. It now comes from the
+        user's own `.hdt`, like everything else.
+
+        Returns [] when the template defines no languages.
+        """
+        if self._languages is None:
+            self._languages = self._index_languages()
+        return self._languages
+
+    def _index_languages(self) -> list[dict]:
+        levels = {
+            "ONEPOINTSIMILARITY": "level1",
+            "TWOPOINTSIMILARITY": "level2",
+            "THREEPOINTSIMILARITY": "level3",
+            "FOURPOINTSIMILARITY": "level4",
+        }
+        out: list[dict] = []
+        for path in [self.path] + self._ancestors(self.path):
+            parsed = _parse_cached(path)
+            for skill in parsed.get("skills") or []:
+                if skill.get("xmlid") != "LANGUAGES":
+                    continue
+                for child in skill.get("child_elements") or []:
+                    if child.get("tag") != "LANGUAGE":
+                        continue
+                    a = child.get("attributes") or {}
+                    entry = {
+                        "display": a.get("DISPLAY", ""),
+                        "family": a.get("TYPE", ""),
+                        "level1": [], "level2": [], "level3": [], "level4": [],
+                    }
+                    for sim in child.get("children") or []:
+                        key = levels.get(sim.get("tag") or "")
+                        text = (sim.get("text") or "").strip()
+                        if key and text:
+                            # Upper-cased because Language.cost upper-cases the
+                            # skill's INPUT before testing membership. The
+                            # template is inconsistent — Urdu lists "Hindi"
+                            # where every other entry shouts "HINDI" — and a
+                            # single mixed-case name would silently stop
+                            # matching, changing what a language costs.
+                            entry[key].append(text.upper())
+                    out.append(entry)
+            if out:
+                # The nearest template in the chain that defines languages wins
+                # outright; they are not merged layer by layer.
+                break
+        return out
 
     def get_maneuver(self, display: str) -> Optional[TemplateData]:
         """The template's maneuver named *display*, or None if it defines none.

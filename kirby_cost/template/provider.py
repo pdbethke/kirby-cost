@@ -3,7 +3,7 @@
 Any class that implements ``get_template_data(xmlid)`` can serve as a provider.
 kirby-cost ships one implementation, ``HDTTemplateProvider``, which reads the
 user's own HERO Designer ``.hdt``; the package carries no template data of its
-own. A consumer that keeps templates in its own storage (kirby-api's relational
+own. A consumer that keeps templates in its own storage (a relational
 catalogue, say) implements this protocol against that storage and passes the
 provider in.
 

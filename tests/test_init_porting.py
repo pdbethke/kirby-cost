@@ -1,18 +1,26 @@
 """Oracle-driven integration tests for init porting fixes.
 
 Requires:
-- Java HD6 CLI at kirby-hd-oracle/hd6cli.sh
-- HDC resource files at champions-campaign-manager/resources/
+- Java HD6 CLI at the HD oracle harness/hd6cli.sh
+- HDC resource files at the character-pack checkout/resources/
 Tests skip gracefully when unavailable.
 """
+from tests.corpus import hd6cli, corpus_root
 import json
 import os
 import subprocess
 import pytest
 from pathlib import Path
 
-RESOURCE_DIR = Path(__file__).parent.parent.parent / "champions-campaign-manager" / "resources"
-HD6CLI = str(Path(__file__).parent.parent.parent / "kirby-hd-oracle" / "hd6cli.sh")
+RESOURCE_DIR = corpus_root() or Path("/nonexistent")
+HD6CLI = str(hd6cli() or "/nonexistent/hd6cli.sh")
+
+# The comparison harness wraps licensed HERO Designer source and is not public.
+# Point KIRBY_COST_HD6CLI at it to run these; without it they skip.
+pytestmark = pytest.mark.skipif(
+    hd6cli() is None,
+    reason="HD6 comparison CLI not configured (set KIRBY_COST_HD6CLI)",
+)
 
 
 def _hdc_files():

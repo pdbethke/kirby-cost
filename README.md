@@ -68,34 +68,30 @@ set. Templates reach the engine through the `TemplateProvider` interface
 (`kirby_cost/template/provider.py`), so a consumer that keeps its catalogue elsewhere
 implements that protocol against its own storage and passes the provider in.
 
-### The oracle test corpus is not shipped either, for the same reason
+### How it is verified, and why you cannot reproduce that here
 
 The engine is validated by costing published characters and comparing every number
-against the Java HD6 CLI. That corpus — 655 characters from the HERO System Bestiary,
-Champions Villains 1-2 and the HERO System Equipment Guide — is **not in this
-repository**. Names, power names and full costed builds together amount to a
-machine-readable copy of published stat blocks, and those belong to Hero Games.
+against HERO Designer's own engine, run headless. As of 2026-08-17 that is 655
+characters, 27,019 objects and 82,367 individual cost values, with zero mismatches.
 
-Nothing is lost for anyone who owns the packs. Point the generator at your own copies:
+**None of that apparatus is public, and cannot be.** The comparison harness wraps the
+licensed HERO Designer source, and the corpus is built from commercial character packs —
+names, power names and full costed builds, which together amount to a machine-readable
+copy of published stat blocks. Neither is redistributable, so neither is here. The
+fixtures directory is gitignored so a locally generated corpus cannot be committed by
+accident.
 
-```bash
-python scripts/generate_oracle_fixtures.py     # writes tests/fixtures/oracle/
-python -m pytest tests/                        # full suite, including parity
-```
-
-Without the corpus the suite still runs and still tests the engine — the parity tests
-simply skip. Measured on this machine, with each input withheld in turn:
+What that means for you: the parity claim above is the maintainer's measurement, not
+something this repository lets you re-run. The tests that ship exercise the engine's own
+logic and pass without any of it:
 
 ```
   372 passed, 159 skipped     # the code alone: no templates, no corpus
   456 passed,  75 skipped     # your templates, no corpus
-1,289 passed                  # templates + a corpus you generated
 ```
 
-The generator resolves the CLI as a workspace sibling and reads the character packs from
-your own filesystem; see the paths at the top of the script. `tests/fixtures/oracle/` and
-`tests/fixtures/*.hdc` are gitignored so a regenerated corpus cannot be committed by
-accident.
+If you own the HERO Designer source package and want to reproduce the full comparison,
+contact the maintainer.
 
 ## Installation
 
