@@ -1,6 +1,6 @@
 """VPP SFX-restriction text accessor.
 
-The a consumer category extractor reads this string to decide what a pool is
+A downstream category extractor reads this string to decide what a pool is
 allowed to conjure. It is descriptive text only — no cost math lives here.
 """
 from types import SimpleNamespace

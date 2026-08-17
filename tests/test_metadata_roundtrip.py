@@ -18,7 +18,7 @@ from kirby_cost.io.hdc_loader import HDCLoader, LoadedHero
 # derives from the workspace root. Read it from there rather than walking for
 # an ancestor directory by name: this file looked for one called "Champions
 # Campaign Manager", the workspace was renamed to Kirby, and the walk ran off
-# the top and produced "/the character-pack checkout/..." — 24 tests erroring
+# the top and produced a path anchored at "/" — 24 tests erroring
 # at setup on a path anchored at the filesystem root.
 _FIXTURES = Path(__file__).resolve().parent / "fixtures" / "oracle"
 

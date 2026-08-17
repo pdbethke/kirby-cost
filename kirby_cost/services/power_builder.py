@@ -1,6 +1,6 @@
 """Build + cost ONE power from a structured spec via the engine's own loader
 helpers. Cost ALWAYS comes from the engine (never hand-rolled). Used by the
-a consumer VPP reconfigure flow to validate an AI-proposed power against the pool.
+a VPP reconfigure flow, to validate a proposed power against the pool.
 
 The construction path mirrors HDCLoader exactly (registry lookup -> instantiate
 -> set xmlid/levels -> apply template defaults -> per-modifier build) so the

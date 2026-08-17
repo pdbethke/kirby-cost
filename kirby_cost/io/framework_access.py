@@ -178,8 +178,8 @@ def vpp_restriction_text(framework) -> str:
     INPUT/NAME plus any LIMITEDPOWER limitation aliases/comments. '' if the
     framework is not a VPP or carries no descriptive restriction.
 
-    Categories are NOT a cost concern — this only surfaces text for the
-    a consumer extractor to read. No cost math here.
+    Categories are NOT a cost concern — this only surfaces the text for a
+    downstream extractor to read. No cost math here.
     """
     if not is_vpp(framework):
         return ""
