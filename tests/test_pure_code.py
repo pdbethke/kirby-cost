@@ -109,10 +109,33 @@ def test_engine_never_imports_kirby_api():
     )
 
 
-def test_setup_py_declares_only_pure_dependencies():
-    text = (ROOT / "setup.py").read_text()
+def test_packaging_declares_only_pure_dependencies():
+    """No ORM, web framework or driver may enter the dependency list.
+
+    Reads pyproject.toml, which replaced setup.py on 2026-08-17. The guard is
+    the point, not the filename: this test failed when setup.py was deleted,
+    which is the guard working — a dependency check that silently stops
+    checking is worse than none.
+    """
+    path = ROOT / "pyproject.toml"
+    assert path.exists(), "packaging metadata missing — this guard reads it"
+    text = path.read_text().lower()
     for banned in FORBIDDEN:
-        assert banned not in text.lower(), f"{banned} must not be a dependency"
+        assert banned not in text, f"{banned} must not be a dependency"
+
+
+def test_the_declared_runtime_dependencies_are_the_expected_two():
+    """Pin the whole list, so an addition is a deliberate act.
+
+    FORBIDDEN catches what we thought to ban; this catches what we did not.
+    """
+    import re
+
+    text = (ROOT / "pyproject.toml").read_text()
+    block = re.search(r"^dependencies = \[(.*?)^\]", text, re.S | re.M)
+    assert block, "could not find the dependencies list"
+    names = re.findall(r'"([A-Za-z0-9_.-]+)', block.group(1))
+    assert names == ["typing-extensions", "lxml"], names
 
 
 def test_database_package_is_gone():

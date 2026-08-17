@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kirby-cost"
+version = "0.2.0"
+description = "Read HERO Designer's own .hdt templates and .hdc characters, and reproduce its point-cost arithmetic exactly."
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.10"
+authors = [{ name = "Peter D Bethke" }]
+keywords = ["hero-system", "champions", "hero-designer", "rpg", "tabletop"]
+
+# PolyForm Noncommercial 1.0.0 is source-available, NOT OSI-approved, so no
+# OSI classifier applies and no SPDX expression is asserted. See LICENSE.
+license = { file = "LICENSE" }
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: Other/Proprietary License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Games/Entertainment :: Role-Playing",
+    "Typing :: Typed",
+]
+
+dependencies = [
+    "typing-extensions>=4.8.0",
+    "lxml>=4.9.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "mypy>=1.5.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/pdbethke/kirby-cost"
+Source = "https://github.com/pdbethke/kirby-cost"
+Issues = "https://github.com/pdbethke/kirby-cost/issues"
+
+[tool.setuptools.packages.find]
+# tests/ is deliberately excluded from the distribution. It is 40+ modules,
+# it would install an importable top-level `tests` package that collides with
+# a consumer's own, and most of it needs licensed inputs that cannot ship.
+include = ["kirby_cost*"]
+exclude = ["tests*"]
+
+[tool.setuptools]
+# No package data. The engine ships no Hero Games content: templates, the
+# language similarity chart and the oracle corpus all come from the user's own
+# licensed HERO Designer installation.
+include-package-data = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
