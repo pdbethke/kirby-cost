@@ -23,7 +23,6 @@ from kirby_cost.model.rules import Rules
 
 # I/O
 from kirby_cost.io.xml_utility import XMLUtility
-from kirby_cost.io.hdc_parser import HDCParser
 
 __all__ = [
     # Core
@@ -39,7 +38,6 @@ __all__ = [
     'Rules',
     # I/O
     'XMLUtility',
-    'HDCParser',
 ]
 
 

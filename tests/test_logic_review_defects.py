@@ -25,15 +25,18 @@ path, which is why 82,367 oracle-compared values said nothing about them.
    reason it has never been hit.
 
 3. ``HDCParser.create_hero_from_file`` called the ``active_hero`` GETTER with an
-   argument instead of ``set_active_hero``, raising TypeError. ``HDCParser`` is
-   exported from the package root, so this is public API that has never worked
-   — it is used by nothing inside the package (``HDCLoader`` is the path
-   everything actually takes) and sits at 5% coverage.
+   argument instead of ``set_active_hero``, raising TypeError. That was public
+   API — ``HDCParser`` was exported from the package root — and it had never
+   worked, because nothing inside the package used it.
+
+   The module was deleted rather than repaired. 1,348 lines at 5% coverage
+   offering a second, unvalidated way to do what ``HDCLoader`` already does is
+   a liability, not a feature: it is the surface where the other two defects
+   in this file also lived. ``HDCLoader`` is the entry point.
 """
 import pytest
 
 from kirby_cost.behaviors.power_instance import PowerInstance
-from kirby_cost.core.context import EngineContext
 from kirby_cost.objects.powers.sense_group import SenseGroup
 
 
@@ -67,28 +70,3 @@ def test_sense_group_records_a_hero_when_one_is_attached():
     group.set_sense_adders(None)
 
     assert group._sense_adders_has_hero is True
-
-
-def test_hdc_parser_can_build_a_hero(tmp_path):
-    """Exported public API: it must at least not raise."""
-    import textwrap
-    from kirby_cost.io.hdc_parser import HDCParser
-
-    xml = textwrap.dedent("""\
-        <?xml version="1.0" encoding="UTF-16"?>
-        <CHARACTER version="6.0" TEMPLATE="builtIn.Superheroic6E.hdt">
-          <CHARACTER_INFO CHARACTER_NAME="Probe" />
-          <CHARACTERISTICS>
-            <STR XMLID="STR" ID="1" BASECOST="0.0" LEVELS="10" ALIAS="STR"
-                 POSITION="0" MULTIPLIER="1.0" />
-          </CHARACTERISTICS>
-          <SKILLS /><PERKS /><TALENTS /><POWERS /><DISADVANTAGES />
-        </CHARACTER>
-        """)
-    p = tmp_path / "probe.hdc"
-    p.write_bytes(xml.encode("utf-16"))
-
-    hero = HDCParser().create_hero_from_file(str(p))
-
-    assert hero is not None
-    assert EngineContext.active_hero() is hero
