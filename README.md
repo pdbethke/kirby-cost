@@ -1,5 +1,9 @@
 # kirby-cost
 
+[![PyPI](https://img.shields.io/pypi/v/kirby-cost)](https://pypi.org/project/kirby-cost/)
+[![Python](https://img.shields.io/pypi/pyversions/kirby-cost)](https://pypi.org/project/kirby-cost/)
+[![Licence: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/licence-PolyForm%20Noncommercial%201.0.0-blue)](LICENSE)
+
 A Python library for reading HERO Designer's own files — `.hdt` templates and `.hdc`
 characters — and reproducing HERO Designer's point-cost arithmetic exactly.
 
