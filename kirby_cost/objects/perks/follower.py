@@ -5,12 +5,32 @@ Converted from com.hero.objects.perks.Follower.java
 """
 
 from typing import Optional
+from kirby_cost.engine.xml_attrs import XMLAttr
 from kirby_cost.objects.perks.perk import Perk
 from kirby_cost.util.rounder import round_half_down
 
 
 class Follower(Perk, xmlid="FOLLOWER"):
     """Follower perk - companion NPC."""
+
+    #: OVERCOST/OVERVAL/MULTIPLIERCOST/MULTIPLIERVAL come from the TEMPLATE —
+    #: the Python comment below said so and the writer stated them anyway, so
+    #: 15 characters had a template default frozen into their file as a
+    #: per-character override. Java writes only NUMBER, BASEPOINTS,
+    #: DISADPOINTS and FILE_ASSOCIATION (Follower.getSaveXML); declared here, the
+    #: writer's "the source did not state it and nothing changed it" rule keeps
+    #: the other four out on its own, without a second hand-written list to
+    #: remember them by.
+    XML_ATTRS = (
+        XMLAttr("NUMBER", "multiples", "int"),
+        XMLAttr("BASEPOINTS", "_base_points", "int"),
+        XMLAttr("DISADPOINTS", "_disad_points", "int"),
+        XMLAttr("OVERCOST", "over_cost", "int"),
+        XMLAttr("OVERVAL", "over_val", "int"),
+        XMLAttr("MULTIPLIERCOST", "multiplier_cost", "int"),
+        XMLAttr("MULTIPLIERVAL", "multiplier_val", "int"),
+        XMLAttr("FILE_ASSOCIATION", "file_path", omit_if=None),
+    )
 
     def __init__(self, element=None):
         """Initialize Follower perk."""
@@ -26,13 +46,7 @@ class Follower(Perk, xmlid="FOLLOWER"):
         super().__init__(element, "FOLLOWER")
 
     def _init(self, element) -> None:
-        """Initialize from XML, including follower-specific fields.
-
-        Mirrors Java Follower.init() + restoreFromSave() which read
-        OVERCOST, OVERVAL, MULTIPLIERCOST, MULTIPLIERVAL from the template
-        definition and NUMBER, BASEPOINTS, DISADPOINTS from saved data.
-        """
-        # Set Java init() defaults
+        """Java Follower.init() defaults, before the document is read."""
         self._display = "Follower"
         self._alias = "Follower"
         self._base_cost = 0.0
@@ -41,48 +55,6 @@ class Follower(Perk, xmlid="FOLLOWER"):
         self._minimum_cost = 1.0
         self._max_cost = 10.0
         super()._init(element)
-        if element is None:
-            return
-        from kirby_cost.io.xml_utility import XMLUtility
-
-        # Template-level attributes (Java init())
-        for attr, field, conv in [
-            ("OVERCOST", "over_cost", int),
-            ("OVERVAL", "over_val", int),
-            ("MULTIPLIERCOST", "multiplier_cost", int),
-            ("MULTIPLIERVAL", "multiplier_val", int),
-        ]:
-            val = XMLUtility.get_value(element, attr)
-            if val and val.strip():
-                try:
-                    setattr(self, field, conv(val))
-                except (ValueError, TypeError):
-                    pass
-
-        # Saved character data (Java restoreFromSave())
-        for attr, field, conv in [
-            ("NUMBER", "multiples", int),
-            ("BASEPOINTS", "_base_points", lambda v: int(float(v))),
-            ("DISADPOINTS", "_disad_points", lambda v: int(float(v))),
-        ]:
-            val = XMLUtility.get_value(element, attr)
-            if val and val.strip():
-                try:
-                    setattr(self, field, conv(val))
-                except (ValueError, TypeError):
-                    pass
-
-    def get_save_xml(self):
-        """Serialize follower including follower-specific fields."""
-        element = self.get_general_save_xml()
-        element.set("BASEPOINTS", str(self._base_points))
-        element.set("DISADPOINTS", str(self._disad_points))
-        element.set("NUMBER", str(self.multiples))
-        element.set("OVERCOST", str(self.over_cost))
-        element.set("OVERVAL", str(self.over_val))
-        element.set("MULTIPLIERCOST", str(self.multiplier_cost))
-        element.set("MULTIPLIERVAL", str(self.multiplier_val))
-        return element
 
     @property
     def base_points(self) -> int:
