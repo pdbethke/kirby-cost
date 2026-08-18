@@ -292,23 +292,40 @@ class SerializationMixin:
         self._get_adder_save_xml(element)
         self._get_modifier_save_xml(element)
 
-        if hasattr(self, "reorder_to_source"):
-            self.reorder_to_source(element)
-
         return element
 
     def _get_adder_save_xml(self, element):
         """Add adder XML to the element."""
         for adder in self.assigned_adders:
-            if hasattr(adder, 'get_save_xml'):
-                element.append(adder.get_save_xml())
+            if hasattr(adder, 'save_xml'):
+                element.append(adder.save_xml())
 
     def _get_modifier_save_xml(self, element):
         """Add modifier XML to the element."""
         for modifier in self.assigned_modifiers:
-            if hasattr(modifier, 'get_save_xml'):
-                element.append(modifier.get_save_xml())
+            if hasattr(modifier, 'save_xml'):
+                element.append(modifier.save_xml())
 
     def get_save_xml(self):
         """Get XML element for saving this object. Override in subclasses."""
         return self.get_general_save_xml()
+
+    def save_xml(self):
+        """This object's finished element. The one entry point serialization has.
+
+        ``get_save_xml`` is the overridable half and ``reorder_to_source`` must
+        run after ALL of it: it restores the attribute order the document used,
+        and lxml writes attributes in the order they were set, so an attribute
+        added after the reorder lands at the end wherever the document put it.
+
+        The reorder used to sit at the foot of ``get_general_save_xml``, which
+        is the middle of the chain — every subclass that adds an attribute in
+        its own ``get_save_xml`` does so afterwards. That was invisible for as
+        long as no such attribute existed in the middle of a real document's
+        order; declaring Detect's ACTIVE produced one immediately, and Ravel's
+        Detect came back with ACTIVE and GROUP transposed.
+        """
+        element = self.get_save_xml()
+        if element is not None:
+            self.reorder_to_source(element)
+        return element

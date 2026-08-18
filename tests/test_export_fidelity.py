@@ -132,6 +132,15 @@ def _diff_document(original: etree._Element, exported: etree._Element) -> list:
             if attr not in oe.attrib:
                 diffs.append((_gap_key(oe, attr),
                               f"{key} gained {attr}={value!r} the source never stated"))
+        # Order, not just presence. lxml writes attributes in the order they
+        # were set, so a document that says the same things in a different
+        # order is still a gratuitous diff against every file HD has produced —
+        # and the one bug this whole file missed was an ordering one, caught by
+        # tests/test_hdc_writer.py on a single character while 794 of them
+        # reported clean.
+        shared = [a for a in oe.attrib if a in ne.attrib]
+        if shared != [a for a in ne.attrib if a in oe.attrib]:
+            diffs.append((_gap_key(oe, "#order"), f"{key} attribute order changed"))
         o_text, n_text = (oe.text or "").strip(), (ne.text or "").strip()
         if o_text != n_text:
             diffs.append((_gap_key(oe, "#text"), f"{key} text changed"))

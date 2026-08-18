@@ -34,6 +34,7 @@ is to be reloaded.
 """
 from __future__ import annotations
 
+import copy
 import os
 from pathlib import Path
 from typing import Any, Iterable
@@ -108,7 +109,7 @@ def _element_for(obj: Any, section: str) -> etree._Element:
     name = (getattr(obj, "_name", "") or getattr(obj, "name", "") or "").strip()
     label = f"{section} {ident}" + (f" ({name})" if name else "")
     try:
-        element = obj.get_save_xml()
+        element = obj.save_xml()
     except Exception as exc:  # noqa: BLE001 — re-raised with the object named
         raise HDCWriteError(f"{label} could not be written: {exc}") from exc
     if element is None:
@@ -182,6 +183,11 @@ def hero_to_element(hero: Any) -> etree._Element:
         element = etree.SubElement(root, "RULES")
         for key, value in rules_attrs.items():
             element.set(key, value)
+
+    # The character's own embedded template, after RULES as HD writes it.
+    embedded = getattr(hero, "embedded_template", None)
+    if embedded is not None:
+        root.append(copy.deepcopy(embedded))
 
     if getattr(hero, "image_data", ""):
         image = etree.SubElement(root, "IMAGE")

@@ -12,6 +12,7 @@ Usage:
         print(power.xmlid, power.total_cost, power.active_cost, power.real_cost_pre_list)
 """
 
+import copy
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -264,6 +265,19 @@ class LoadedHero:
         #: holding them is that the document said them. The handful the engine
         #: does act on are parsed onto `Rules` as before, from this same block.
         self.rules_attrs: dict[str, str] = {}
+        #: The character's own embedded <TEMPLATE> block, when it carries one.
+        #: 15 corpus characters do: a thin override layer naming what it
+        #: extends ("builtIn.Superheroic6E.hdt") and where it came from, plus
+        #: the ten section elements it overrides. A character is costed against
+        #: the template it DECLARES, so dropping this on write does not merely
+        #: lose a decoration — it recosts the character on the next load.
+        #:
+        #: Held as the element, verbatim, for the reason `rules_attrs` is held
+        #: verbatim: the engine resolves templates through HDTTemplateProvider
+        #: and does not consult this block, so parsing it into a model would be
+        #: inventing a representation of something nothing reads. What the
+        #: document said is exactly what needs to come back out.
+        self.embedded_template = None
 
         # Character identification
         self.player_name: str = ""
@@ -869,6 +883,10 @@ class HDCLoader:
         # Load rules from HDC (language similarities, etc.). The whole block is
         # kept so the writer can state it back; only what the engine acts on is
         # parsed onto Rules.
+        template_elem = root.find("TEMPLATE")
+        if template_elem is not None:
+            hero.embedded_template = copy.deepcopy(template_elem)
+
         rules_elem = root.find("RULES")
         if rules_elem is not None:
             hero.rules_attrs = dict(rules_elem.attrib)

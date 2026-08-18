@@ -33,7 +33,7 @@ class EnduranceReserve(Power, xmlid="ENDURANCERESERVE"):
         """Serialize endurance reserve including recovery component."""
         element = self.get_general_save_xml()
         if self.rec is not None:
-            rec_elem = self.rec.get_save_xml()
+            rec_elem = self.rec.save_xml()
             if rec_elem is not None:
                 element.append(rec_elem)
         return element

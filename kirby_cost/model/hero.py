@@ -334,50 +334,50 @@ class Hero:
         chars_elem = etree.SubElement(root, "CHARACTERISTICS")
         for char_obj in self.characteristics:
             if hasattr(char_obj, 'get_save_xml'):
-                chars_elem.append(char_obj.get_save_xml())
+                chars_elem.append(char_obj.save_xml())
         
         # SKILLS
         skills_elem = etree.SubElement(root, "SKILLS")
         for skill in self.skills:
             if hasattr(skill, 'get_save_xml'):
-                skills_elem.append(skill.get_save_xml())
+                skills_elem.append(skill.save_xml())
         
         # PERKS
         perks_elem = etree.SubElement(root, "PERKS")
         for perk in self.perks:
             if hasattr(perk, 'get_save_xml'):
-                perks_elem.append(perk.get_save_xml())
+                perks_elem.append(perk.save_xml())
         
         # TALENTS
         talents_elem = etree.SubElement(root, "TALENTS")
         for talent in self.talents:
             if hasattr(talent, 'get_save_xml'):
-                talents_elem.append(talent.get_save_xml())
+                talents_elem.append(talent.save_xml())
         
         # MARTIALARTS
         ma_elem = etree.SubElement(root, "MARTIALARTS")
         for maneuver in self.maneuvers:
             if hasattr(maneuver, 'get_save_xml'):
-                ma_elem.append(maneuver.get_save_xml())
+                ma_elem.append(maneuver.save_xml())
         
         # POWERS
         powers_elem = etree.SubElement(root, "POWERS")
         for power in self.powers:
             if hasattr(power, 'get_save_xml'):
-                powers_elem.append(power.get_save_xml())
+                powers_elem.append(power.save_xml())
         
         # DISADVANTAGES
         disads_elem = etree.SubElement(root, "DISADVANTAGES")
         for disad in self.disads:
             if hasattr(disad, 'get_save_xml'):
-                disads_elem.append(disad.get_save_xml())
+                disads_elem.append(disad.save_xml())
         
         # EQUIPMENT
         if self.equipment:
             equip_elem = etree.SubElement(root, "EQUIPMENT")
             for equip in self.equipment:
                 if hasattr(equip, 'get_save_xml'):
-                    equip_elem.append(equip.get_save_xml())
+                    equip_elem.append(equip.save_xml())
         
         # IMAGE (if present)
         if self.image_data and self.image_file_name and len(self.image_data) > 0:

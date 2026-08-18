@@ -80,7 +80,7 @@ class CompoundPower(Power, xmlid="COMPOUNDPOWER"):
         """Serialize compound power including sub-powers."""
         element = self.get_general_save_xml()
         for sub in self.powers:
-            sub_elem = sub.get_save_xml()
+            sub_elem = sub.save_xml()
             if sub_elem is not None:
                 element.append(sub_elem)
         return element
