@@ -9,6 +9,7 @@ It handles objects that can affect characteristics.
 
 from typing import Optional
 from kirby_cost.objects.base import GenericObject
+from kirby_cost.engine.xml_attrs import XMLAttr
 from kirby_cost.util.constants import CharacteristicType
 
 
@@ -18,6 +19,14 @@ class CharAffectingObject(GenericObject):
     
     Extends GenericObject with characteristic increase tracking.
     """
+
+    #: Only a characteristic-affecting object has these, which is why
+    #: declaring them on GenericObject would write an attribute nothing reads.
+    XML_ATTRS = (
+        XMLAttr("AFFECTS_PRIMARY", "affects_primary", "yesno"),
+        XMLAttr("AFFECTS_TOTAL", "affects_total", "yesno"),
+    )
+
     
     def __init__(self):
         """Initialize a CharAffectingObject."""

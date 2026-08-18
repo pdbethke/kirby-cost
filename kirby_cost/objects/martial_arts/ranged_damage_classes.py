@@ -68,6 +68,8 @@ class RangedDamageClasses(GenericObject, xmlid="RANGEDDC"):
         self._minimum_level = 1
         
         super()._init(element)
+        # Folded in from restore_from_save, which ran after _init.
+        # One ingest per class; see engine/xml_attrs.py.
     
     @property
     def column2_output(self) -> str:
@@ -122,13 +124,5 @@ class RangedDamageClasses(GenericObject, xmlid="RANGEDDC"):
         element.tag = "RANGEDDC"
         return element
     
-    def restore_from_save(self, element) -> None:
-        """
-        Restore from saved XML element.
-        
-        Args:
-            element: XML element containing saved data
-        """
-        super().restore_from_save(element)
 
 

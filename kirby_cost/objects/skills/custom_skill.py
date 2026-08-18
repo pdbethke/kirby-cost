@@ -43,9 +43,11 @@ class CustomSkill(Skill, xmlid="CUSTOMSKILL"):
         element.set("ROLL", str(self._custom_roll))
         return element
 
-    def restore_from_save(self, element) -> None:
-        """Restore from save."""
-        super().restore_from_save(element)
+    def _init(self, element) -> None:
+        """Read this element. Was restore_from_save."""
+        super()._init(element)
+        # Folded in from restore_from_save, which ran after _init.
+        # One ingest per class; see engine/xml_attrs.py.
         roll_str = element.get("ROLL")
         if roll_str and roll_str.strip():
             try:

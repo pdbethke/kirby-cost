@@ -8,6 +8,7 @@ This is the base class for all powers in Hero Designer.
 
 from typing import Optional
 from kirby_cost.objects.char_affecting import CharAffectingObject
+from kirby_cost.engine.xml_attrs import XMLAttr
 from kirby_cost.util.rounder import round_half_down, round_half_up
 
 
@@ -21,6 +22,14 @@ class Power(CharAffectingObject):
     - Standard effect handling
     - Resistant defenses
     """
+
+    XML_ATTRS = (
+        #: NOTE the field is `use_standard_effect` (singular). `uses_standard_effect`
+    #: is the METHOD that gates it, and binding the table to that name replaced
+    #: the method with a bool — 'bool' object is not callable, three tests down.
+    XMLAttr("USESTANDARDEFFECT", "use_standard_effect", "yesno"),
+    )
+
     
     # Static last sense edit timestamp (for sense caching)
     last_sense_edit: float = 0.0

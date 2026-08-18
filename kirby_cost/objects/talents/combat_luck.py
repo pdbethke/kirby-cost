@@ -100,15 +100,11 @@ class CombatLuck(Talent, xmlid="COMBAT_LUCK"):
         element.set("AFFECTS_TOTAL", "Yes" if self.affect_total else "No")
         return element
     
-    def restore_from_save(self, element) -> None:
-        """
-        Restore from saved XML element.
-        
-        Args:
-            element: XML element containing saved data
-        """
-        super().restore_from_save(element)
-        
+    def _init(self, element) -> None:
+        """Read this element. Was restore_from_save."""
+        super()._init(element)
+        # Folded in from restore_from_save, which ran after _init.
+        # One ingest per class; see engine/xml_attrs.py.
         affects_primary_str = XMLUtility.get_value(element, "AFFECTS_PRIMARY")
         if affects_primary_str and affects_primary_str.strip():
             self.affects_primary = affects_primary_str.strip().upper().startswith("Y")

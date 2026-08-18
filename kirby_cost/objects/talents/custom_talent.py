@@ -51,15 +51,11 @@ class CustomTalent(Talent, xmlid="CUSTOMTALENT"):
         element.set("ROLL", str(self._roll))
         return element
     
-    def restore_from_save(self, element) -> None:
-        """
-        Restore from saved XML element.
-        
-        Args:
-            element: XML element containing saved data
-        """
-        super().restore_from_save(element)
-        
+    def _init(self, element) -> None:
+        """Read this element. Was restore_from_save."""
+        super()._init(element)
+        # Folded in from restore_from_save, which ran after _init.
+        # One ingest per class; see engine/xml_attrs.py.
         # Parse roll value
         roll_str = XMLUtility.get_value(element, "ROLL")
         if roll_str and roll_str.strip():

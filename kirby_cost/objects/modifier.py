@@ -8,6 +8,7 @@ Modifiers represent advantages and limitations that can be applied to powers.
 
 from typing import Optional, List, TYPE_CHECKING
 from kirby_cost.objects.base import GenericObject
+from kirby_cost.engine.xml_attrs import XMLAttr
 from kirby_cost.util.rounder import round_half_up
 
 if TYPE_CHECKING:
@@ -25,6 +26,11 @@ class Modifier(GenericObject):
     - Nested modifiers (advantages on limitations, etc.)
     - Minimum/maximum value limits
     """
+
+    XML_ATTRS = (
+        XMLAttr("DISPLAYINSTRING", "_display_in_string", "yesno"),
+    )
+
     
     def __init__(self):
         """Initialize a Modifier."""
@@ -322,7 +328,9 @@ class Modifier(GenericObject):
             element.set("IS_LIMITATION", "Yes")
         if self.private_mod:
             element.set("PRIVATE", "Yes")
-        if self._duration:
+        # Only when the document said so: DURATION is template-derived on most
+        # modifiers, and writing it back makes it a per-character override.
+        if self._duration and "DURATION" in getattr(self, "_source_attrs", ()) :
             element.set("DURATION", self._duration)
         
         return element

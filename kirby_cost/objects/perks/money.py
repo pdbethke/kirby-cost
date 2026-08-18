@@ -31,15 +31,11 @@ class Money(Perk, xmlid="MONEY"):
         """
         return super().get_save_xml()
     
-    def restore_from_save(self, element) -> None:
-        """
-        Restore from saved XML element.
-        
-        Args:
-            element: XML element containing saved data
-        """
-        super().restore_from_save(element)
-        
+    def _init(self, element) -> None:
+        """Read this element. Was restore_from_save."""
+        super()._init(element)
+        # Folded in from restore_from_save, which ran after _init.
+        # One ingest per class; see engine/xml_attrs.py.
         # Set selected option base cost to match perk base cost
         selected_option = self._selected_option
         if selected_option:

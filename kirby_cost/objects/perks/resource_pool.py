@@ -186,15 +186,8 @@ class ResourcePool(Perk, xmlid="RESOURCE_POOL"):
         """
         self._init_defaults()
         super()._init(element)
-    
-    def restore_from_save(self, element) -> None:
-        """
-        Restore from saved XML element.
-        
-        Args:
-            element: XML element containing saved data
-        """
-        super().restore_from_save(element)
+        # Folded in from restore_from_save, which ran after _init.
+        # One ingest per class; see engine/xml_attrs.py.
         self._available_modifiers = []
         
         # Parse free points
@@ -204,6 +197,7 @@ class ResourcePool(Perk, xmlid="RESOURCE_POOL"):
                 self.free_points = int(free_points_str)
             except (ValueError, TypeError):
                 self.free_points = 0
+    
 
 
 

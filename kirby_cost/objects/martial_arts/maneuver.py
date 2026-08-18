@@ -791,40 +791,8 @@ class Maneuver(GenericObject, xmlid="MANEUVER"):
                 self.damage_type = int(dmgtype_str)
             except (ValueError, TypeError):
                 pass
-    
-    def get_save_xml(self):
-        """Get XML element for saving."""
-        element = super().get_save_xml()
-        element.tag = "MANEUVER"
-        
-        if self.custom:
-            element.set("CUSTOM", "Yes")
-        element.set("CATEGORY", self.category)
-        element.set("DISPLAY", str(self._display))
-        element.set("OCV", str(self.ocv))
-        element.set("DCV", str(self.dcv))
-        element.set("DC", str(self.dc))
-        element.set("PHASE", self.phase)
-        element.set("EFFECT", self.effect)
-        element.set("ADDSTR", "Yes" if self.add_str else "No")
-        element.set("ACTIVECOST", str(self._maneuver_active_cost))
-        element.set("DAMAGETYPE", str(self.damage_type))
-        element.set("MAXSTR", str(self.max_str))
-        element.set("STRMULT", str(self.str_multiplier))
-        element.set("USEWEAPON", "Yes" if self._use_weapon else "No")
-        
-        if self.weapon_effect and self.weapon_effect.strip():
-            element.set("WEAPONEFFECT", self.weapon_effect)
-        
-        if self.category.upper() == "RANGED":
-            element.set("RANGE", str(self.ranged))
-        
-        return element
-    
-    def restore_from_save(self, element) -> None:
-        """Restore from saved XML element."""
-        super().restore_from_save(element)
-        
+        # Folded in from restore_from_save, which ran after _init.
+        # One ingest per class; see engine/xml_attrs.py.
         # Restore category
         cat_str = XMLUtility.get_value(element, "CATEGORY")
         if cat_str and cat_str.strip():
@@ -918,3 +886,33 @@ class Maneuver(GenericObject, xmlid="MANEUVER"):
         # Restore CUSTOM
         custom_str = XMLUtility.get_value(element, "CUSTOM")
         self.custom = custom_str and custom_str.strip().upper().startswith("Y")
+    
+    def get_save_xml(self):
+        """Get XML element for saving."""
+        element = super().get_save_xml()
+        element.tag = "MANEUVER"
+        
+        if self.custom:
+            element.set("CUSTOM", "Yes")
+        element.set("CATEGORY", self.category)
+        element.set("DISPLAY", str(self._display))
+        element.set("OCV", str(self.ocv))
+        element.set("DCV", str(self.dcv))
+        element.set("DC", str(self.dc))
+        element.set("PHASE", self.phase)
+        element.set("EFFECT", self.effect)
+        element.set("ADDSTR", "Yes" if self.add_str else "No")
+        element.set("ACTIVECOST", str(self._maneuver_active_cost))
+        element.set("DAMAGETYPE", str(self.damage_type))
+        element.set("MAXSTR", str(self.max_str))
+        element.set("STRMULT", str(self.str_multiplier))
+        element.set("USEWEAPON", "Yes" if self._use_weapon else "No")
+        
+        if self.weapon_effect and self.weapon_effect.strip():
+            element.set("WEAPONEFFECT", self.weapon_effect)
+        
+        if self.category.upper() == "RANGED":
+            element.set("RANGE", str(self.ranged))
+        
+        return element
+    

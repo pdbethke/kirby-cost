@@ -218,15 +218,11 @@ class Reputation(Perk, xmlid="REPUTATION"):
         
         return cost
     
-    def restore_from_save(self, element) -> None:
-        """
-        Restore from saved XML element.
-        
-        Args:
-            element: XML element containing saved data
-        """
-        super().restore_from_save(element)
-        
+    def _init(self, element) -> None:
+        """Read this element. Was restore_from_save."""
+        super()._init(element)
+        # Folded in from restore_from_save, which ran after _init.
+        # One ingest per class; see engine/xml_attrs.py.
         # Handle HOWWELL and HOWWIDE adders if options don't exist
         if (len(self.options) == 0 and 
             GenericObject.find_object_by_id(self.available_adders, "HOWWELL") and

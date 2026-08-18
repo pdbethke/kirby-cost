@@ -273,9 +273,12 @@ class Sense(Power):
             element.set("GROUP", self.group_id)
         if self.active:
             element.set("ACTIVE", "Yes")
-        for sa in self.sense_adders:
-            prov = etree.SubElement(element, "PROVIDES")
-            prov.text = sa
+        # Only when the document stated them: sense_adders is filled from the
+        # template for every sense, so echoing it back invents elements.
+        if "PROVIDES" in getattr(self, "_source_child_tags", frozenset()):
+            for sa in self.sense_adders:
+                prov = etree.SubElement(element, "PROVIDES")
+                prov.text = sa
         return element
 
     @property

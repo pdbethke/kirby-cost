@@ -158,16 +158,8 @@ class SimulateDeath(Talent, xmlid="SIMULATE_DEATH"):
                         choice = CharacteristicChoice()
                         choice._init(item_elem)
                         self.characteristic_choices.append(choice)
-    
-    def restore_from_save(self, element) -> None:
-        """
-        Restore from saved XML element.
-        
-        Args:
-            element: XML element containing saved data
-        """
-        super().restore_from_save(element)
-        
+        # Folded in from restore_from_save, which ran after _init.
+        # One ingest per class; see engine/xml_attrs.py.
         # Parse CHARACTERISTIC from child element text
         if hasattr(element, 'find'):
             char_elem = element.find('CHARACTERISTIC')
@@ -175,6 +167,7 @@ class SimulateDeath(Talent, xmlid="SIMULATE_DEATH"):
                 char_str = char_elem.text.strip()
                 if char_str:
                     self.set_characteristic(characteristic_integer(char_str))
+    
     
     def set_characteristic(self, char_type: int) -> None:
         """
