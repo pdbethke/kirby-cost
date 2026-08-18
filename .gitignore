@@ -40,6 +40,10 @@ htmlcov/
 .env
 .env.local
 
+# Local test inputs — absolute paths into licensed material on one machine.
+# .env.test.example is the tracked template.
+.env.test
+
 .venv/
 .claude/
 .worktrees/
@@ -57,11 +61,15 @@ legal/
 # Bestiary, Champions Villains 1-2 and the HERO System Equipment Guide: 651
 # named characters with their power names and full costed builds. That is a
 # machine-readable reproduction of published stat blocks, however useful it is
-# as a test corpus. Regenerate your own with
-# scripts/generate_oracle_fixtures.py from packs you own.
+# as a test corpus.
 #
-# The .hdc files are Champions Villains character files themselves; the wipeout
-# dump is a costed build. Same rule.
+# They are generated, not authored, from packs you own — but the generator is
+# not here either: it drives a headless build of HERO Designer to dump HD's own
+# costs, and that harness wraps licensed source, so it cannot be published. The
+# tests that need these fixtures skip without them, and the suite passes.
+#
+# The .hdc files are Champions Villains character files themselves, and
+# roundtrip_hd6_costs.json is one character's costed build. Same rule.
 tests/fixtures/oracle/
 tests/fixtures/*.hdc
-tests/fixtures/wipeout_hd6_costs.json
+tests/fixtures/roundtrip_hd6_costs.json

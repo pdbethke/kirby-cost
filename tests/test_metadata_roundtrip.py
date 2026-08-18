@@ -14,8 +14,9 @@ from kirby_cost.io.hdc_loader import HDCLoader, LoadedHero
 
 # The .hdc files live outside this repo — they are published Hero Games
 # content, never vendored. Their location is already recorded once, in the
-# oracle fixtures' ``hdc_path``, which ``scripts/generate_oracle_fixtures.py``
-# derives from the workspace root. Read it from there rather than walking for
+# oracle fixtures' ``hdc_path``, written there by the fixture generator (which
+# is not public: it drives a headless HERO Designer, wrapping licensed source).
+# Read it from there rather than walking for
 # an ancestor directory by name: this file looked for one called "Champions
 # Campaign Manager", the workspace was renamed to Kirby, and the walk ran off
 # the top and produced a path anchored at "/" — 24 tests erroring

@@ -6,7 +6,7 @@ This is the definitive test — if this passes, the Python port matches
 Hero Designer exactly.
 """
 
-from tests.corpus import hd6cli, corpus_root
+from tests.corpus import hd6cli, corpus_root, roundtrip_hdc
 import json
 import subprocess
 import pytest
@@ -43,10 +43,18 @@ def load_python(hdc_path: str):
     return loader.load_file(hdc_path)
 
 
-# A maintainer-only character, not part of any pack. KIRBY_COST_WIPEOUT_HDC
-# points at it; without it the tests that use it skip.
-import os as _os
-WIPEOUT = _os.environ.get("KIRBY_COST_WIPEOUT_HDC", "/nonexistent/Wipeout.hdc")
+# A structurally awkward character to roundtrip whole. Not from any pack, so
+# KIRBY_COST_ROUNDTRIP_HDC names one or these tests skip. Resolved through
+# tests/corpus.py rather than read here, so that a variable naming a path which
+# no longer exists counts as absent — and so the skip guard can see it.
+#
+# Nothing here may assume WHICH character it is. This variable used to name one
+# specific character and the test below asserted that name, pinning the suite
+# to a player's PC from a home campaign — not the maintainer's file, not
+# shippable, and not even a good example: it held no CompoundPower at all,
+# though the docstring claimed one for years. Assert on STRUCTURE, so any
+# sufficiently gnarly build of your own satisfies it.
+COMPLEX = str(roundtrip_hdc() or "/nonexistent/roundtrip.hdc")
 
 _CORPUS = corpus_root() or Path("/nonexistent")
 HORSE = str(_CORPUS / "bestiary"
@@ -69,21 +77,27 @@ class TestHDCLoader:
         assert len(hero.characteristics) > 0
         assert len(hero.powers) > 0
 
-    @pytest.mark.skipif(not Path(WIPEOUT).exists(),
-                        reason="maintainer-only character file absent")
-    def test_load_wipeout(self):
-        hero = load_python(WIPEOUT)
-        assert hero.name == "Wipeout"
+    @pytest.mark.skipif(not Path(COMPLEX).exists(),
+                        reason="roundtrip character absent (set KIRBY_COST_ROUNDTRIP_HDC)")
+    def test_load_complex_character(self):
+        hero = load_python(COMPLEX)
+        assert hero.name, "a loaded character must report a name"
+        assert hero.powers and hero.skills
 
 
-@pytest.mark.skipif(not Path(WIPEOUT).exists(),
-                    reason="maintainer-only character file absent")
-class TestHDCWipeoutRoundtrip:
-    """Wipeout is the hardest test — complex Multipower, CompoundPower, modifiers."""
+@pytest.mark.skipif(not Path(COMPLEX).exists(),
+                    reason="roundtrip character absent (set KIRBY_COST_ROUNDTRIP_HDC)")
+class TestHDCComplexRoundtrip:
+    """The hardest case: every object of one build, against the oracle at once.
 
-    def test_wipeout_roundtrip(self):
-        oracle = load_oracle(WIPEOUT)
-        hero = load_python(WIPEOUT)
+    Frameworks and containers are where a whole-character roundtrip earns its
+    keep — a Multipower's slots, a CompoundPower's sub-powers and a maneuver
+    all cost through paths no standalone power reaches.
+    """
+
+    def test_complex_roundtrip(self):
+        oracle = load_oracle(COMPLEX)
+        hero = load_python(COMPLEX)
 
         issues = []
         for section, py_list, java_key in [

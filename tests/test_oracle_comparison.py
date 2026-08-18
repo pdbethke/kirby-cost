@@ -8,8 +8,13 @@ This is the ultimate validation — if these tests pass, the Python port
 matches the real Hero Designer exactly.
 
 Fixture generation:
-  cd <the HD comparison harness>
-  ./hd6cli.sh /path/to/character.hdc > <repo>/tests/fixtures/character_costs.json
+  ./hd6cli.sh /path/to/character.hdc > <repo>/tests/fixtures/roundtrip_hd6_costs.json
+
+Nothing below may assume WHICH character the fixture holds. It used to be a
+player's PC from someone else's campaign, asserted by name and by an exact
+power count, which pinned the suite to one file that could never ship. The
+assertions are structural instead, so the fixture can be regenerated from any
+build complex enough to be worth comparing.
 """
 
 import json
@@ -22,6 +27,15 @@ from tests.conftest import make_object, make_modifier, make_adder
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
 
+#: Objects whose cost comes from their CHILDREN, not from their own scalars.
+#: These tests rebuild each object from base_cost/levels with the conftest
+#: factories, which cannot express "sum of what is inside me": a CompoundPower
+#: totals its sub-powers and a GENERIC_OBJECT container its slots, so both
+#: reconstruct to 0 against a real oracle number. Compared structurally in
+#: test_compound_power_totals_its_sub_powers instead.
+CONTAINER_XMLIDS = {"GENERIC_OBJECT", "COMPOUNDPOWER"}
+
+
 def load_fixture(name: str) -> dict:
     """Load a JSON fixture file."""
     path = FIXTURES_DIR / name
@@ -32,26 +46,30 @@ def load_fixture(name: str) -> dict:
 
 
 # ═══════════════════════════════════════════════════════════
-#  Wipeout character — complex 6E superhero
+#  A stored oracle dump of one complex 6E character
 # ═══════════════════════════════════════════════════════════
 
-class TestWipeoutCosts:
-    """
-    Test costs against Java HD6 oracle for Wipeout character.
-    This character has 30 powers with various modifier combinations.
+class TestStoredOracleCosts:
+    """Costs against a stored Java HD6 dump of one complex character.
+
+    Distinct from test_hdc_roundtrip.py, which drives the Java CLI live: this
+    reconstructs objects from the dump with the conftest factories, so it
+    exercises the cost formulas without a loader or a template in the way.
     """
 
     @pytest.fixture
-    def wipeout(self):
-        return load_fixture("wipeout_hd6_costs.json")
+    def oracle(self):
+        return load_fixture("roundtrip_hd6_costs.json")
 
-    def test_fixture_loaded(self, wipeout):
-        assert wipeout["name"] == "Wipeout"
-        assert len(wipeout["powers"]) == 30
+    def test_fixture_loaded(self, oracle):
+        assert oracle["name"], "the dump must name its character"
+        assert len(oracle["powers"]) > 20, "too simple to be worth comparing"
+        assert any(p["modifiers"] for p in oracle["powers"]), \
+            "a dump with no modifiers exercises none of the cost chain"
 
-    def test_simple_characteristics(self, wipeout):
+    def test_simple_characteristics(self, oracle):
         """Characteristics with no modifiers: total = active = real."""
-        for char in wipeout["characteristics"]:
+        for char in oracle["characteristics"]:
             if len(char["modifiers"]) == 0 and char["total_cost"] >= 0:
                 obj = make_object(
                     base_cost=char["base_cost"],
@@ -65,7 +83,7 @@ class TestWipeoutCosts:
                 assert obj.active_cost == char["active_cost"], \
                     f'{char["xmlid"]}: active_cost mismatch'
 
-    def test_powers_no_modifiers(self, wipeout):
+    def test_powers_no_modifiers(self, oracle):
         """Powers without modifiers: verify total/active/real costs."""
         # Skip characteristics that appear in powers list (STR, CON, etc.)
         # — they have subclass-specific getTotalCost() overrides
@@ -75,10 +93,10 @@ class TestWipeoutCosts:
             "OCV", "DCV", "OMCV", "DMCV",
             "RUNNING", "SWIMMING", "LEAPING",
         }
-        for power in wipeout["powers"]:
+        for power in oracle["powers"]:
             if len(power["modifiers"]) > 0:
                 continue
-            if power["xmlid"] in ("GENERIC_OBJECT",):
+            if power["xmlid"] in CONTAINER_XMLIDS:
                 continue
             # Skip characteristics — they have subclass overrides for cost
             if power["xmlid"] in CHAR_XMLIDS:
@@ -104,7 +122,7 @@ class TestWipeoutCosts:
             assert obj.total_cost == power["total_cost"], \
                 f'{power["name"] or power["xmlid"]}: total_cost {obj.total_cost} != {power["total_cost"]}'
 
-    def test_powers_with_simple_modifiers(self, wipeout):
+    def test_powers_with_simple_modifiers(self, oracle):
         """
         Powers where modifiers have simple base_cost values (no context-dependent logic).
         We reconstruct the power with modifiers and verify cost chain.
@@ -118,10 +136,10 @@ class TestWipeoutCosts:
         # Powers with modifiers that DON'T require parent context
         # (i.e., their total_value equals their base_cost from the fixture)
         simple_powers = []
-        for power in wipeout["powers"]:
+        for power in oracle["powers"]:
             if len(power["modifiers"]) == 0:
                 continue
-            if power["xmlid"] in ("GENERIC_OBJECT",):
+            if power["xmlid"] in CONTAINER_XMLIDS:
                 continue
             # Skip characteristics — they have subclass overrides
             if power["xmlid"] in CHAR_XMLIDS:
@@ -175,13 +193,56 @@ class TestWipeoutCosts:
                 assert obj.real_cost_pre_list == power["real_cost"], \
                     f'{power["name"]}: real mismatch {obj.real_cost_pre_list} != {power["real_cost"]}'
 
-    def test_all_modifier_values(self, wipeout):
+    def test_compound_power_totals_its_sub_powers(self, oracle):
+        """A CompoundPower costs the sum of what is inside it.
+
+        The rule the reconstruction loops above cannot check, and the one no
+        standalone power reaches. Asserted against the oracle's own numbers:
+        the container's total must equal its sub-powers' totals summed, with
+        its own base_cost contributing nothing.
+        """
+        compounds = [p for p in oracle["powers"]
+                     if p["xmlid"] == "COMPOUNDPOWER"]
+        if not compounds:
+            pytest.skip("this dump holds no CompoundPower")
+        for power in compounds:
+            subs = power.get("sub_powers") or []
+            assert subs, f'{power["name"]}: a CompoundPower with no sub-powers'
+            assert power["total_cost"] == sum(s["total_cost"] for s in subs), \
+                f'{power["name"]}: total {power["total_cost"]} is not its parts'
+
+    def test_pool_control_cost_comes_from_its_adder(self, oracle):
+        """A VPP's control cost is the CONTROLCOST adder's, not zero.
+
+        The regression this guards is not hypothetical: the loader's framework
+        branch read only <MODIFIER> children and never <ADDER> ones, so the
+        synthesised CONTROLCOST stub kept its 0 levels and EVERY pool in the
+        corpus costed its control at 0. Asserted from the oracle's own dump —
+        the pool's total is its levels plus what the adder charges.
+        """
+        pools = [p for p in oracle["powers"]
+                 if p.get("class") == "VariablePowerPool"]
+        if not pools:
+            pytest.skip("this dump holds no Variable Power Pool")
+        for pool in pools:
+            control = [a for a in pool["adders"] if a["xmlid"] == "CONTROLCOST"]
+            assert len(control) == 1, \
+                f'{pool["name"]}: expected exactly one CONTROLCOST adder'
+            assert control[0]["levels"] > 0, \
+                f'{pool["name"]}: control adder kept the synthesised 0 levels'
+            assert control[0]["total_cost"] > 0, \
+                f'{pool["name"]}: control costed at 0 — the framework-adder bug'
+            pool_cost = pool["levels"] / pool["level_value"] * pool["level_cost"]
+            assert pool["total_cost"] == pool_cost + control[0]["total_cost"], \
+                f'{pool["name"]}: total is not pool plus control'
+
+    def test_all_modifier_values(self, oracle):
         """
         For every modifier in the fixture, verify that a Modifier with
         the given base_cost produces the expected total_value.
         (Only for simple modifiers where total_value == base_cost.)
         """
-        for power in wipeout["powers"]:
+        for power in oracle["powers"]:
             for mod_data in power["modifiers"]:
                 if abs(mod_data["total_value"] - mod_data["base_cost"]) < 0.001:
                     mod = make_modifier(
