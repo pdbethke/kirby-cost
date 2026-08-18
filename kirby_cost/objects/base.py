@@ -352,13 +352,37 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
             if _value != -1.0 and hasattr(self, _rate):
                 setattr(self, _rate, _value)
 
-        # Duration, target, uses_end
-        if tmpl.uses_end:
+        # Duration, target, uses_end.
+        #
+        # The XML wins, as it does for BASECOST and LVLVAL. Java builds the
+        # object FROM the template and then restores the document onto it, so
+        # a stated value is the last word; this loader runs the two the other
+        # way round, and these three lines used to overwrite what `_init` had
+        # just read. A custom power stating END="No" came back saying "Yes",
+        # on 209 characters, and TARGET="N/A" came back "SELFONLY" — the
+        # heuristics here ("only if empty", "only if N/A") were standing in for
+        # the precedence, and could not tell a document that said "N/A" from
+        # one that said nothing at all.
+        #
+        # Gated on the source having stated it AND this class declaring it:
+        # `_source_attrs` is every attribute on the element, including ones no
+        # subclass reads, and suppressing the template for an attribute that
+        # was never loaded would leave the field at its constructor default.
+        stated = self._stated_and_declared()
+        if tmpl.uses_end and "END" not in stated:
             self.uses_end = True
-        if tmpl.duration and not self._duration:
+        if tmpl.duration and not self._duration and "DURATION" not in stated:
             self._duration = tmpl.duration
-        if tmpl.target and self.target in ("", "N/A"):
+        if tmpl.target and self.target in ("", "N/A") and "TARGET" not in stated:
             self.target = tmpl.target
+
+    def _stated_and_declared(self) -> frozenset:
+        """XML attribute names the source stated that this class also reads."""
+        stated = getattr(self, "_source_attrs", None)
+        if not stated:
+            return frozenset()
+        declared = {d.attr for d in type(self).xml_schema()}
+        return frozenset(stated & declared)
 
     # ── Polymorphic methods (overridden in subclasses) ──────────
     # These remain as methods because subclasses override them.
