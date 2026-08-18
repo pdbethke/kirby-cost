@@ -172,19 +172,13 @@ class CombatSense(Talent, xmlid="COMBAT_SENSE"):
                         choice = CharacteristicChoice()
                         choice._init(item_elem)
                         self.characteristic_choices.append(choice)
-    
-    def restore_from_save(self, element) -> None:
-        """
-        Restore from saved XML element.
-        
-        Args:
-            element: XML element containing saved data
-        """
+        # Folded in from restore_from_save, which ran after _init.
+        # One ingest per class; see engine/xml_attrs.py.
         char_str = XMLUtility.get_value(element, "CHARACTERISTIC")
         if char_str and char_str.strip():
             self.set_characteristic(characteristic_integer(char_str))
         
-        super().restore_from_save(element)
+    
     
     def set_characteristic(self, char_type: int) -> None:
         """

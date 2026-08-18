@@ -12,6 +12,7 @@ from kirby_cost.objects.skills.characteristic_choice import CharacteristicChoice
 from kirby_cost.objects.characteristics.characteristic import Characteristic
 from kirby_cost.objects.powers.automaton import Automaton
 from kirby_cost.util.constants import CharacteristicType, characteristic_integer, characteristic_string
+from kirby_cost.engine.xml_attrs import XMLAttr
 from kirby_cost.util.rounder import round_half_down, round_half_up
 
 if TYPE_CHECKING:
@@ -42,6 +43,20 @@ class Skill(GenericObject):
     - Display formatting
     - Cost calculations with skill maxima
     """
+
+    #: The characteristic a skill rolls against. Stored as a CharacteristicType
+    #: int, written as a name, and never read at all until now: every skill
+    #: re-exported as GENERAL, which costs 2 where INT costs 3.
+    XML_ATTRS = (
+        #: Read by BOTH the table and set_characteristic(), deliberately.
+        #: Gating the table off (read=False) and leaving it to the richer path
+        #: broke the round trip: the two are not equivalent, and the table's
+        #: plain assignment is doing work set_characteristic does not.
+        XMLAttr("CHARACTERISTIC", "characteristic",
+                parse_with=characteristic_integer,
+                format_with=characteristic_string),
+    )
+
     
     def __init__(self, xmlid: str = "SKILL"):
         """Initialize a Skill."""
@@ -581,31 +596,6 @@ class Skill(GenericObject):
         
         return element
     
-    def restore_from_save(self, element) -> None:
-        """Restore from XML element (stub)."""
-        super().restore_from_save(element)
-        
-        char_str = element.get("CHARACTERISTIC", "")
-        if char_str and char_str.strip():
-            self.set_characteristic(characteristic_integer(char_str))
-
-        fam_str = element.get("FAMILIARITY", "")
-        if fam_str and fam_str.strip():
-            self.set_familiarity(fam_str.upper().startswith("Y"))
-
-        prof_str = element.get("PROFICIENCY", "")
-        if prof_str and prof_str.strip():
-            self.set_proficiency(prof_str.upper().startswith("Y"))
-        
-        levels_only_str = element.get("LEVELSONLY", "")
-        if levels_only_str and levels_only_str.strip():
-            self.levels_only = levels_only_str.upper().startswith("Y")
-        
-        everyman_str = element.get("EVERYMAN", "")
-        if everyman_str and everyman_str.strip().upper().startswith("Y"):
-            self.set_everyman(True)
-        else:
-            self.set_everyman(False)
     
     def _init(self, element) -> None:
         """Initialize from XML element (stub)."""
@@ -666,4 +656,27 @@ class Skill(GenericObject):
         everyman_str = element.get("EVERYMAN", "")
         if everyman_str and everyman_str.strip():
             self.set_everyman(everyman_str.upper().startswith("Y"))
+        # Folded in from restore_from_save, which ran after _init.
+        # One ingest per class; see engine/xml_attrs.py.
+        char_str = element.get("CHARACTERISTIC", "")
+        if char_str and char_str.strip():
+            self.set_characteristic(characteristic_integer(char_str))
+
+        fam_str = element.get("FAMILIARITY", "")
+        if fam_str and fam_str.strip():
+            self.set_familiarity(fam_str.upper().startswith("Y"))
+
+        prof_str = element.get("PROFICIENCY", "")
+        if prof_str and prof_str.strip():
+            self.set_proficiency(prof_str.upper().startswith("Y"))
+        
+        levels_only_str = element.get("LEVELSONLY", "")
+        if levels_only_str and levels_only_str.strip():
+            self.levels_only = levels_only_str.upper().startswith("Y")
+        
+        everyman_str = element.get("EVERYMAN", "")
+        if everyman_str and everyman_str.strip().upper().startswith("Y"):
+            self.set_everyman(True)
+        else:
+            self.set_everyman(False)
 

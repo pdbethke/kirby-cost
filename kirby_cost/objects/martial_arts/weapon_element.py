@@ -71,6 +71,8 @@ class WeaponElement(GenericObject, xmlid="WEAPON_ELEMENT"):
         
         # Ensure alias is set
         self._alias = "Weapon Element"
+        # Folded in from restore_from_save, which ran after _init.
+        # One ingest per class; see engine/xml_attrs.py.
     
     @property
     def column2_output(self) -> str:
@@ -159,13 +161,5 @@ class WeaponElement(GenericObject, xmlid="WEAPON_ELEMENT"):
         element.tag = "WEAPON_ELEMENT"
         return element
     
-    def restore_from_save(self, element) -> None:
-        """
-        Restore from saved XML element.
-        
-        Args:
-            element: XML element containing saved data
-        """
-        super().restore_from_save(element)
 
 

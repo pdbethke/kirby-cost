@@ -10,6 +10,7 @@ import math
 from kirby_cost.objects.powers.power import Power
 from kirby_cost.objects.base import GenericObject
 from kirby_cost.util.rounder import round_half_down
+from kirby_cost.engine.xml_attrs import XMLAttr
 
 
 class ForceField(Power, xmlid="FORCEFIELD"):
@@ -19,6 +20,17 @@ class ForceField(Power, xmlid="FORCEFIELD"):
     Provides non-resistant defense (PD, ED, Mental Defense, Power Defense).
     """
     
+    #: HD costs Resistant Protection by the PD/ED split, not by LEVELS alone.
+    #: Nothing in the engine read these — the fields existed and stayed 0 —
+    #: so a re-exported character lost the whole power: 42 points to 0, in a
+    #: file that opened cleanly.
+    XML_ATTRS = (
+        XMLAttr("PDLEVELS", "pd_levels", "int"),
+        XMLAttr("EDLEVELS", "ed_levels", "int"),
+        XMLAttr("MDLEVELS", "md_levels", "int"),
+        XMLAttr("POWDLEVELS", "powd_levels", "int"),
+    )
+
     def __init__(self):
         """Initialize a Force Field power."""
         super().__init__()

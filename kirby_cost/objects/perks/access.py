@@ -22,18 +22,15 @@ class Access(Perk, xmlid="ACCESS"):
         """Initialize an Access perk."""
         super().__init__(element, self.XMLID)
     
-    def restore_from_save(self, element) -> None:
-        """
-        Restore from saved XML element.
-        
-        Args:
-            element: XML element containing saved data
-        """
+    def _init(self, element) -> None:
+        """Read this element. Was restore_from_save."""
+        super()._init(element)
+        # Folded in from restore_from_save, which ran after _init.
+        # One ingest per class; see engine/xml_attrs.py.
         # Save original base cost
         original_base_cost = self._base_cost
         
         # Call parent restore
-        super().restore_from_save(element)
         
         # If base cost is positive, use it as levels
         if self._base_cost > 0.0:

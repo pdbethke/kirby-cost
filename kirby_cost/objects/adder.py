@@ -7,6 +7,7 @@ Adder extends GenericObject and represents adders that can be added to powers.
 
 from typing import Optional, TYPE_CHECKING
 from kirby_cost.objects.base import GenericObject
+from kirby_cost.engine.xml_attrs import XMLAttr
 
 if TYPE_CHECKING:
     from kirby_cost.template.dataclasses import AdderTemplate
@@ -14,6 +15,17 @@ if TYPE_CHECKING:
 
 class Adder(GenericObject):
     """Adder class - extends GenericObject."""
+
+    #: HD states these on every adder, as Yes/No. They were written only when
+    #: true, so "SELECTED=No" came back as no attribute at all — a different
+    #: statement, on 60 of Ravel's elements.
+    XML_ATTRS = (
+        XMLAttr("REQUIRED", "_required", "yesno"),
+        XMLAttr("SELECTED", "_selected", "yesno"),
+        XMLAttr("GROUP", "_group", "yesno"),
+        XMLAttr("DISPLAYINSTRING", "_display_in_string", "yesno"),
+    )
+
     
     def __init__(self):
         """Initialize an Adder."""
@@ -170,13 +182,9 @@ class Adder(GenericObject):
         element = super().get_save_xml()
         element.tag = "ADDER"
         
-        # Adder-specific attributes
-        if self._required:
-            element.set("REQUIRED", "Yes")
-        if self._selected:
-            element.set("SELECTED", "Yes")
-        if self._group:
-            element.set("GROUP", "Yes")
-        
+        # REQUIRED/SELECTED/GROUP are declared in XML_ATTRS and written by the
+        # table. They used to be re-set here, AFTER it, which overwrote the
+        # document's own "YES" with "Yes" on every adder — the fourth
+        # hand-maintained list of the same three facts.
         return element
 

@@ -61,6 +61,17 @@ class Linked(Modifier, xmlid="LINKED"):
                 self.lesser_value = float(lesser_value_str)
             except ValueError:
                 pass
+        # Folded in from restore_from_save, which ran after _init.
+        # One ingest per class; see engine/xml_attrs.py.
+        from kirby_cost.io.xml_utility import XMLUtility
+        linked_id_str = XMLUtility.get_value(element, "LINKED_ID")
+        if linked_id_str and linked_id_str.strip():
+            try:
+                self.linked_to_id = int(linked_id_str)
+            except ValueError:
+                self.linked_to_id = -1
+        else:
+            self.linked_to_id = -1
 
     @property
     def base_cost(self) -> float:
@@ -361,24 +372,6 @@ class Linked(Modifier, xmlid="LINKED"):
         """Check if this is a limitation."""
         return True
     
-    def restore_from_save(self, element) -> None:
-        """
-        Restore from save XML element.
-        
-        Args:
-            element: XML element to restore from
-        """
-        super().restore_from_save(element)
-        
-        from kirby_cost.io.xml_utility import XMLUtility
-        linked_id_str = XMLUtility.get_value(element, "LINKED_ID")
-        if linked_id_str and linked_id_str.strip():
-            try:
-                self.linked_to_id = int(linked_id_str)
-            except ValueError:
-                self.linked_to_id = -1
-        else:
-            self.linked_to_id = -1
 
 
 def is_linked(mod) -> bool:

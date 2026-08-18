@@ -67,6 +67,11 @@ class KnowledgeSkill(Skill, xmlid="KNOWLEDGE_SKILL"):
             type_str = element.get("TYPE", "")
             if type_str and type_str.strip():
                 self.selected_type_by_display(type_str)
+        # Folded in from restore_from_save, which ran after _init.
+        # One ingest per class; see engine/xml_attrs.py.
+        type_str = element.get("TYPE", "")
+        if type_str and type_str.strip():
+            self.selected_type_by_display(type_str)
 
     def column2_output(self, active_hero: Optional['Hero'] = None) -> str:
         """Get column 2 output."""
@@ -151,12 +156,6 @@ class KnowledgeSkill(Skill, xmlid="KNOWLEDGE_SKILL"):
         
         return types_list
     
-    def restore_from_save(self, element) -> None:
-        """Restore from save."""
-        super().restore_from_save(element)
-        type_str = element.get("TYPE", "")
-        if type_str and type_str.strip():
-            self.selected_type_by_display(type_str)
     
     def selected_type_by_display(self, display: str) -> None:
         """Set selected type by display string."""

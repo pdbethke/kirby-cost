@@ -114,6 +114,10 @@ class Language(Skill, xmlid="LANGUAGES"):
             native_tongue_str = element.get("NATIVE_TONGUE", "")
             if native_tongue_str:
                 self.native_tongue = native_tongue_str.strip().upper().startswith("Y")
+        # Folded in from restore_from_save, which ran after _init.
+        # One ingest per class; see engine/xml_attrs.py.
+        native_tongue_str = element.get("NATIVE_TONGUE", "")
+        self.native_tongue = native_tongue_str and native_tongue_str.strip().upper().startswith("Y")
 
     def column2_output(self, active_hero: Optional['Hero'] = None) -> str:
         """Get column 2 output."""
@@ -488,10 +492,5 @@ class Language(Skill, xmlid="LANGUAGES"):
         
         return False
     
-    def restore_from_save(self, element) -> None:
-        """Restore from save."""
-        super().restore_from_save(element)
-        native_tongue_str = element.get("NATIVE_TONGUE", "")
-        self.native_tongue = native_tongue_str and native_tongue_str.strip().upper().startswith("Y")
     
 

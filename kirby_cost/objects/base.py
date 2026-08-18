@@ -24,6 +24,8 @@ from kirby_cost.io.xml_utility import XMLUtility
 from kirby_cost.engine.cost import CostMixin, ENHANCER_DEFS
 from kirby_cost.engine.modifiers import ModifierMixin
 from kirby_cost.engine.serialize import SerializationMixin
+from kirby_cost.engine.deserialize import DeserializationMixin
+from kirby_cost.engine.xml_attrs import XMLAttr, XMLAttrsMixin, XMLField
 
 if TYPE_CHECKING:
     from kirby_cost.objects.adder import Adder
@@ -31,7 +33,8 @@ if TYPE_CHECKING:
     from kirby_cost.objects.list import List as HeroList
 
 
-class GenericObject(CostMixin, ModifierMixin, SerializationMixin, ABC):
+class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
+                    DeserializationMixin, SerializationMixin, ABC):
     """
     Base class for all purchasable items in Hero Designer.
     
@@ -43,6 +46,50 @@ class GenericObject(CostMixin, ModifierMixin, SerializationMixin, ABC):
     - Level-based cost calculations
     - Adder and modifier management
     """
+
+    #: Every attribute an HDC element carries, declared once. The loader reads
+    #: these and the serializer writes them, so the two cannot drift apart.
+    #: Cost-bearing attributes with side effects (MINCOST sets min_set,
+    #: BASECOST records whether the XML supplied it) keep their bespoke read in
+    #: _init and are declared read=False — the inventory stays single even
+    #: where the reader is not.
+    #: Declared AS the fields that hold them. The XML name stays explicit —
+    #: nothing derives POSITION from `position` or SHOW_ACTIVE_COST from
+    #: `display_active_cost`, because no rule connects them.
+    position = XMLField("POSITION", "int", default=0)
+    multiplier = XMLField("MULTIPLIER", "float", default=1.0)
+    graphic = XMLField("GRAPHIC", default="")
+    color = XMLField("COLOR", default="")
+    sfx = XMLField("SFX", default="")
+    display_active_cost = XMLField("SHOW_ACTIVE_COST", "yesno", default=False)
+    include_notes_in_printout = XMLField("INCLUDE_NOTES_IN_PRINTOUT", "yesno",
+                                         default=False)
+    comments = XMLField("COMMENTS", default="")
+    show_alias = XMLField("SHOWALIAS", "yesno", default=True)
+    #: NOT `include_in_base`: Adder already has a method of that name, a cost
+    #: concept hardcoded to False. Same word, different subject — which is why
+    #: the XML name and the field name are declared separately.
+    included_in_base = XMLField("INCLUDEINBASE", "yesno", default=False)
+    private_mod = XMLField("PRIVATE", "yesno", default=False)
+    source_option = XMLField("OPTION", default="", omit_if="")
+    source_option_alias = XMLField("OPTION_ALIAS", default="", omit_if="")
+
+    #: Rows remain where the storage is a private name __init__ owns.
+    XML_ATTRS = (
+        XMLAttr("QUANTITY", "_quantity", "int"),
+        #: Modifier exposes `force_allow` as a property over this; binding the
+        #: descriptor to the public name would have shadowed the property.
+        XMLAttr("FORCEALLOW", "_force_allow", "yesno"),
+        #: A sub-power of a CompoundPower is nested in the document and states
+        #: its parent, but nothing linked it back: CompoundPower.powers holds
+        #: the children while the children knew nothing of the compound, so
+        #: both attributes vanished on write. Declared so the document's own
+        #: values survive; the effective-parent logic in the serializer still
+        #: overrides them when a real framework link exists.
+        XMLAttr("PARENTID", "parent_id", "int"),
+        XMLAttr("ULTRA_SLOT", "ultra", "yesno"),
+    )
+
     
     # Static ID counter
     _id_count = 0
@@ -83,7 +130,13 @@ class GenericObject(CostMixin, ModifierMixin, SerializationMixin, ABC):
         self.abbreviation: str = ""
         self.definition: str = ""
         self.notes: str = ""
-        self.comments: str = ""
+        #: Sheet-display flags HD writes on every element. No field existed for
+        #: the first two, so they were dropped on every write.
+        #: HD writes PRIVATE on adders as well as modifiers; Modifier keeps
+        #: its own, this gives adders somewhere to put it.
+        #: OPTION/OPTION_ALIAS exactly as the document stated them. An object
+        #: with a resolved `_selected_option` overwrites these on write; one
+        #: without them kept nothing at all, losing the option on 29 elements.
         
         # Cost fields
         self._base_cost: float = 0.0
@@ -140,6 +193,9 @@ class GenericObject(CostMixin, ModifierMixin, SerializationMixin, ABC):
         # Other fields
         self.position: int = 0
         self.position_locked: bool = False
+        #: HD writes FORCEALLOW on adders as well as modifiers; Modifier
+        #: exposes it as a property over this same name.
+        self._force_allow: bool = False
         self._quantity: int = 1
         self.price: float = 0.0
         self._weight: float = 0.0
@@ -731,6 +787,55 @@ class GenericObject(CostMixin, ModifierMixin, SerializationMixin, ABC):
         if element is None:
             return
 
+        # The element's own TAG and XMLID, kept because they are facts of the
+        # document that the class cannot re-derive. A CompoundPower is written
+        # by HD as <POWER XMLID="COMPOUNDPOWER"> and a pool as
+        # <VPP XMLID="GENERIC_OBJECT"> — framework identity lives in the tag,
+        # and the xmlid does NOT follow from the Python class. Without these,
+        # a rewrite guesses: CompoundPowers went back out as <GENERIC_OBJECT>,
+        # which HERO Designer ignores inside POWERS, so a round trip through
+        # our own writer silently cost Ravel two powers and 41 points. Our
+        # loader read that same file back as complete, so nothing but HD itself
+        # could catch it.
+        self._source_tag = getattr(element, "tag", "") or ""
+        self._source_xmlid = element.get("XMLID", "") or ""
+        #: Which attributes the FILE actually stated. An HDC stores only
+        #: overrides — precedence is XML, then the selected option, then the
+        #: template — so a value that came from the template must not be
+        #: written back as though the character had declared it. Doing so
+        #: freezes template data into the file and the character stops
+        #: following its template: writing a template-derived MINCOST="1.0"
+        #: onto two of Ravel's skills made HD recost them 3 -> 2.
+        #: A BuildNode (io/build_json.py) quacks like an element but has no
+        #: keys(); an empty set means "no source spoke for this object", and
+        #: everything it holds is then written as its own statement.
+        _keys = getattr(element, "keys", None)
+        #: Kept as a TUPLE, not a set: order is a fact of the document too,
+        #: and lxml writes attributes in the order they were set.
+        self._source_attr_order = tuple(_keys()) if callable(_keys) else ()
+        self._source_attrs = frozenset(self._source_attr_order)
+        #: The raw strings the document used. An attribute we did not change is
+        #: echoed back exactly as written, so our formatting never introduces a
+        #: difference: HD writes SELECTED="YES" and this engine would render the
+        #: same boolean as "Yes" — a diff on 60 elements that means nothing.
+        #: Child element tags the document carried. PROVIDES is template-
+        #: derived on a sense power, and writing it back added two elements HD
+        #: never wrote — the same "resolved value echoed as an override"
+        #: mistake as MINCOST, one level down in the tree.
+        try:
+            self._source_child_tags = frozenset(c.tag for c in element)
+        except TypeError:
+            self._source_child_tags = frozenset()
+        _get = getattr(element, "get", None)
+        self._source_attr_values = (
+            {k: element.get(k) for k in self._source_attr_order}
+            if callable(_get) else {})
+
+        # Everything declared in XML_ATTRS, read from one inventory that the
+        # writer also uses. See kirby_cost/engine/xml_attrs.py for why this is
+        # a table and not another hand-maintained list of getattr calls.
+        self.read_xml_attrs(element)
+
         # The object's IDENTITY, when the source supplies one. Without this the
         # id is whatever `GenericObject._id_count` happened to reach while this
         # object was being constructed — unique within a process, meaningless
@@ -740,7 +845,7 @@ class GenericObject(CostMixin, ModifierMixin, SerializationMixin, ABC):
         # key collides silently.
         #
         # Read on the normal load path (it was only read in
-        # `restore_from_save`, which no loader calls), so an HDC file's `ID`
+        # `read_element`, the child-descending path), so an HDC file's `ID`
         # and a build doc's `id` both survive into the loaded build.
         obj_id = XMLUtility.get_value(element, "ID")
         if obj_id:
@@ -850,22 +955,15 @@ class GenericObject(CostMixin, ModifierMixin, SerializationMixin, ABC):
             type_val = type_elem.text
             if type_val and type_val.strip() and type_val.strip() not in self._types:
                 self._types.append(type_val.strip())
-    
-    def restore_from_save(self, element) -> None:
-        """
-        Restore this object from a saved XML element.
-        
-        This is called when loading a character from an HDC file.
-        Similar to _init but handles saved state (including IDs, positions, etc.).
-        
-        Args:
-            element: XML element (lxml.etree.Element) containing saved object data
-        """
+
+        # Folded in from restore_from_save, which ran immediately after
+        # _init and re-read much of what it had just read. Kept because a
+        # few of these are read NOWHERE else: TEXT, USE_END_RESERVE and
+        # the ALIAS -> abbreviation fallback.
         if element is None:
             return
         
         # Call _init first to handle basic initialization
-        self._init(element)
         
         # Restore saved state
         alias = XMLUtility.get_value(element, "ALIAS")
@@ -935,35 +1033,7 @@ class GenericObject(CostMixin, ModifierMixin, SerializationMixin, ABC):
         if use_end_reserve:
             self._use_end_reserve = use_end_reserve.strip().upper().startswith("Y")
         
-        # Parse adders
-        for adder_elem in XMLUtility.children(element, "ADDER"):
-            adder = self._create_adder_from_xml(adder_elem)
-            if adder:
-                adder.parent = self
-                adder.restore_from_save(adder_elem)
-                self._assigned_adders.append(adder)
-        
-        # Parse modifiers
-        for mod_elem in XMLUtility.children(element, "MODIFIER"):
-            modifier = self._create_modifier_from_xml(mod_elem)
-            if modifier:
-                modifier.parent = self
-                modifier.restore_from_save(mod_elem)
-                if not modifier.display:
-                    modifier.display = modifier.alias if modifier.alias else ""
-                self._assigned_modifiers.append(modifier)
-        
-        # Ensure all modifiers have parent set
-        for modifier in self._assigned_modifiers:
-            modifier.parent = self
-        
-        input_val = XMLUtility.get_value(element, "INPUT")
-        if input_val is not None:
-            self.input = input_val
-        
-        # Set abbreviation from alias
-        if self._alias:
-            self.abbreviation = self._alias
+    
     
     def _create_adder_from_xml(self, element) -> Optional['Adder']:
         """

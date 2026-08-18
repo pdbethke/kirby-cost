@@ -105,14 +105,11 @@ class CannotEscapeWithTeleport(Modifier, xmlid="NOTELEPORT"):
         
         return string2
     
-    def restore_from_save(self, element) -> None:
-        """
-        Restore from save XML element.
-        
-        Args:
-            element: XML element to restore from
-        """
-        super().restore_from_save(element)
+    def _init(self, element) -> None:
+        """Read this element. Was restore_from_save."""
+        super()._init(element)
+        # Folded in from restore_from_save, which ran after _init.
+        # One ingest per class; see engine/xml_attrs.py.
         self._base_cost = 0.0
     
     def included(self, generic_object: GenericObject) -> str:

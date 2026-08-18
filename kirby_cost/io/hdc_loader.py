@@ -233,6 +233,19 @@ class LoadedHero:
         self.name: str = ""
         self.template_name: str = ""
 
+        # Document-level facts. The character object is meant to be the full
+        # shape of the HDC in class form — everything downstream (a relational
+        # projection, an exporter) reads the object, never the file. Anything
+        # the document states that the object cannot hold is a hole: a writer
+        # would have to invent the value, and a round trip would lose it.
+        #: The CHARACTER element's own version attribute.
+        self.version: str = "6.0"
+        #: BASIC_CONFIGURATION/EXPORT_TEMPLATE — the print template last used.
+        self.export_template: str = ""
+        #: How the file was encoded on disk. HD writes UTF-16; the loader used
+        #: to detect this and throw it away, so a rewrite could only guess.
+        self.source_encoding: str = ""
+
         # Character identification
         self.player_name: str = ""
         self.alternate_identities: str = ""
@@ -681,15 +694,18 @@ class HDCLoader:
         with open(path, 'rb') as f:
             raw = f.read()
 
-        # Detect encoding
+        # Detect encoding. Recorded on the hero (below) rather than discarded:
+        # writing a UTF-16 file back out as UTF-8 is a silent change to the
+        # document, and the object is supposed to carry the whole document.
         if raw[:2] in (b'\xff\xfe', b'\xfe\xff'):
-            text = raw.decode('utf-16')
+            text, source_encoding = raw.decode('utf-16'), 'utf-16'
         elif raw[:4] == b'<\x00?\x00':
-            text = raw.decode('utf-16-le')
+            text, source_encoding = raw.decode('utf-16-le'), 'utf-16-le'
         elif raw[:4] == b'\x00<\x00?':
-            text = raw.decode('utf-16-be')
+            text, source_encoding = raw.decode('utf-16-be'), 'utf-16-be'
         else:
-            text = raw.decode('utf-8')
+            text, source_encoding = raw.decode('utf-8'), 'utf-8'
+        self._source_encoding = source_encoding
 
         # Strip XML declaration if present (lxml handles it, but encoding may conflict)
         if text.startswith('<?xml'):
@@ -767,6 +783,8 @@ class HDCLoader:
         # A provider that cannot resolve the name returns itself, which is what
         # HD does: keep the active template rather than fail the load.
         hero.template_name = root.get("TEMPLATE", "")
+        hero.version = root.get("version", "6.0")
+        hero.source_encoding = getattr(self, "_source_encoding", "")
         switch = getattr(self._provider, "for_template", None)
         self._active_provider = (
             switch(hero.template_name) if switch is not None else self._provider
@@ -820,6 +838,7 @@ class HDCLoader:
             hero.disad_points = int(dp) if dp else 75
             xp = basic_config.get("EXPERIENCE", "")
             hero.experience = int(xp) if xp else 0
+            hero.export_template = basic_config.get("EXPORT_TEMPLATE", "")
 
         # Image data
         image_elem = root.find("IMAGE")
@@ -1027,6 +1046,24 @@ class HDCLoader:
                         fw.assigned_adders.append(adder)
                         continue
                     existing._levels = adder.levels
+                    # The stub is the object that survives, so it must also
+                    # take over the FILE's identity: kept as-is it wrote back
+                    # its own process-local id, and the adder the document
+                    # named ceased to exist across a round trip.
+                    existing._id = adder._id
+                    for provenance in ("_source_tag", "_source_xmlid",
+                                       "_source_attrs", "_source_attr_order",
+                                       "_source_attr_values",
+                                       "_source_child_tags"):
+                        if hasattr(adder, provenance):
+                            setattr(existing, provenance,
+                                    getattr(adder, provenance))
+                    # ...and the document's own values, not just its identity:
+                    # ALIAS, GRAPHIC, COLOR and the display flags all belong to
+                    # the adder the file wrote, while the stub carries whatever
+                    # __init__ gave it.
+                    existing._alias = adder._alias
+                    existing.read_xml_attrs(adder_elem)
                     if adder._base_cost_from_xml:
                         existing.base_cost = adder.base_cost
                     for attr in ("_level_cost", "_level_value"):

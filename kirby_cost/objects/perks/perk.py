@@ -121,17 +121,15 @@ class Perk(GenericObject):
         target_val = XMLUtility.get_value(element, "TARGET")
         if target_val and target_val.strip():
             self.target = target_val
-    
-    def restore_from_save(self, element) -> None:
-        """Restore from saved XML element."""
-        super().restore_from_save(element)
-        
+        # Folded in from restore_from_save, which ran after _init.
+        # One ingest per class; see engine/xml_attrs.py.
         basecost_str = XMLUtility.get_value(element, "BASECOST")
         if basecost_str and basecost_str.strip():
             try:
                 self._base_cost = float(basecost_str)
             except (ValueError, TypeError):
                 pass
+    
 
 
 
