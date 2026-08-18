@@ -240,11 +240,6 @@ class SerializationMixin:
             element.set("USE_END_RESERVE", "Yes")
 
 
-        if self._is_equipment:
-            element.set("PRICE", str(self.price if hasattr(self, 'price') else 0.0))
-            element.set("WEIGHT", str(self._weight if hasattr(self, 'weight') else 0.0))
-            element.set("CARRIED", "Yes" if getattr(self, 'carried', True) else "No")
-
         if self._selected_option:
             option = self._selected_option
             element.set("OPTION", option.xmlid or "")

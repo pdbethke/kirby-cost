@@ -88,6 +88,18 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         #: overrides them when a real framework link exists.
         XMLAttr("PARENTID", "parent_id", "int"),
         XMLAttr("ULTRA_SLOT", "ultra", "yesno"),
+        #: What a piece of equipment costs, weighs and whether it is being
+        #: carried. Java reads all three unconditionally
+        #: (GenericObject.java:3240) and writes them behind `isEquipment()`
+        #: (:1929). Here nothing read them and the write was gated on
+        #: `_is_equipment`, which the loader never sets — so the gate never
+        #: opened and every equipped object came back stripped of all three.
+        #: Declared instead of gated: the writer already states only what the
+        #: document stated or the caller changed, which is the same answer the
+        #: isEquipment gate was reaching for, without a flag to keep in sync.
+        XMLAttr("PRICE", "price", "float"),
+        XMLAttr("WEIGHT", "_weight", "float"),
+        XMLAttr("CARRIED", "carried", "yesno"),
     )
 
     

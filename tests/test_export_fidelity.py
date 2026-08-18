@@ -18,10 +18,23 @@ export, with the same value.** Not a sample of them, and not the ones somebody
 remembered to list.
 
 The ledger works like ``oracle_known_residuals.json``: shrink-only, with a
-staleness ratchet. An entry is a defect that is known and not yet fixed, never
-a diff that is acceptable. When a class starts round-tripping, its entry comes
-out in the same commit — ``test_export_ledger_is_not_stale`` fails until it
-does, and that failure is a free win, not a regression.
+staleness ratchet. When a class starts round-tripping, its entry comes out in
+the same commit — ``test_export_ledger_is_not_stale`` fails until it does, and
+that failure is a free win, not a regression.
+
+It has two lists, and the difference between them is the whole discipline:
+
+``gaps``
+    Defects. Known, not yet fixed, and each one a character that comes back
+    saying less than it said. This list is meant to reach zero, and it has.
+
+``matches_hd``
+    Diffs HERO DESIGNER ITSELF produces on a re-save, so reproducing them is
+    fidelity rather than damage. Each entry states the Java that does it,
+    because "HD does this too" is exactly the excuse that would hide a real
+    defect if it were ever accepted without one. Two entries, both normalising:
+    HD trims TEXT (``textOutput = check.trim()``) and HD re-resolves an
+    option's cost onto BASECOST after restoring it.
 """
 from __future__ import annotations
 
@@ -46,9 +59,11 @@ pytestmark = pytest.mark.skipif(
 
 
 def _ledger() -> set[str]:
+    """Every key the ledger accounts for — defects and HD's own normalising."""
     if not LEDGER_PATH.exists():
         return set()
-    return set(json.loads(LEDGER_PATH.read_text()).get("gaps", []))
+    doc = json.loads(LEDGER_PATH.read_text())
+    return set(doc.get("gaps", [])) | set(doc.get("matches_hd", []))
 
 
 def _corpus_files() -> list[Path]:
