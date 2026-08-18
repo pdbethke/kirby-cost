@@ -69,7 +69,14 @@ class SerializationMixin:
             value = getattr(self, descriptor.field, None)
             if value is None:
                 continue
-            if descriptor.omit_if != "__never__" and value == descriptor.omit_if:
+            if (descriptor.omit_if != "__never__"
+                    and value == descriptor.omit_if
+                    and not (stated and descriptor.attr in stated)):
+                # `omit_if` says what HD leaves out when it has nothing to say.
+                # It does not get to overrule the document: OPTION_ALIAS="" is
+                # something 68 corpus elements state outright, and dropping it
+                # rewrites an option that was deliberately cleared back into an
+                # option that was never chosen.
                 continue
             if stated and descriptor.attr not in stated:
                 # The document did not state it. Write it only if this object

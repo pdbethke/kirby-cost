@@ -5,12 +5,32 @@ Converted from com.hero.objects.perks.Vehicle.java
 """
 
 from typing import Optional
+from kirby_cost.engine.xml_attrs import XMLAttr
 from kirby_cost.objects.perks.perk import Perk
 from kirby_cost.util.rounder import round_half_down
 
 
 class Vehicle(Perk, xmlid="VEHICLE_BASE"):
     """Vehicle/Base perk - vehicles and bases built on points."""
+
+    #: OVERCOST/OVERVAL/MULTIPLIERCOST/MULTIPLIERVAL come from the TEMPLATE —
+    #: the Python comment below said so and the writer stated them anyway, so
+    #: 12 characters had a template default frozen into their file as a
+    #: per-character override. Java writes only NUMBER, BASEPOINTS,
+    #: DISADPOINTS and FILE_ASSOCIATION (Vehicle.getSaveXML); declared here, the
+    #: writer's "the source did not state it and nothing changed it" rule keeps
+    #: the other four out on its own, without a second hand-written list to
+    #: remember them by.
+    XML_ATTRS = (
+        XMLAttr("NUMBER", "multiples", "int"),
+        XMLAttr("BASEPOINTS", "_base_points", "int"),
+        XMLAttr("DISADPOINTS", "_disad_points", "int"),
+        XMLAttr("OVERCOST", "over_cost", "int"),
+        XMLAttr("OVERVAL", "over_val", "int"),
+        XMLAttr("MULTIPLIERCOST", "multiplier_cost", "int"),
+        XMLAttr("MULTIPLIERVAL", "multiplier_val", "int"),
+        XMLAttr("FILE_ASSOCIATION", "file_path", omit_if=None),
+    )
 
     def __init__(self, element=None):
         """Initialize Vehicle perk."""
@@ -23,41 +43,6 @@ class Vehicle(Perk, xmlid="VEHICLE_BASE"):
         self._base_points: int = 0
         self._disad_points: int = 0
         self.file_path: Optional[str] = None
-
-    def _init(self, element) -> None:
-        """Initialize from XML, including vehicle-specific fields."""
-        super()._init(element)
-        if element is None:
-            return
-        from kirby_cost.io.xml_utility import XMLUtility
-
-        for attr, field, conv in [
-            ("BASEPOINTS", "_base_points", lambda v: int(float(v))),
-            ("DISADPOINTS", "_disad_points", lambda v: int(float(v))),
-            ("NUMBER", "multiples", int),
-            ("OVERCOST", "over_cost", int),
-            ("OVERVAL", "over_val", int),
-            ("MULTIPLIERCOST", "multiplier_cost", int),
-            ("MULTIPLIERVAL", "multiplier_val", int),
-        ]:
-            val = XMLUtility.get_value(element, attr)
-            if val:
-                try:
-                    setattr(self, field, conv(val))
-                except (ValueError, TypeError):
-                    pass
-
-    def get_save_xml(self):
-        """Serialize vehicle including vehicle-specific fields."""
-        element = self.get_general_save_xml()
-        element.set("BASEPOINTS", str(self._base_points))
-        element.set("DISADPOINTS", str(self._disad_points))
-        element.set("NUMBER", str(self.multiples))
-        element.set("OVERCOST", str(self.over_cost))
-        element.set("OVERVAL", str(self.over_val))
-        element.set("MULTIPLIERCOST", str(self.multiplier_cost))
-        element.set("MULTIPLIERVAL", str(self.multiplier_val))
-        return element
 
     @property
     def base_points(self) -> int:

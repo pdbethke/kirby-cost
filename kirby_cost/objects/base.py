@@ -887,8 +887,14 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         if display:
             self._display = display
 
+        # ALIAS="" is a statement, not an absence. Java tests the attribute's
+        # PRESENCE (`check != null && element.getAttribute("ALIAS") != null`,
+        # GenericObject.java:3166) where this tested its truthiness, so an
+        # explicitly blank alias was discarded and the template's own name
+        # survived in its place — 74 characters exported an Enhanced Perception
+        # or a Naked Modifier under a name their file had deliberately cleared.
         alias = XMLUtility.get_value(element, "ALIAS")
-        if alias:
+        if alias or "ALIAS" in getattr(self, "_source_attrs", ()):
             self._alias = alias
 
         name = XMLUtility.get_value(element, "NAME")
@@ -994,7 +1000,13 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         if alias:
             self._alias = alias
             self.abbreviation = alias
-        elif not self._alias:
+        elif "ALIAS" not in getattr(self, "_source_attrs", ()) and not self._alias:
+            # Java falls back to the display name only when the attribute is
+            # ABSENT (`else if (alias == null)`, GenericObject.java:3617). This
+            # tested `not self._alias`, which cannot tell a document that
+            # cleared the alias from one that never carried it — so the fix one
+            # read above, where ALIAS="" is finally honoured, was undone four
+            # hundred lines later by the fallback firing on the empty string.
             self._alias = self._display
         
         text_output = XMLUtility.get_value(element, "TEXT")
