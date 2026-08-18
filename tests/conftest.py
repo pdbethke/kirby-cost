@@ -25,6 +25,66 @@ import pytest
 from kirby_cost.objects.base import GenericObject
 from kirby_cost.objects.modifier import Modifier
 from kirby_cost.objects.adder import Adder
+from tests.corpus import GENERATED, INPUTS, missing_inputs
+
+#: Everything the suite can be given: variables to set, plus fixtures to
+#: generate. Counted together because the guard treats them alike.
+_INPUT_COUNT = len(INPUTS) + len(GENERATED)
+
+
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+
+#: Untracked, and the only place a maintainer's own paths are written down.
+#: See .env.test.example for the shape. Loaded here rather than by a shell
+#: wrapper so that a plain `pytest`, an IDE runner and CI all behave alike —
+#: PyCharm does not source anyone's shell profile.
+_ENV_FILE = _REPO_ROOT / ".env.test"
+
+
+def _parse_env_file(text: str) -> "dict[str, str]":
+    """KEY=VALUE pairs from dotenv-ish text. No dependency, no interpolation.
+
+    Tolerates `export KEY=value`, surrounding quotes, blank lines and #
+    comments, and expands a leading ~. Anything else is left exactly as
+    written: these are paths, and a path is allowed to contain # or =.
+    """
+    found: "dict[str, str]" = {}
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        if line.startswith("export "):
+            line = line[len("export "):].lstrip()
+        key, _, value = line.partition("=")
+        key = key.strip()
+        if not key:
+            continue
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+            value = value[1:-1]
+        found[key] = os.path.expanduser(value)
+    return found
+
+
+def _load_env_file(path: Path) -> "list[str]":
+    """Apply `path`'s assignments to os.environ, without overriding it.
+
+    An explicit variable always wins, so a one-off
+    `KIRBY_COST_CORPUS=... pytest` still overrides the file.
+    """
+    if not path.is_file():
+        return []
+    applied = []
+    for key, value in _parse_env_file(path.read_text()).items():
+        if not os.environ.get(key):
+            os.environ[key] = value
+            applied.append(key)
+    return applied
+
+
+#: Recorded for the run header. Populated at import, before anything below
+#: reads the environment.
+LOADED_FROM_ENV_FILE = _load_env_file(_ENV_FILE)
 
 
 _LOCAL_HDT = (
@@ -65,6 +125,97 @@ def pytest_runtest_makereport(item, call):
         item.location[1] or 0,
         "Skipped: no HERO Designer template configured (set KIRBY_COST_HDT)",
     )
+
+
+# ---------------------------------------------------------------------------
+# The skip guard
+#
+# Every skip in this suite means one thing: an input the tests need is not on
+# this machine. That is correct and expected for anyone but the maintainer, and
+# the suite passes without any of them.
+#
+# It is also, for the maintainer, indistinguishable from coverage quietly
+# draining away. Two real cases, both green the whole time they were broken:
+# the oracle fixtures skipped for months after the Kirby rename left their
+# paths pointing at the old workspace, and the whole-character roundtrip
+# skipped from the day its hardcoded path was scrubbed for publication
+# (ed775fb) until 2026-08-18 — nothing ever pointed the replacement variable
+# at a file.
+#
+# So the guard is conditional on there being nothing left to blame: when every
+# input resolves — the five variables AND the generated fixtures — a skip is no
+# longer "unrunnable here", it is a defect, and the run fails. Configure nothing
+# and it never fires, which is every case but the maintainer's.
+# ---------------------------------------------------------------------------
+
+#: nodeid -> reason, for skips seen this session.
+_SKIPPED: "dict[str, str]" = {}
+
+
+def _skip_reason(report) -> str:
+    """A skip's reason, whether pytest phrased it as a tuple or a string."""
+    longrepr = report.longrepr
+    if isinstance(longrepr, tuple) and len(longrepr) == 3:
+        return str(longrepr[2]).removeprefix("Skipped: ")
+    return str(longrepr) if longrepr else "no reason given"
+
+
+def pytest_report_header(config):
+    """Say what the run is configured with, before it says anything else."""
+    lines = []
+    if LOADED_FROM_ENV_FILE:
+        lines.append(
+            f"kirby-cost: {len(LOADED_FROM_ENV_FILE)} inputs from "
+            f".env.test ({', '.join(sorted(LOADED_FROM_ENV_FILE))})"
+        )
+    missing = missing_inputs()
+    if missing:
+        lines.append(
+            f"kirby-cost: {_INPUT_COUNT - len(missing)}/{_INPUT_COUNT} inputs "
+            f"present; tests needing {', '.join(missing)} will skip"
+        )
+    else:
+        lines.append(
+            f"kirby-cost: all {_INPUT_COUNT} inputs present — "
+            "any skip will fail the run"
+        )
+    return lines
+
+
+def pytest_runtest_logreport(report):
+    if report.skipped:
+        _SKIPPED.setdefault(report.nodeid, _skip_reason(report))
+
+
+def _guard_verdict() -> "tuple[bool, list[str]]":
+    """(should_fail, missing_inputs). Kept pure so it can be tested directly."""
+    if os.environ.get("KIRBY_COST_ALLOW_SKIPS"):
+        return False, []
+    missing = missing_inputs()
+    return (bool(_SKIPPED) and not missing), missing
+
+
+def pytest_terminal_summary(terminalreporter, exitstatus, config):
+    should_fail, _ = _guard_verdict()
+    if not should_fail:
+        return
+    terminalreporter.section("skips with every input configured", red=True)
+    terminalreporter.write_line(
+        f"{len(_SKIPPED)} test(s) skipped, but all {_INPUT_COUNT} inputs in "
+        "tests/corpus.py resolve. A skip here is not 'unrunnable on this "
+        "machine' — it is coverage that has gone missing."
+    )
+    for nodeid, reason in sorted(_SKIPPED.items()):
+        terminalreporter.write_line(f"  {nodeid}\n      {reason}")
+    terminalreporter.write_line(
+        "Set KIRBY_COST_ALLOW_SKIPS=1 to proceed anyway (deliberate skips only)."
+    )
+
+
+def pytest_sessionfinish(session, exitstatus):
+    should_fail, _ = _guard_verdict()
+    if should_fail and session.exitstatus == 0:
+        session.exitstatus = 1
 
 
 class ConcreteObject(GenericObject):
