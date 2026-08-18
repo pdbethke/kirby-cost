@@ -6,6 +6,7 @@ Converted from com.hero.objects.powers.Duplication.java
 Power to duplicate oneself.
 """
 
+from kirby_cost.engine.xml_attrs import XMLAttr
 from kirby_cost.objects.powers.power import Power
 from kirby_cost.io.xml_utility import XMLUtility
 from typing import Optional
@@ -17,6 +18,22 @@ class Duplication(Power, xmlid="DUPLICATION"):
 
     Creates duplicate versions of the character.
     """
+
+    #: NUMBER and POINTS are the character's; OVERCOST, OVERVAL,
+    #: MULTIPLIERCOST and MULTIPLIERVAL are the TEMPLATE's, and get_save_xml
+    #: stated all six, freezing four template defaults into 6 characters'
+    #: files as per-character overrides. Java writes NUMBER, POINTS and
+    #: FILE_ASSOCIATION only (Duplication.getSaveXML). Declared, so the
+    #: writer's own "the source did not state it and nothing changed it" rule
+    #: keeps the template's four out without a second list to maintain.
+    XML_ATTRS = (
+        XMLAttr("NUMBER", "multiples", "int"),
+        XMLAttr("POINTS", "points", "int"),
+        XMLAttr("OVERCOST", "over_cost", "int"),
+        XMLAttr("OVERVAL", "over_val", "int"),
+        XMLAttr("MULTIPLIERCOST", "multiplier_cost", "int"),
+        XMLAttr("MULTIPLIERVAL", "multiplier_val", "int"),
+    )
 
     def __init__(self):
         """Initialize a Duplication power."""
@@ -33,13 +50,7 @@ class Duplication(Power, xmlid="DUPLICATION"):
         self.file_association_last_check: Optional[int] = None
 
     def _init(self, element) -> None:
-        """Initialize from XML element, including Duplication-specific fields.
-
-        Mirrors Java Duplication.init() + restoreFromSave() which read
-        OVERCOST, OVERVAL, MULTIPLIERCOST, MULTIPLIERVAL from the template
-        definition and NUMBER, POINTS from the saved character data.
-        """
-        # Set defaults before super()._init so template can override
+        """Java Duplication.init() defaults, before the document is read."""
         self._display = "Duplication"
         self._alias = "Duplication"
         self._base_cost = 0.0
@@ -47,48 +58,6 @@ class Duplication(Power, xmlid="DUPLICATION"):
         self._level_value = 5.0
         self._minimum_cost = 1.0
         super()._init(element)
-        if element is None:
-            return
-
-        # Fields from Java init() — template-level attributes
-        for attr, field, conv in [
-            ("OVERCOST", "over_cost", int),
-            ("OVERVAL", "over_val", int),
-            ("MULTIPLIERCOST", "multiplier_cost", int),
-            ("MULTIPLIERVAL", "multiplier_val", int),
-        ]:
-            val = XMLUtility.get_value(element, attr)
-            if val and val.strip():
-                try:
-                    setattr(self, field, conv(val))
-                except (ValueError, TypeError):
-                    pass
-
-        # Fields from Java restoreFromSave() — saved character data
-        val = XMLUtility.get_value(element, "NUMBER")
-        if val and val.strip():
-            try:
-                self.multiples = int(val)
-            except (ValueError, TypeError):
-                pass
-
-        val = XMLUtility.get_value(element, "POINTS")
-        if val and val.strip():
-            try:
-                self.points = int(val)
-            except (ValueError, TypeError):
-                pass
-
-    def get_save_xml(self):
-        """Serialize duplication including duplication-specific fields."""
-        element = self.get_general_save_xml()
-        element.set("POINTS", str(self.points))
-        element.set("NUMBER", str(self.multiples))
-        element.set("OVERCOST", str(self.over_cost))
-        element.set("OVERVAL", str(self.over_val))
-        element.set("MULTIPLIERCOST", str(self.multiplier_cost))
-        element.set("MULTIPLIERVAL", str(self.multiplier_val))
-        return element
 
     @property
     def total_cost(self) -> float:

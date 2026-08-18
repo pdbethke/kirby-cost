@@ -6,6 +6,7 @@ Converted from com.hero.objects.powers.Detect.java
 Power to detect things.
 """
 
+from kirby_cost.engine.xml_attrs import XMLAttr
 from kirby_cost.objects.powers.sense import Sense
 
 
@@ -15,11 +16,19 @@ class Detect(Sense, xmlid="DETECT"):
     
     Power to detect specific things.
     """
-    
+
+    #: Whether the Detect is an ACTIVE sense — Java reads and writes it
+    #: (Detect.java:145, :152) and this port did neither, so 17 characters
+    #: exported a Detect that had lost the distinction entirely.
+    XML_ATTRS = (
+        XMLAttr("ACTIVE", "active", "yesno"),
+    )
+
     def __init__(self):
         """Initialize a Detect power."""
         super().__init__(Detect.XMLID)
         self._duration = "CONSTANT"
+        self.active: bool = False
     
     @property
     def damage_display(self) -> str:

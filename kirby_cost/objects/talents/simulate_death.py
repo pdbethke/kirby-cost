@@ -7,6 +7,7 @@ Simulate Death allows appearing dead.
 """
 
 from typing import Optional, List
+from kirby_cost.engine.xml_attrs import XMLAttr
 from kirby_cost.objects.talents.talent import Talent
 from kirby_cost.objects.skills.characteristic_choice import CharacteristicChoice
 from kirby_cost.objects.base import GenericObject
@@ -25,6 +26,19 @@ class SimulateDeath(Talent, xmlid="SIMULATE_DEATH"):
     Allows appearing dead.
     Can be based on different characteristics.
     """
+
+    #: Declared as well as read through set_characteristic(), for the reason
+    #: Skill.XML_ATTRS gives: the two are not equivalent. set_characteristic()
+    #: only assigns when a matching CHARACTERISTIC_CHOICE is present, and those
+    #: choices are template data that an HDC does not carry — so a talent
+    #: stating CHARACTERISTIC="INT" kept the 0 it was born with and exported as
+    #: "GENERAL", which is a different talent at a different cost.
+    XML_ATTRS = (
+        XMLAttr("CHARACTERISTIC", "characteristic",
+                parse_with=characteristic_integer,
+                format_with=characteristic_string),
+    )
+
     
     def __init__(self, element=None):
         """Initialize a Simulate Death talent."""

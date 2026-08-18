@@ -28,15 +28,23 @@ that is the whole of what this fixes.
 """
 
 from kirby_cost.engine.xml_attrs import XMLAttr
+from kirby_cost.objects.perks.perk import Perk
 from kirby_cost.objects.skills.skill import Skill
 
 
-class Enhancer(Skill):
-    """A skill enhancer, saved as HD saves it.
+class EnhancerSerialization:
+    """How HD writes an enhancer, whichever section it lives in.
 
     Ported from ``Enhancer.getSaveXML``/``restoreFromSave``: the element takes
     the enhancer's own XMLID as its tag and carries INTBASED, which HD writes
     in upper case ("YES"/"NO") unlike the "Yes"/"No" it uses everywhere else.
+
+    A mixin rather than a base class because Java has one ``Enhancer`` and this
+    port does not: four of the five sit in SKILLS and Well-Connected sits in
+    PERKS, and the loader files an object by the SECTION it was read from. A
+    single base would have to pick one, and picking Skill would have moved
+    Well-Connected out of ``hero.perks`` — changing where every consumer looks
+    for it to fix how one attribute is written.
     """
 
     #: Java's Enhancer.restoreFromSave reads INTBASED and nothing else.
@@ -45,16 +53,20 @@ class Enhancer(Skill):
                 format_with=lambda v: "YES" if v else "NO"),
     )
 
-    def __init__(self, xmlid: str = None):
-        super().__init__(xmlid or type(self).XMLID)
-        #: Enhancer.java:46 — `protected boolean intBased = false`.
-        self.int_based: bool = False
-
     def get_save_xml(self):
         """The enhancer's own tag, and INTBASED — not a skill's attributes."""
         element = self.get_general_save_xml()
         element.tag = self.xmlid
         return element
+
+
+class Enhancer(EnhancerSerialization, Skill):
+    """A skill enhancer: Scholar, Scientist, Linguist, Traveler, Jack."""
+
+    def __init__(self, xmlid: str = None):
+        super().__init__(xmlid or type(self).XMLID)
+        #: Enhancer.java:46 — `protected boolean intBased = false`.
+        self.int_based: bool = False
 
 
 class Scholar(Enhancer, xmlid="SCHOLAR"):
@@ -75,3 +87,15 @@ class Traveler(Enhancer, xmlid="TRAVELER"):
 
 class JackOfAllTrades(Enhancer, xmlid="JACK_OF_ALL_TRADES"):
     """Jack of All Trades — discounts Professional Skills."""
+
+
+class WellConnected(EnhancerSerialization, Perk, xmlid="WELL_CONNECTED"):
+    """Well-Connected — discounts Contacts.
+
+    An enhancer that lives in PERKS. It was exported as a plain <PERK>, losing
+    the INTBASED that says whether its roll is INT-based, on 14 characters.
+    """
+
+    def __init__(self, element=None):
+        super().__init__(element, "WELL_CONNECTED")
+        self.int_based: bool = False
