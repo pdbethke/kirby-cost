@@ -18,6 +18,18 @@ class Sense(Power):
     
     Base class for all senses in Hero Designer.
     """
+
+    def to_build_dict(self) -> dict:
+        d = super().to_build_dict()
+        if getattr(self, "group_id", ""):
+            d["group"] = self.group_id
+        if getattr(self, "active", False):
+            d["sense_active"] = True
+        provides = list(getattr(self, "sense_adders", []) or [])
+        if provides:
+            d["provides"] = provides
+        return d
+
     
     # Static class variables
     _all_senses: List['Sense'] = []

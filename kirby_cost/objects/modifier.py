@@ -27,6 +27,22 @@ class Modifier(GenericObject):
     - Minimum/maximum value limits
     """
 
+    def to_build_dict(self) -> dict:
+        """A modifier, with the adders and sub-modifiers it carries."""
+        d = self._build_dict_core()
+        if getattr(self, "private_mod", False):
+            d["private"] = True
+        nested = [a.to_build_dict()
+                  for a in getattr(self, "_assigned_adders", [])]
+        if nested:
+            d["adders"] = nested
+        submods = [s.to_build_dict()
+                   for s in getattr(self, "assigned_modifiers", [])]
+        if submods:
+            d["modifiers"] = submods
+        return d
+
+
     XML_ATTRS = (
         XMLAttr("DISPLAYINSTRING", "_display_in_string", "yesno"),
     )

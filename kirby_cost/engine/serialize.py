@@ -80,6 +80,86 @@ class SerializationMixin:
                     continue
             element.set(descriptor.attr, self._verbatim_or_format(descriptor, value))
 
+    # ------------------------------------------------------------------
+    # Build-doc export. The same object, in the other shape.
+    #
+    # This lived in io/build_json.py as a module-level _obj_to_dict that
+    # reached INTO subclasses — isinstance(o, ForceWall), isinstance(o, Sense),
+    # isinstance(o, Skill), isinstance(o, Maneuver) — so one function had to
+    # know every class that had anything extra to say, and a new subclass was
+    # exported wrongly until somebody remembered to add a branch there. The XML
+    # side never worked that way: each class contributes its own get_save_xml.
+    # Now both directions do, and the exporter owns export in both shapes.
+    # ------------------------------------------------------------------
+
+    def _build_dict_core(self) -> dict:
+        """The fields every exported object carries, whatever kind it is."""
+        d: dict = {"xmlid": self.xmlid}
+        if getattr(self, "option_id", None):
+            d["option_id"] = self.option_id
+        if getattr(self, "levels", 0):
+            d["levels"] = self.levels
+        base_cost = getattr(self, "_base_cost", 0.0)
+        # An explicit BASECOST="0.0" is a statement, and gating on truthiness
+        # alone dropped it — the rebuild then fell back to a nonzero template
+        # default. Hence the provenance flag, not just the value.
+        if base_cost or getattr(self, "_base_cost_from_xml", False):
+            d["base_cost"] = base_cost
+        if getattr(self, "_level_cost", 0.0):
+            d["level_cost"] = self._level_cost
+        if getattr(self, "_level_value", 0.0):
+            d["level_value"] = self._level_value
+        if getattr(self, "min_set", False):
+            d["min_cost"] = getattr(self, "_minimum_cost", 0.0)
+        if getattr(self, "max_set", False):
+            d["max_cost"] = getattr(self, "_max_cost", 0.0)
+        return d
+
+    def to_build_dict(self) -> dict:
+        """This object as a build-doc node, children included.
+
+        Document concerns — the synthetic id, the parent link, which section it
+        belongs to — stay with the document, in io/build_json.py, exactly as
+        the CHARACTER envelope stays in io/hdc_writer.py.
+        """
+        d = self._build_dict_core()
+        framework_tag = getattr(self, "_framework_tag", "")
+        if framework_tag and framework_tag != self.xmlid:
+            d["framework_tag"] = framework_tag
+        if getattr(self, "_alias", ""):
+            d["alias"] = self._alias
+        # The player's OWN name for the power — the only thing distinguishing
+        # two ENERGYBLASTs in a UI, an AI action menu or an exported .hdc.
+        if getattr(self, "_name", ""):
+            d["name"] = self._name
+        if getattr(self, "input", ""):
+            d["input"] = self.input
+        if getattr(self, "ultra", True) is False:
+            d["ultra_slot"] = False
+        if getattr(self, "add_modifiers_to_base", False):
+            d["add_modifiers_to_base"] = True
+        self._emit_build_children(d)
+        return d
+
+    def _emit_build_children(self, d: dict) -> None:
+        """Modifiers, adders, and the objects an object can contain."""
+        mods = [m.to_build_dict()
+                for m in getattr(self, "_assigned_modifiers", [])]
+        if mods:
+            d["modifiers"] = mods
+        adders = [a.to_build_dict()
+                  for a in getattr(self, "_assigned_adders", [])]
+        if adders:
+            d["adders"] = adders
+        # A CompoundPower's sub-powers are not in the hero's top-level lists,
+        # so they are emitted nested or their cost is lost.
+        sub_powers = [sp.to_build_dict() for sp in getattr(self, "powers", [])]
+        if sub_powers:
+            d["sub_powers"] = sub_powers
+        rec = getattr(self, "rec", None)
+        if rec is not None:
+            d["endurance_reserve_rec"] = rec.to_build_dict()
+
     def get_general_save_xml(self):
         """
         Get XML element for saving this object (general attributes).

@@ -16,6 +16,21 @@ if TYPE_CHECKING:
 class Adder(GenericObject):
     """Adder class - extends GenericObject."""
 
+    def to_build_dict(self) -> dict:
+        """An adder exports less than a power: no alias, name or input."""
+        d = self._build_dict_core()
+        if getattr(self, "_selected", False):
+            d["selected"] = True
+        # REQUIRED gates whether some skills/perks count an adder's cost at
+        # all (Reputation skips required HOWWELL/HOWWIDE).
+        if getattr(self, "_required", False):
+            d["required"] = True
+        nested = [a.to_build_dict() for a in self.assigned_adders]
+        if nested:
+            d["adders"] = nested
+        return d
+
+
     #: HD states these on every adder, as Yes/No. They were written only when
     #: true, so "SELECTED=No" came back as no attribute at all — a different
     #: statement, on 60 of Ravel's elements.
