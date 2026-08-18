@@ -1,28 +1,15 @@
 {
-  "_comment": "Export gaps: attributes and elements a character loses when written back out. Shrink-only -- an entry is a KNOWN DEFECT, never an acceptable diff. Remove entries in the commit that fixes them; test_export_ledger_is_not_stale fails until you do.",
+  "_comment": "Export fidelity ledger. Shrink-only, with a staleness ratchet in test_export_ledger_is_not_stale. See tests/test_export_fidelity.py for what each list means.",
   "_measured": {
     "characters": 794,
-    "round_trip_clean": 783,
-    "gap_classes": 18
+    "round_trip_clean": 791,
+    "date": "2026-08-18"
   },
-  "gaps": [
-    "ADDER:IMMUNITY|BASECOST",
-    "MODIFIER:CHARGES|CLIPS_COST",
-    "POWER:COMPOUNDPOWER|CARRIED",
-    "POWER:COMPOUNDPOWER|PRICE",
-    "POWER:COMPOUNDPOWER|WEIGHT",
-    "POWER:DISPEL|CARRIED",
-    "POWER:DISPEL|PRICE",
-    "POWER:DISPEL|WEIGHT",
-    "POWER:INVISIBILITY|CARRIED",
-    "POWER:INVISIBILITY|PRICE",
-    "POWER:INVISIBILITY|WEIGHT",
+  "gaps": [],
+  "_gaps_comment": "Defects: attributes or elements a character LOSES on write. Empty, and meant to stay that way. A new entry here is a regression, not a discovery.",
+  "matches_hd": [
     "POWER:NAKEDMODIFIER|TEXT",
-    "POWER:RKA|CARRIED",
-    "POWER:RKA|PRICE",
-    "POWER:RKA|WEIGHT",
-    "POWER:SUMMON|CARRIED",
-    "POWER:SUMMON|PRICE",
-    "POWER:SUMMON|WEIGHT"
-  ]
+    "ADDER:IMMUNITY|BASECOST"
+  ],
+  "_matches_hd_comment": "Diffs HERO DESIGNER ITSELF produces on a re-save, so reproducing them is fidelity, not damage. Never add one without the Java that does it. POWER:NAKEDMODIFIER|TEXT -- HD trims the attribute on restore (GenericObject.java:3623, textOutput = check.trim()), so a TEXT with a trailing space loses it in HD too. ADDER:IMMUNITY|BASECOST -- HD restores BASECOST from the document and then re-applies the selected option's cost over it (restoreFromSave ends by re-running setSelectedOption; Charges.java:549-551 shows the same pattern), so the in-memory baseCost is the option's 3.0 and that is what getSaveXML writes. Note this one is REASONED from the Java restore order rather than observed: confirming it needs HD to re-save the file, which the headless oracle CLI does not do -- it dumps costs. The cost side is confirmed, at 3.0, by 656/656 oracle parity."
 }

@@ -54,11 +54,47 @@ class Charges(Modifier, xmlid="CHARGES"):
                 except (ValueError, TypeError):
                     pass
     
+    def get_save_xml(self):
+        """Charges, plus the price of its CLIPS adder.
+
+        CLIPS_COST is not a field on the modifier — it is the base cost of the
+        CLIPS adder hanging off it, which HD hoists onto the parent so that a
+        restore can put it back before the adder is recosted
+        (``Charges.getSaveXML``/``restoreFromSave``). Nothing here wrote it, so
+        9 characters exported clips priced at whatever the template says
+        instead of what the character paid.
+
+        Declared as code rather than in XML_ATTRS because there is no field to
+        declare: the value lives on a child.
+        """
+        element = super().get_save_xml()
+        clips = GenericObject.find_object_by_id(self.assigned_adders, "CLIPS")
+        if clips is not None:
+            element.set("CLIPS_COST", str(clips.base_cost))
+        return element
+
+    def _init(self, element) -> None:
+        """Read the document, then put CLIPS_COST back onto the CLIPS adder."""
+        super()._init(element)
+        if element is None:
+            return
+        from kirby_cost.io.xml_utility import XMLUtility
+
+        cost = XMLUtility.get_value(element, "CLIPS_COST")
+        if not (cost and cost.strip()):
+            return
+        clips = GenericObject.find_object_by_id(self.assigned_adders, "CLIPS")
+        if clips is not None:
+            try:
+                clips.base_cost = float(cost)
+            except (ValueError, TypeError):
+                pass
+
     @property
     def column2_output(self) -> str:
         """
         Get column 2 output string.
-        
+
         Complex formatting for Charges modifier with many adder types.
         """
         self.validation_check()  # Would need to implement this
