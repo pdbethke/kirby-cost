@@ -37,7 +37,8 @@ from kirby_cost.objects.powers import (  # noqa: F401
 # ── Skills ──────────────────────────────────────────────────────────
 from kirby_cost.objects.skills import (  # noqa: F401
     accumulator_skill, adder_based_skill, autofire_skills, combat_levels,
-    cramming, custom_skill, defense_maneuver, knowledge_skill, language,
+    cramming, custom_skill, defense_maneuver, enhancer, knowledge_skill,
+    language,
     mental_combat_levels, n_counter_skill, penalty_skill_levels,
     professional_skill, rapid_attack_hth, rapid_attack_ranged,
     skill_levels, transport_familiarity, two_weapon_fighting_hth,
