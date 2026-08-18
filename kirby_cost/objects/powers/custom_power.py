@@ -6,6 +6,7 @@ Converted from com.hero.objects.powers.CustomPower.java
 Power for user-defined custom powers.
 """
 
+from kirby_cost.engine.xml_attrs import XMLAttr
 from kirby_cost.objects.powers.power import Power
 from kirby_cost.objects.base import GenericObject
 from kirby_cost.util.rounder import round_half_down, round_up
@@ -17,15 +18,45 @@ from typing import Optional
 class CustomPower(Power, xmlid="CUSTOMPOWER"):
     """
     Custom Power.
-    
+
     User-defined custom power with custom cost calculations.
     """
-    
+
+    #: A custom power has no template entry, so unlike every other power it
+    #: carries its own definition of what it DOES — and none of it was read or
+    #: written. 164 corpus characters round-tripped their custom powers into
+    #: blanks: no damage, no killing flag, no defence, no range, no duration,
+    #: no target. The engine's own fields for these existed and stayed at their
+    #: constructor defaults, so nothing failed; the power simply became inert.
+    #:
+    #: Java writes all twelve unconditionally
+    #: (``CustomPower.getSaveXML``) and reads them back in
+    #: ``restoreFromSave`` — including DEFENSE falling back to "NONE" when the
+    #: document leaves it blank, which is why the field defaults there too.
+    XML_ATTRS = (
+        XMLAttr("DOESBODY", "does_body", "yesno"),
+        XMLAttr("DOESDAMAGE", "does_damage", "yesno"),
+        XMLAttr("DOESKNOCKBACK", "does_knockback", "yesno"),
+        XMLAttr("KILLING", "killing", "yesno"),
+        XMLAttr("DEFENSE", "defense"),
+        XMLAttr("END", "uses_end", "yesno"),
+        XMLAttr("VISIBLE", "visible", "yesno"),
+        XMLAttr("RANGE", "range"),
+        XMLAttr("DURATION", "duration"),
+        XMLAttr("TARGET", "target"),
+        # Java holds col3Output as null until set and writes "" for null or
+        # blank, so the empty string IS the value HD states — the field starts
+        # "" rather than None because the writer skips a None and HD writes
+        # ENDCOLUMNOUTPUT on every custom power without exception.
+        XMLAttr("ENDCOLUMNOUTPUT", "col3_output"),
+        XMLAttr("USECUSTOMENDCOLUMN", "use_custom_column3", "yesno"),
+    )
+
     def __init__(self):
         """Initialize a Custom Power."""
         super().__init__()
         self.xmlid = CustomPower.XMLID
-        self.col3_output: Optional[str] = None
+        self.col3_output: str = ""
         self.use_custom_column3: bool = False
     
     @property
