@@ -191,192 +191,22 @@ def build_from_json(doc: dict[str, Any]) -> LoadedHero:
     return HDCLoader()._build_hero_from_root(_root_from_doc(doc))
 
 
-def _emit_cost_fields(o, d: dict[str, Any]) -> None:
-    """Emit the effective cost-driving fields the loader reads in _init().
-
-    These mirror what the HDC XML carries on a power/modifier/adder. Emitting
-    the loaded object's *effective* values (not just what survived through the
-    current doc) makes the doc reproduce the cost even when the original XML
-    overrode template defaults (e.g. an adder's explicit LVLCOST/LVLVAL — see
-    the DOUBLE adder under AUTOFIRE). Read directly off the private cost fields
-    because the public properties can be overridden by computed subclasses.
-    """
-    if getattr(o, "_level_cost", 0.0):
-        d["level_cost"] = o._level_cost
-    if getattr(o, "_level_value", 0.0):
-        d["level_value"] = o._level_value
-    # min/max only when the loader would treat them as set (min_set/max_set);
-    # the value clamps modifier totals (modifier.py:133-136).
-    if getattr(o, "min_set", False):
-        d["min_cost"] = getattr(o, "_minimum_cost", 0.0)
-    if getattr(o, "max_set", False):
-        d["max_cost"] = getattr(o, "_max_cost", 0.0)
-
-
-def _modifier_to_dict(m) -> dict[str, Any]:
-    d: dict[str, Any] = {"xmlid": m.xmlid}
-    if getattr(m, "option_id", None):
-        d["option_id"] = m.option_id
-    if getattr(m, "levels", 0):
-        d["levels"] = m.levels
-    bc = getattr(m, "_base_cost", 0.0)
-    if bc or getattr(m, "_base_cost_from_xml", False):
-        d["base_cost"] = bc
-    if getattr(m, "private_mod", False):
-        d["private"] = True
-    _emit_cost_fields(m, d)
-    # Emit nested adders on the modifier (e.g. EXPLOSION on AOE)
-    nested = [_adder_to_dict(a) for a in getattr(m, "_assigned_adders", [])]
-    if nested:
-        d["adders"] = nested
-    # Emit sub-modifiers (modifiers on modifiers; loader: hdc_loader.py:1108-1111)
-    submods = [_modifier_to_dict(s) for s in getattr(m, "assigned_modifiers", [])]
-    if submods:
-        d["modifiers"] = submods
-    return d
-
-
-def _adder_to_dict(a) -> dict[str, Any]:
-    d: dict[str, Any] = {"xmlid": a.xmlid}
-    if getattr(a, "option_id", None):
-        d["option_id"] = a.option_id
-    if getattr(a, "levels", 0):
-        d["levels"] = a.levels
-    bc = getattr(a, "_base_cost", 0.0)
-    if bc or getattr(a, "_base_cost_from_xml", False):
-        d["base_cost"] = bc
-    _emit_cost_fields(a, d)
-    if getattr(a, "_selected", False):
-        d["selected"] = True
-    # REQUIRED gates whether some skills/perks count an adder's cost (e.g.
-    # Reputation skips required HOWWELL/HOWWIDE — perks/reputation.py:188-196).
-    if getattr(a, "_required", False):
-        d["required"] = True
-    # Nested adders (loader: hdc_loader.py:1141-1144)
-    nested = [_adder_to_dict(s) for s in getattr(a, "assigned_adders", [])]
-    if nested:
-        d["adders"] = nested
-    return d
-
-
 def _obj_to_dict(o, idx: int, parent_id: str | None) -> dict[str, Any]:
-    d: dict[str, Any] = {"id": f"O{idx}", "xmlid": o.xmlid}
-    # Preserve framework tag when it differs from xmlid (e.g. LIST separator)
-    fw_tag = getattr(o, "_framework_tag", "")
-    if fw_tag and fw_tag != o.xmlid:
-        d["framework_tag"] = fw_tag
+    """Document placement around the object's own export.
+
+    Everything about WHAT an object is now comes from the object
+    (``SerializationMixin.to_build_dict``, overridden by the classes that have
+    more to say). What is left here is where it sits in the document: the
+    synthetic id and the parent link, which no object can know about itself.
+
+    This function used to be 120 lines that branched on isinstance for
+    ForceWall, Sense, Skill and Maneuver — so adding a subclass with anything
+    extra to export meant editing this module, and forgetting to was silent.
+    """
+    d: dict[str, Any] = {"id": f"O{idx}"}
+    d.update(o.to_build_dict())
     if parent_id:
         d["parent"] = parent_id
-    if getattr(o, "levels", 0):
-        d["levels"] = o.levels
-    bc = getattr(o, "_base_cost", 0.0)
-    if bc or getattr(o, "_base_cost_from_xml", False):
-        d["base_cost"] = bc
-    _emit_cost_fields(o, d)
-    if getattr(o, "_alias", ""):
-        d["alias"] = o._alias
-    # The player's OWN name for the power — "Teleportation Boxing" for one of
-    # Cheshire Cat's two Blasts, "Billy Club" for his HandToHandAttack. This
-    # was read on input but never emitted, so it died at the build doc and
-    # every consumer saw two indistinguishable "ENERGYBLAST" entries. It is
-    # the only thing that tells them apart in a UI, an AI action menu, or an
-    # exported .hdc. Cosmetic for cost, load-bearing for meaning.
-    if getattr(o, "_name", ""):
-        d["name"] = o._name
-    if getattr(o, "option_id", None):
-        d["option_id"] = o.option_id
-    if getattr(o, "input", ""):
-        d["input"] = o.input
-    if getattr(o, "ultra", True) is False:
-        d["ultra_slot"] = False
-    if getattr(o, "add_modifiers_to_base", False):
-        d["add_modifiers_to_base"] = True
-    # ForceWall dimension levels + per-unit costs (force_wall.py:42-48,91-94).
-    from kirby_cost.objects.powers.force_wall import ForceWall
-    if isinstance(o, ForceWall):
-        if getattr(o, "length_levels", 0):
-            d["length_levels"] = o.length_levels
-        if getattr(o, "height_levels", 0):
-            d["height_levels"] = o.height_levels
-        if getattr(o, "body_levels", 0):
-            d["body_levels"] = o.body_levels
-        if getattr(o, "width_levels", 0):
-            d["width_levels"] = o.width_levels
-        # Unit costs always emitted so total_cost reproduces (defaults 2/1, but
-        # the wall's level-cost reads them — emit verbatim to be faithful).
-        d["cost_per_inch"] = getattr(o, "cost_per_inch", 2)
-        d["cost_per_body"] = getattr(o, "cost_per_body", 1)
-    # Sense: GROUP membership (cost discount), ACTIVE, and PROVIDES capabilities.
-    from kirby_cost.objects.powers.sense import Sense
-    if isinstance(o, Sense):
-        gid = getattr(o, "group_id", "")
-        if gid:
-            d["group"] = gid
-        if getattr(o, "active", False):
-            d["sense_active"] = True
-        prov = list(getattr(o, "sense_adders", []) or [])
-        if prov:
-            d["provides"] = prov
-    # Skill cost-mode flags + characteristic (only meaningful on Skill objects).
-    from kirby_cost.objects.skills.skill import Skill
-    if isinstance(o, Skill):
-        # Mark the object as a skill so _obj_node re-emits the SKILL element
-        # tag — required for skills bought in the POWERS section to dispatch
-        # through the skill registry on rebuild (hdc_loader.py:854-855).
-        d["skill"] = True
-        d["familiarity"] = bool(o.is_familiarity)
-        d["proficiency"] = bool(o.is_proficiency)
-        d["levels_only"] = bool(o.levels_only)
-        d["everyman"] = bool(o.is_everyman)
-        cs = getattr(o, "characteristic_string", "")
-        if cs:
-            d["characteristic"] = cs
-    # Maneuver detail fields (maneuver.py get_save_xml is the attr authority).
-    from kirby_cost.objects.martial_arts.maneuver import Maneuver
-    if isinstance(o, Maneuver):
-        # Marker: _obj_node re-emits the MANEUVER element tag (same mechanism
-        # as the "skill" marker for skills bought in POWERS).
-        d["maneuver"] = True
-        d["category"] = o.category
-        d["display"] = str(o.display or "")
-        d["ocv"] = o.ocv
-        d["dcv"] = o.dcv
-        d["dc"] = int(o.dc)
-        d["phase"] = o.phase
-        d["effect"] = o.effect
-        d["add_str"] = bool(o.add_str)
-        d["maneuver_active_cost"] = int(o.maneuver_active_cost)
-        d["damage_type"] = int(o.damage_type)
-        d["max_str"] = int(o.max_str)
-        d["str_multiplier"] = int(o.str_multiplier)
-        d["use_weapon"] = bool(o.use_weapon)
-        if o.custom:
-            d["custom"] = True
-        if o.weapon_effect and o.weapon_effect.strip():
-            d["weapon_effect"] = o.weapon_effect
-        if o.category.strip().upper() == "RANGED":
-            d["ranged"] = int(o.ranged)
-    mods = [_modifier_to_dict(m) for m in getattr(o, "_assigned_modifiers", [])]
-    if mods:
-        d["modifiers"] = mods
-    adders = [_adder_to_dict(a) for a in getattr(o, "_assigned_adders", [])]
-    if adders:
-        d["adders"] = adders
-    # CompoundPower sub-powers live in o.powers (hdc_loader.py:973). They are
-    # NOT in the hero's top-level lists, so they must be emitted nested here or
-    # their cost (CompoundPower.total_cost = sum of sub-powers) is lost.
-    sub_powers = [_obj_to_dict(sp, 0, None) for sp in getattr(o, "powers", [])]
-    if sub_powers:
-        # sub-powers carry no framework id/parent linkage; drop the synthetic id
-        for sp in sub_powers:
-            sp.pop("id", None)
-        d["sub_powers"] = sub_powers
-    # EnduranceReserve recovery component (hdc_loader.py:977-985).
-    rec = getattr(o, "rec", None)
-    if rec is not None:
-        rd = _obj_to_dict(rec, 0, None)
-        rd.pop("id", None)
-        d["endurance_reserve_rec"] = rd
     return d
 
 

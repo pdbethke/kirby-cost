@@ -15,6 +15,19 @@ class ForceWall(Power, xmlid="FORCEWALL"):
     
     Creates a wall of force with DEF and BODY.
     """
+
+    def to_build_dict(self) -> dict:
+        d = super().to_build_dict()
+        for field in ("length_levels", "height_levels", "body_levels",
+                      "width_levels"):
+            if getattr(self, field, 0):
+                d[field] = getattr(self, field)
+        # Always emitted so total_cost reproduces: the wall's level cost reads
+        # these, and their defaults are not what every wall carries.
+        d["cost_per_inch"] = getattr(self, "cost_per_inch", 2)
+        d["cost_per_body"] = getattr(self, "cost_per_body", 1)
+        return d
+
     
     def __init__(self):
         """Initialize a Force Wall power."""

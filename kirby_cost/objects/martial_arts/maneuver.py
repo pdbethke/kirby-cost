@@ -26,6 +26,31 @@ class Maneuver(GenericObject, xmlid="MANEUVER"):
     Strike, Kick, Throw, etc.) are instances of this class with different
     configurations loaded from template files.
     """
+
+    def to_build_dict(self) -> dict:
+        d = super().to_build_dict()
+        d["maneuver"] = True          # marker: re-emit a MANEUVER element tag
+        d["category"] = self.category
+        d["display"] = str(self.display or "")
+        d["ocv"] = self.ocv
+        d["dcv"] = self.dcv
+        d["dc"] = int(self.dc)
+        d["phase"] = self.phase
+        d["effect"] = self.effect
+        d["add_str"] = bool(self.add_str)
+        d["maneuver_active_cost"] = int(self.maneuver_active_cost)
+        d["damage_type"] = int(self.damage_type)
+        d["max_str"] = int(self.max_str)
+        d["str_multiplier"] = int(self.str_multiplier)
+        d["use_weapon"] = bool(self.use_weapon)
+        if self.custom:
+            d["custom"] = True
+        if self.weapon_effect and self.weapon_effect.strip():
+            d["weapon_effect"] = self.weapon_effect
+        if self.category.strip().upper() == "RANGED":
+            d["ranged"] = int(self.ranged)
+        return d
+
     
     # Damage type constants
     NONE = 0

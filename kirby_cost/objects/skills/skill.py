@@ -44,6 +44,21 @@ class Skill(GenericObject):
     - Cost calculations with skill maxima
     """
 
+    def to_build_dict(self) -> dict:
+        d = super().to_build_dict()
+        # Marker: the rebuild re-emits a SKILL element tag, so a skill bought
+        # in the POWERS section still dispatches through the skill registry.
+        d["skill"] = True
+        d["familiarity"] = bool(self.is_familiarity)
+        d["proficiency"] = bool(self.is_proficiency)
+        d["levels_only"] = bool(self.levels_only)
+        d["everyman"] = bool(self.is_everyman)
+        characteristic = getattr(self, "characteristic_string", "")
+        if characteristic:
+            d["characteristic"] = characteristic
+        return d
+
+
     #: The characteristic a skill rolls against. Stored as a CharacteristicType
     #: int, written as a name, and never read at all until now: every skill
     #: re-exported as GENERAL, which costs 2 where INT costs 3.
