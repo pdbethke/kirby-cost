@@ -2,10 +2,20 @@ name: Tests
 
 # Runs the tests that need nothing but the code.
 #
-# The parity suite is not here and cannot be: it compares against HERO
-# Designer's own engine over commercial character packs, and neither the
-# harness nor the corpus is redistributable. Those tests skip when their
-# inputs are absent, which on CI is always. See the README.
+# Two release gates are not here and cannot be. Both need the commercial
+# character packs, and one of them needs HERO Designer's own engine; neither
+# the corpus nor that harness is redistributable.
+#
+#   * PARITY (tests/test_oracle_fixtures.py) — every cost this engine computes,
+#     against HD's.
+#   * EXPORT FIDELITY (tests/test_export_fidelity.py) — every character written
+#     back out, against the file it was read from.
+#
+# Both skip when their inputs are absent, which on CI is always. So a green run
+# here means the code-only tests pass; it is NOT evidence that costs match or
+# that a character survives a round trip. Those are run by the maintainer,
+# where tests/conftest.py fails the run on any skip at all once every input
+# resolves. See the README.
 #
 # Publishing is deliberately not wired up in this repository.
 
