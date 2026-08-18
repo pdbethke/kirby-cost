@@ -15,6 +15,7 @@ Linked modifier with extensive custom logic:
 """
 
 from typing import List, Optional
+from kirby_cost.engine.xml_attrs import XMLAttr
 from kirby_cost.objects.modifier import Modifier
 from kirby_cost.objects.base import GenericObject
 from kirby_cost.objects.adder import Adder
@@ -30,6 +31,17 @@ class Linked(Modifier, xmlid="LINKED"):
     and validation. Dynamically generates list of available powers to link to.
     """
     
+    #: LINKED_ID is the whole point of the modifier — it names the power this
+    #: one is linked TO — and it was read and never written. 92 characters
+    #: exported their Linked modifiers pointing at nothing, which HD reads back
+    #: as unlinked: the discount stays, the link does not. LESSERVALUE joins it
+    #: here for the same reason the module docstring gives for LINKED_ID, one
+    #: ingest per class, so the pair cannot drift apart again.
+    XML_ATTRS = (
+        XMLAttr("LINKED_ID", "linked_to_id", "int"),
+        XMLAttr("LESSERVALUE", "lesser_value", "float"),
+    )
+
     def __init__(self, element=None):
         """Initialize a Linked modifier."""
         super().__init__()
@@ -43,35 +55,6 @@ class Linked(Modifier, xmlid="LINKED"):
 
         if element is not None:
             self._init(element)
-
-    def _init(self, element) -> None:
-        """
-        Initialize from XML element.
-
-        Args:
-            element: XML element to parse
-        """
-        super()._init(element)
-
-        # Parse LESSERVALUE attribute
-        from kirby_cost.io.xml_utility import XMLUtility
-        lesser_value_str = XMLUtility.get_value(element, "LESSERVALUE")
-        if lesser_value_str and lesser_value_str.strip():
-            try:
-                self.lesser_value = float(lesser_value_str)
-            except ValueError:
-                pass
-        # Folded in from restore_from_save, which ran after _init.
-        # One ingest per class; see engine/xml_attrs.py.
-        from kirby_cost.io.xml_utility import XMLUtility
-        linked_id_str = XMLUtility.get_value(element, "LINKED_ID")
-        if linked_id_str and linked_id_str.strip():
-            try:
-                self.linked_to_id = int(linked_id_str)
-            except ValueError:
-                self.linked_to_id = -1
-        else:
-            self.linked_to_id = -1
 
     @property
     def base_cost(self) -> float:

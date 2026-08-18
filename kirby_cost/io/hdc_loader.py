@@ -245,6 +245,25 @@ class LoadedHero:
         #: How the file was encoded on disk. HD writes UTF-16; the loader used
         #: to detect this and throw it away, so a rewrite could only guess.
         self.source_encoding: str = ""
+        #: BASIC_CONFIGURATION/RULES — the campaign ruleset's NAME, when the
+        #: document names it there. Held rather than assumed: the writer used
+        #: to emit RULES="Default" unconditionally, which invented the
+        #: attribute on the 133 characters whose files never stated it.
+        self.rules_name: str = ""
+        #: The campaign <RULES> block exactly as the document stated it, in
+        #: order. HD writes the whole ruleset into the file — some 70
+        #: attributes, from BASEPOINTS and APPEREND through the skill-roll
+        #: denominators to the five notes labels — and the engine reads one of
+        #: them. The other 69 were dropped on write, so every character with a
+        #: campaign block reloaded onto HD's defaults instead of its campaign:
+        #: 102 characters silently changed ruleset.
+        #:
+        #: Kept verbatim rather than modelled onto `Rules`. These are campaign
+        #: CONFIGURATION, not character state; porting 70 fields the engine
+        #: does not consult would be 70 more places to drift, and the point of
+        #: holding them is that the document said them. The handful the engine
+        #: does act on are parsed onto `Rules` as before, from this same block.
+        self.rules_attrs: dict[str, str] = {}
 
         # Character identification
         self.player_name: str = ""
@@ -839,6 +858,7 @@ class HDCLoader:
             xp = basic_config.get("EXPERIENCE", "")
             hero.experience = int(xp) if xp else 0
             hero.export_template = basic_config.get("EXPORT_TEMPLATE", "")
+            hero.rules_name = basic_config.get("RULES", "")
 
         # Image data
         image_elem = root.find("IMAGE")
@@ -846,9 +866,12 @@ class HDCLoader:
             hero.image_filename = image_elem.get("FILENAME", "")
             hero.image_data = image_elem.text or ""
 
-        # Load rules from HDC (language similarities, etc.)
-        rules_elem = root.find(".//RULES")
+        # Load rules from HDC (language similarities, etc.). The whole block is
+        # kept so the writer can state it back; only what the engine acts on is
+        # parsed onto Rules.
+        rules_elem = root.find("RULES")
         if rules_elem is not None:
+            hero.rules_attrs = dict(rules_elem.attrib)
             lang_sim = rules_elem.get("LANGUAGESIMILARITIESUSED", "")
             if lang_sim.strip().upper().startswith("Y"):
                 hero.rules._language_similarities_used = True

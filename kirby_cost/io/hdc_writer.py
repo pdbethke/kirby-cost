@@ -140,7 +140,11 @@ def hero_to_element(hero: Any) -> etree._Element:
     basic.set("BASE_POINTS", str(hero.base_points))
     basic.set("DISAD_POINTS", str(hero.disad_points))
     basic.set("EXPERIENCE", str(hero.experience))
-    basic.set("RULES", "Default")
+    # Only when the document named a ruleset here. This was `"Default"`
+    # unconditionally, which stated the attribute on 133 characters whose files
+    # do not carry it — and would have overwritten any other campaign's name.
+    if getattr(hero, "rules_name", ""):
+        basic.set("RULES", hero.rules_name)
     if getattr(hero, "export_template", ""):
         basic.set("EXPORT_TEMPLATE", hero.export_template)
 
@@ -161,9 +165,23 @@ def hero_to_element(hero: Any) -> etree._Element:
         _append_objects(element, getattr(hero, _OBJECT_SECTIONS[section], []),
                         section)
 
+    # The campaign ruleset, as the document stated it. This used to write a
+    # RULES element carrying ONE attribute — the language-similarities flag,
+    # the only one the engine reads — which is not a smaller version of the
+    # block, it is a different ruleset: HD fills the other ~69 back in from its
+    # own defaults on load, so a Heroic 6E character reloaded as a Standard
+    # one. Where the object holds the block, it is written whole; where it does
+    # not (a character built in Python, which never had one), the flag the
+    # engine does model is still stated, as before.
+    rules_attrs = dict(getattr(hero, "rules_attrs", {}) or {})
     rules = getattr(hero, "rules", None)
-    if rules is not None and getattr(rules, "_language_similarities_used", False):
-        etree.SubElement(root, "RULES").set("LANGUAGESIMILARITIESUSED", "Yes")
+    if not rules_attrs and rules is not None and getattr(
+            rules, "_language_similarities_used", False):
+        rules_attrs = {"LANGUAGESIMILARITIESUSED": "Yes"}
+    if rules_attrs:
+        element = etree.SubElement(root, "RULES")
+        for key, value in rules_attrs.items():
+            element.set(key, value)
 
     if getattr(hero, "image_data", ""):
         image = etree.SubElement(root, "IMAGE")
