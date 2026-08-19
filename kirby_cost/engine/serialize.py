@@ -141,6 +141,21 @@ class SerializationMixin:
             d["name"] = self._name
         if getattr(self, "input", ""):
             d["input"] = self.input
+        # The one place HD stores a user's OWN wording. TEXT is not a cached
+        # render of the display string: `setTextOutput` stores null when the
+        # text equals what `getColumn2Output()` would generate, and
+        # `getSaveXML` writes the attribute only when something is stored
+        # (GenericObject.java:1884, :1916). So a TEXT in a document means the
+        # user typed over what HD produced — 117 objects across the corpus do.
+        #
+        # The XML side carried it and this side did not, so the SAME character
+        # kept its overrides through an .hdc round trip and lost them through a
+        # build-doc one. Notes went with it: they were accepted on input and
+        # never emitted, which reads as support and behaves as a delete.
+        if getattr(self, "text_output", ""):
+            d["text"] = self.text_output
+        if getattr(self, "notes", ""):
+            d["notes"] = self.notes
         if getattr(self, "ultra", True) is False:
             d["ultra_slot"] = False
         if getattr(self, "add_modifiers_to_base", False):

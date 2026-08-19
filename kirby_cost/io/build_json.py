@@ -20,12 +20,15 @@ _SECTION_TAG = {
 # _init reads BASECOST/LVLCOST/LVLVAL/LEVELS/MINCOST/MAXCOST; for XML-supplied
 # values these override template defaults — see _base_cost_from_xml at base.py:569.)
 _ATTR = {"levels": "LEVELS", "alias": "ALIAS",
-         # "name"→NAME now round-trips: to_build_json emits it (see
-         # _obj_to_dict). "notes"→NOTES is still input-only — accepted so
-         # hand-authored docs are not rejected, but not emitted.
+         # "name"→NAME, "text"→TEXT and "notes"→NOTES all round-trip now.
+         # TEXT is the user's own wording, stored by HD only when it differs
+         # from the generated display string, and NOTES is their annotation;
+         # both were carried by the .hdc writer and dropped here, so the same
+         # character kept them through one export shape and lost them through
+         # the other.
          "name": "NAME",
          "option_id": "OPTIONID", "input": "INPUT",
-         "notes": "NOTES",
+         "notes": "NOTES", "text": "TEXT",
          "id": "ID", "parent": "PARENTID", "base_cost": "BASECOST",
          "level_cost": "LVLCOST", "level_value": "LVLVAL",
          "min_cost": "MINCOST", "max_cost": "MAXCOST",
