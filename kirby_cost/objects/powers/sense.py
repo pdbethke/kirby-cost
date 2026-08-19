@@ -364,10 +364,6 @@ class Sense(Power):
         
         return ", ".join(parts)
     
-    @property
-    def modifier_string(self) -> str:
-        """Get modifier string (stub)."""
-        return ""
     
     def included_in_template(self) -> bool:
         """Check if included in template (stub)."""

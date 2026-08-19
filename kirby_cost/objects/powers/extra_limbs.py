@@ -62,8 +62,4 @@ class ExtraLimbs(Power, xmlid="EXTRALIMBS"):
         """Get adder string (stub)."""
         return ""
     
-    @property
-    def modifier_string(self) -> str:
-        """Get modifier string (stub)."""
-        return ""
 

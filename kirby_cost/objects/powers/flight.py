@@ -104,9 +104,4 @@ class Flight(Power, xmlid="FLIGHT"):
         # Would build string from assigned adders
         return ""
     
-    @property
-    def modifier_string(self) -> str:
-        """Get modifier string for display (stub)."""
-        # Would build string from assigned modifiers
-        return ""
 

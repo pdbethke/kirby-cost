@@ -307,8 +307,4 @@ class VariablePowerPool(List):
         """Get adder string for display (stub)."""
         return ""
     
-    @property
-    def modifier_string(self) -> str:
-        """Get modifier string for display (stub)."""
-        return ""
 

@@ -87,9 +87,9 @@ class VariableAdvantage(Modifier, xmlid="VARIABLEADVANTAGE"):
         level_value = self._level_value
         if level_cost != 0.0 and level_value != 0.0:
             advantages_value = self.base_cost / (level_cost / level_value)
-            string2 = string2 + self.fraction(advantages_value) + " Advantages; "
+            string2 = string2 + self.get_fraction(advantages_value) + " Advantages; "
         else:
-            string2 = string2 + self.fraction(self.base_cost) + " Advantages; "
+            string2 = string2 + self.get_fraction(self.base_cost) + " Advantages; "
         
         # Add adders string
         if string.strip():
@@ -99,6 +99,6 @@ class VariableAdvantage(Modifier, xmlid="VARIABLEADVANTAGE"):
         if self.comments.strip():
             string2 = string2 + self.comments + "; "
         
-        string2 = string2 + self.fraction(d) + ")"
+        string2 = string2 + self.get_fraction(d) + ")"
         
         return string2

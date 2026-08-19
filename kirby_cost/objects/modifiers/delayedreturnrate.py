@@ -44,7 +44,7 @@ class DelayedReturnRate(Modifier, xmlid="DELAYEDRETURNRATE"):
         for adder in self.assigned_adders:
             if string:
                 string = string + ", "
-            string = string + adder.column2_output + " (" + self.fraction(adder.base_cost) + ")"
+            string = string + adder.column2_output + " (" + self.get_fraction(adder.base_cost) + ")"
             d -= adder.base_cost
         
         # Add selected option in parentheses
@@ -81,7 +81,7 @@ class DelayedReturnRate(Modifier, xmlid="DELAYEDRETURNRATE"):
         if self.comments.strip():
             string2 = string2 + self.comments + "; "
         
-        string2 = string2 + self.fraction(d) + ")"
+        string2 = string2 + self.get_fraction(d) + ")"
         n2 -= 1
         
         # Close remaining parentheses

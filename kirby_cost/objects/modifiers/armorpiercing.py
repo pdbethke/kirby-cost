@@ -111,7 +111,7 @@ class ArmorPiercing(Modifier, xmlid="ARMORPIERCING"):
         if total_value < self._minimum_cost and self.min_set:
             total_value = self._minimum_cost
         
-        result = result + self.fraction(total_value) + ")"
+        result = result + self.get_fraction(total_value) + ")"
         
         # Close any remaining parentheses
         paren_count = result.count("(") - result.count(")")

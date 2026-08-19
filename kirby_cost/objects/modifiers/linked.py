@@ -232,7 +232,7 @@ class Linked(Modifier, xmlid="LINKED"):
         if string.strip():
             string2 = string2 + string + "; "
         
-        string2 = string2 + self.fraction(d) + ")"
+        string2 = string2 + self.get_fraction(d) + ")"
         
         return string2
     

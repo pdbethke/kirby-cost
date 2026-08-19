@@ -288,7 +288,7 @@ class Invisible(Modifier, xmlid="INVISIBLE"):
         if string.strip():
             string2 = string2 + string + "; "
         
-        string2 = string2 + self.fraction(d) + ")"
+        string2 = string2 + self.get_fraction(d) + ")"
         
         return string2
     
@@ -389,7 +389,7 @@ class Invisible(Modifier, xmlid="INVISIBLE"):
         if self.comments.strip():
             string3 = string3 + self.comments + "; "
         
-        string3 = string3 + self.fraction(d) + ")"
+        string3 = string3 + self.get_fraction(d) + ")"
         
         if string.strip():
             if string3.strip():

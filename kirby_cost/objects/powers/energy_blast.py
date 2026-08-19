@@ -126,9 +126,4 @@ class EnergyBlast(Power, xmlid="ENERGYBLAST"):
                     adders.append(adder.alias)
         return ", ".join(adders)
     
-    @property
-    def modifier_string(self) -> str:
-        """Get modifier string for display (stub)."""
-        # Would build string from assigned modifiers
-        return ""
 

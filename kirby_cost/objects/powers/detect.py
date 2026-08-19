@@ -83,8 +83,4 @@ class Detect(Sense, xmlid="DETECT"):
         
         return output
     
-    @property
-    def modifier_string(self) -> str:
-        """Get modifier string (stub)."""
-        return ""
 
