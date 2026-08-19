@@ -32,6 +32,16 @@ class AdderTemplate:
 
     xmlid: str
     display: str = ""
+    #: What HD prints for this adder, which is not always its DISPLAY.
+    #: Reputation's EXTREME is `DISPLAY="Extreme" ALIAS="(Extreme"` — the
+    #: unclosed bracket is deliberate, and the renderer's paren counting
+    #: exists to close it at the end of the line.
+    alias: str = ""
+    #: Whether the template REQUIRES this adder. HDC files never say so — it
+    #: is a property of the template, not of the character — and the display
+    #: layer branches on it: a required adder prints only its option, an
+    #: optional one prints its own name too.
+    required: bool = False
     base_cost: float = 0.0
     level_cost: float = 0.0
     level_value: float = 0.0

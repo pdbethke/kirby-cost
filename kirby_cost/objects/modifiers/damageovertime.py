@@ -8,7 +8,7 @@ Validates target and duration requirements. Uses base class getColumn2Output() m
 """
 
 from kirby_cost.objects.modifier import Modifier
-from kirby_cost.objects.base import GenericObject
+from kirby_cost.objects.base import GenericObject, option_alias
 
 
 class DamageOverTime(Modifier, xmlid="DAMAGEOVERTIME"):
@@ -88,12 +88,12 @@ class DamageOverTime(Modifier, xmlid="DAMAGEOVERTIME"):
         # Add INCREMENTS adder
         for adder in self.assigned_adders:
             if adder.xmlid == "INCREMENTS" and adder.selected_option:
-                string2 = string2 + adder.selected_option.alias + " damage increments, "
+                string2 = string2 + option_alias(adder) + " damage increments, "
         
         # Add TIMEBETWEEN adder
         for adder in self.assigned_adders:
             if adder.xmlid == "TIMEBETWEEN" and adder.selected_option:
-                string2 = string2 + "damage occurs every " + adder.selected_option.alias + ", "
+                string2 = string2 + "damage occurs every " + option_alias(adder) + ", "
         
         # Add other adders
         for adder in self.assigned_adders:

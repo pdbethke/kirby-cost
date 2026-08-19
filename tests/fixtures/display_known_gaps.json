@@ -3,10 +3,10 @@
   "_measured": {
     "date": "2026-08-19",
     "strings_compared": 91692,
-    "exact": 80833,
-    "wrong": 10859,
+    "exact": 81619,
+    "wrong": 10073,
     "raised": 0,
-    "gap_classes": 260
+    "gap_classes": 258
   },
   "gaps": [
     "adder_string|ActiveSonar",
@@ -74,7 +74,6 @@
     "column2_output|Desolidification",
     "column2_output|Detect",
     "column2_output|DimensionalSingle",
-    "column2_output|Disadvantage",
     "column2_output|DiscriminatorySense",
     "column2_output|Dispel",
     "column2_output|Drain",
@@ -142,7 +141,6 @@
     "column2_output|RadioPerception",
     "column2_output|Reflection",
     "column2_output|Regeneration",
-    "column2_output|Reputation",
     "column2_output|Running",
     "column2_output|Scholar",
     "column2_output|Scientist",

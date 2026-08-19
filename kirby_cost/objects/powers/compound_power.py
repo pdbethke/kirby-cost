@@ -9,6 +9,8 @@ Power that combines multiple powers together.
 from kirby_cost.objects.powers.power import Power
 from kirby_cost.objects.base import GenericObject
 from kirby_cost.objects.char_affecting import CharAffectingObject
+from kirby_cost.objects.base import _show_common_limitations
+from kirby_cost.util.rounder import round_half_down, round_half_up
 from typing import List
 
 
@@ -75,6 +77,63 @@ class CompoundPower(Power, xmlid="COMPOUNDPOWER"):
             d += obj.real_cost_pre_list
             obj.parent = None
         return d
+
+    # ═══════════════════════════════════════════════════════════
+    #  Display
+    # ═══════════════════════════════════════════════════════════
+
+    @property
+    def column2_output(self) -> str:
+        """Every sub-power in turn, joined by "plus", behind a cost summary.
+
+        Ported from ``CompoundPower.getColumn2Output(boolean)``
+        (CompoundPower.java). A compound power has no line of its own — it is
+        the sum of its parts, and HD prints the parts:
+
+            <i>Scaly Skin:</i>  (Total: 18 Active Cost, 18 Real Cost)
+            +6 PD, Resistant <b>plus</b> +6 ED, Resistant
+
+        This inherited the default, which is the alias, so all 460 of them in
+        the corpus printed the words "Compound Power" and nothing else.
+
+        The awkward part is faithful and deliberate: a sub-power does not
+        carry the framework's limitations, but HD PRINTS them on it, so it
+        pushes the parent's limitations onto each child, renders, and puts the
+        child's own list back. Doing that by copy rather than in place would
+        change what the children print, because a modifier reads its parent.
+        """
+        parent_mods = list(self._parent.assigned_modifiers) if self._parent else []
+        ret = ""
+
+        for obj in self.powers:
+            original = obj._assigned_modifiers
+            borrowed = list(original)
+            if _show_common_limitations():
+                for mod in parent_mods:
+                    from kirby_cost.objects.frameworks import is_multipower
+                    if mod.xmlid == "CHARGES" and is_multipower(self._parent):
+                        continue
+                    generic = mod.xmlid in ("MODIFIER", "CUSTOM_MODIFIER",
+                                            "GENERIC_OBJECT")
+                    already = GenericObject.find_object_by_id(original, mod.xmlid)
+                    if mod.total_value < 0 and (already is None or generic):
+                        borrowed.append(mod)
+            obj._assigned_modifiers = borrowed
+            try:
+                if ret.strip():
+                    ret += self.list_separator
+                ret += obj.get_text_output()
+                if self.display_active_cost:
+                    ret += f" (Real Cost: {round_half_down(obj.real_cost_pre_list)})"
+            finally:
+                obj._assigned_modifiers = original
+
+        if self.display_active_cost:
+            ret = (f"(Total: {round_half_up(self.active_cost)} Active Cost, "
+                   f"{round_half_up(self.real_cost_pre_list)} Real Cost) " + ret)
+        if self._name and self._name.strip():
+            ret = f"<i>{self._name}:</i>  {ret}"
+        return ret
 
     def get_save_xml(self):
         """Serialize compound power including sub-powers."""

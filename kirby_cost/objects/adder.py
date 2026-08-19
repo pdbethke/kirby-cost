@@ -74,6 +74,18 @@ class Adder(GenericObject):
         if not self._types and tmpl.types:
             self._types = list(tmpl.types)
 
+        # Display-only, and neither is ever stated by an HDC file: REQUIRED is
+        # a property of the template, and ALIAS is what the template says to
+        # PRINT as opposed to what it calls the adder. Both were parsed out of
+        # the .hdt and then dropped, so a required adder rendered as though it
+        # were optional (printing its own name alongside its option) and an
+        # adder whose alias deliberately opens an unclosed bracket printed its
+        # display text instead.
+        if tmpl.required:
+            self._required = True
+        if tmpl.alias and not (self._alias or '').strip():
+            self._alias = tmpl.alias
+
     @property
     def is_required(self) -> bool:
         """Check if this adder is required."""

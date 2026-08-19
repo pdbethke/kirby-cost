@@ -9,7 +9,7 @@ Base class for sense adders that modify senses.
 from typing import List, Optional
 from kirby_cost.objects.powers.power import Power
 from kirby_cost.objects.adder import Adder
-from kirby_cost.objects.base import GenericObject
+from kirby_cost.objects.base import GenericObject, option_alias
 
 
 class SenseAdder(Power):
@@ -118,7 +118,7 @@ class SenseAdder(Power):
         """
         display = detect.alias
         if detect.selected_option:
-            option_display = detect.selected_option.alias
+            option_display = option_alias(detect)
             # Check for EXTRA adders
             extra_adders = []
             for adder in detect.assigned_adders:
