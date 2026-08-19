@@ -264,6 +264,27 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         """
         from kirby_cost.template.dataclasses import OptionTemplate  # noqa: F811
 
+        # Where the template says a modifier's option and input BELONG.
+        #
+        # HD reads SHOWOPTIONINPARENS / SHOWINPUTINPARENS / SHOWOPTIONONLY off
+        # the element (Modifier.java:1002-1022) and they decide whether the
+        # option is printed after the alias or inside the brackets. 32
+        # modifiers in Main6E set the first and 3 set the second, and none of
+        # them are ever stated by an HDC file — they are properties of the
+        # modifier, not of the character. The fields existed here and stayed
+        # False, so an AVAD printed
+        # "Attack Versus Alternate Defense Very Common -> Rare Life Support
+        # [appropriate Immunity]" instead of
+        # "Attack Versus Alternate Defense (Life Support [...]; ...)".
+        attrs = getattr(tmpl, "attributes", None) or {}
+        for xml_name, field in (("SHOWOPTIONINPARENS", "show_option_in_parens"),
+                                ("SHOWINPUTINPARENS", "show_input_in_parens"),
+                                ("SHOWOPTIONONLY", "show_option_only")):
+            if hasattr(self, field):
+                stated = (attrs.get(xml_name) or "").strip().upper()
+                if stated:
+                    setattr(self, field, stated.startswith("Y"))
+
         # What the template CALLS this object, as distinct from what this
         # character calls it. Focus is the one that shows: HD compares
         # `getAlias()` against `getDisplay()` and prints the alias inside the

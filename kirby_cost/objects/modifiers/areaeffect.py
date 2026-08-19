@@ -286,3 +286,104 @@ class AreaEffect(Modifier, xmlid="AOE"):
             return f"{self._display} cannot be applied to abilities which already affect an area."
         
         return ""
+
+    def area(self) -> str:
+        """``4m Radius``, ``1m Surface``, ``12m Long, 4m Tall Line``.
+
+        Ported from ``AreaEffect.getArea`` (6E branch). The shape comes from
+        the SELECTED OPTION and the size from the levels, and a Line reads its
+        other two dimensions off DOUBLEHEIGHT and DOUBLEWIDTH adders — which
+        HD then marks not-to-be-printed, because it has just printed them
+        itself as part of the shape.
+
+        The 5E branch is not ported. It prices the area off the parent's
+        active cost and is unreachable here: every template in this corpus is
+        6E, and `_is_6e` says so.
+        """
+        option = self._selected_option
+        if option is None:
+            return ""
+        lvl = f"{self._levels}"
+        xmlid = (option.xmlid or "").upper()
+        ret = ""
+        if xmlid == "RADIUS":
+            ret = f"{lvl}m Radius"
+        elif xmlid == "CONE":
+            ret = f"{lvl}m Cone"
+        elif xmlid == "LINE":
+            ret = f"{lvl}m"
+            height = GenericObject.find_object_by_id(self.assigned_adders, "DOUBLEHEIGHT")
+            width = GenericObject.find_object_by_id(self.assigned_adders, "DOUBLEWIDTH")
+            if height is not None:
+                height.display_in_string = False
+                ret += f" Long, {height.levels}m Tall"
+            if width is not None:
+                width.display_in_string = False
+                if height is not None:
+                    ret += f", {width.levels}m Wide"
+                else:
+                    ret += f" Long, 2m Tall, {width.levels}m Wide"
+            elif height is not None:
+                ret += ", 2m Wide"
+            ret += " Line"
+        elif xmlid == "ANY":
+            ret = f"{lvl} 2m Areas"
+        elif xmlid == "SURFACE":
+            ret = f"{lvl}m Surface"
+        for ad in self.assigned_adders:
+            if ad.xmlid == "EXPLOSION":
+                ad.display_in_string = False
+                ret += " Explosion"
+        return ret
+
+    @property
+    def column2_output(self) -> str:
+        """``Area Of Effect (1m Surface; personal, Damage Shield; +1/4)``.
+
+        Ported from ``AreaEffect.getColumn2Output``. This class had none, so
+        it inherited the generic modifier line and printed the option's alias
+        where HD prints the AREA — "Area Of Effect Surface (personal, ...)"
+        rather than "Area Of Effect (1m Surface; personal, ...)". The size is
+        the point of the modifier and it was the part being dropped.
+
+        Four adders are special and the rest are ordinary: ACCURATE and
+        NONSELECTIVETARGET attach to the alias, DOUBLEAREA is skipped
+        outright, and MOBILE prints its own speed and fraction.
+        """
+        area = self.area()
+        ret = self.alias or ""
+        val = self.total_value
+        adder_str = ""
+        for ad in self.assigned_adders:
+            if ad.xmlid == "ACCURATE":
+                ret += " " + (ad.alias or "")
+                ad.display_in_string = False
+            elif ad.xmlid == "NONSELECTIVETARGET":
+                ret += " " + (ad.alias or "")
+            elif ad.xmlid == "DOUBLEAREA":
+                continue
+            elif ad.xmlid == "MOBILE":
+                if adder_str.strip():
+                    adder_str += ", "
+                adder_str += (ad.alias or "")
+                adder_str += (f" ({ad.levels}m per Phase; "
+                              f"{self.get_fraction(ad.double_total())})")
+                ad.display_in_string = False
+            elif ad.display_in_string:
+                val -= ad.base_cost
+                if adder_str.strip():
+                    adder_str += ", "
+                adder_str += f"{ad.alias or ''} ({self.get_fraction(ad.base_cost)})"
+
+        if self.input and self.input.strip():
+            if ret.strip():
+                ret += ":  "
+            ret += self.input
+
+        ret += f" ({area}; "
+        if (self.comments or "").strip():
+            ret += self.comments + "; "
+        ret += self.get_fraction(val) + ")"
+        if adder_str.strip():
+            ret += ", " + adder_str
+        return ret
