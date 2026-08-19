@@ -597,11 +597,76 @@ class Maneuver(GenericObject, xmlid="MANEUVER"):
             return None
         return str(self.end_usage)
     
+    @staticmethod
+    def _replace(val: str, token: str, replacement: str) -> str:
+        """Java ``Maneuver.replace`` (Maneuver.java:569).
+
+        Not str.replace. The DC values carry their own padding — getWeaponDC
+        returns " +2 DC " — and the template writes "Weapon [WEAPONDC] Strike"
+        with spaces of its own, so a plain substitution gives
+        "Weapon  +2 DC  Strike". HD trims BOTH sides of the seam and rebuilds
+        it with exactly one space.
+
+        The empty-replacement branch is reproduced as written, double space
+        and all: HD reassigns the replacement to " " and then trims it again
+        on the next line, so what lands between the two halves is nothing
+        surrounded by two spaces. It looks like a bug and it is what the
+        oracle prints.
+        """
+        while token in val:
+            i = val.index(token)
+            if i == 0:
+                val = replacement.strip() + " " + val[len(token):].strip()
+            else:
+                if not replacement.strip():
+                    replacement = " "
+                part1 = val[:i]
+                part2 = val[i + len(token):]
+                val = (part1.strip() + " " + replacement.strip() + " "
+                       + part2.strip())
+        return val.strip()
+
+    def _substitute_dc(self, text: str) -> str:
+        """Fill in the damage-class tokens a template maneuver leaves open.
+
+        The .hdt writes a maneuver's effect with placeholders — "Weapon
+        [WEAPONDC] Strike" — because the damage classes depend on what the
+        character bought, not on the maneuver. Java substitutes all seven in
+        ``getEffect`` and ``getWeaponEffect`` (Maneuver.java:835, 892).
+
+        Nothing here did, so 212 maneuvers printed the placeholder itself:
+        "Weapon [WEAPONDC] Strike" where HD prints "Weapon +2 DC Strike". All
+        seven values were already computed and simply never asked for.
+        """
+        for token, value in (
+            ("[NORMALDC]", self.normal_dc),
+            ("[WEAPONDC]", self.weapon_dc),
+            ("[FLASHDC]", self.flash_dc),
+            ("[NNDDC]", self.nnd_dc),
+            ("[STRDC]", self.str_dc),
+            ("[KILLINGDC]", self.killing_dc),
+            ("[WEAPONKILLINGDC]", self.weapon_killing_dc),
+        ):
+            text = self._replace(text, token, value or "")
+        return text
+
+    @property
+    def resolved_effect(self) -> str:
+        """``getEffect()`` — the effect with its tokens filled and the
+        modifiers appended."""
+        return self._substitute_dc(self.effect or "") + self.modifier_string
+
+    @property
+    def resolved_weapon_effect(self) -> str:
+        """``getWeaponEffect()`` — the same for the with-weapon wording."""
+        return self._substitute_dc(self.weapon_effect or "") + self.modifier_string
+
     @property
     def maneuver_effect(self) -> str:
         """Get maneuver effect string."""
-        effect_str = self.weapon_effect if self.use_weapon else self.effect
-        
+        effect_str = (self.resolved_weapon_effect if self.use_weapon
+                      else self.resolved_effect)
+
         if "[DAMAGE]" in effect_str:
             effect_str = effect_str.replace("[DAMAGE]", self.damage_string)
             return effect_str
@@ -624,9 +689,9 @@ class Maneuver(GenericObject, xmlid="MANEUVER"):
         if self.custom:
             output += self.maneuver_effect
         elif self.use_weapon:
-            output += self.weapon_effect
+            output += self.resolved_weapon_effect
         else:
-            output += self.effect
+            output += self.resolved_effect
         
         # Add END usage note
         if self.end_usage > 0:

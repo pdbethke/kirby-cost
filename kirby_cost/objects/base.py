@@ -264,6 +264,19 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         """
         from kirby_cost.template.dataclasses import OptionTemplate  # noqa: F811
 
+        # What the template CALLS this object, as distinct from what this
+        # character calls it. Focus is the one that shows: HD compares
+        # `getAlias()` against `getDisplay()` and prints the alias inside the
+        # brackets only when they DIFFER — a character who renamed the
+        # limitation gets both names, one who did not gets one. The display
+        # was never filled in from the template, so it was "" on every
+        # modifier, the two never matched, and 954 foci printed
+        # "OIF (Focus; demonic weapon; -1/2)" for HD's
+        # "OIF (demonic weapon; -1/2)". DISPLAY is not serialised, so this
+        # reaches the display layer and nothing else.
+        if not (self._display or "").strip() and getattr(tmpl, "display", ""):
+            self._display = tmpl.display
+
         # The ORDER of the template's adders, which the display layer needs
         # and the cost layer does not. HD walks this list rather than the
         # character's own, so the clauses print in the order the template
