@@ -113,14 +113,5 @@ class HandToHandAttack(Power, xmlid="HANDTOHANDATTACK"):
         
         return output
     
-    @property
-    def adder_string(self) -> str:
-        """Get adder string for display (stub)."""
-        adders = []
-        for adder in self.assigned_adders:
-            if adder.xmlid not in ("PLUSONEPIP", "PLUSONEHALFDIE", "MINUSONEPIP"):
-                if adder.display_in_string:
-                    adders.append(adder.alias)
-        return ", ".join(adders)
     
 

@@ -147,10 +147,6 @@ class KillingAttackRanged(Power, xmlid="RKA"):
         
         return output
     
-    @property
-    def adder_string(self) -> str:
-        """Get adder string (stub)."""
-        return ""
     
 
 

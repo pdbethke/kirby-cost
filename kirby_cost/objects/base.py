@@ -321,6 +321,20 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
                     chosen.xmlid = opt.xmlid
                     chosen._display = opt.display
                     chosen._alias = opt.alias or opt.display
+                    # The DOCUMENT outranks the template here. HD writes
+                    # OPTION_ALIAS from the option it held and restores it back
+                    # onto the option on load, so what the file says IS the
+                    # option's alias — including when it says nothing:
+                    # `OPTION="3" OPTIONID="3" OPTION_ALIAS=""` on a custom
+                    # LIMITEDPOWER means the option is not to be named, and HD's
+                    # guard (`getAlias().trim().length() > 0`) then prints
+                    # "Only With Grab (-1/2)". Reading the template instead
+                    # printed the severity text HD uses to DERIVE the value:
+                    # "Only With Grab Power loses about a third of its
+                    # effectiveness". Presence, not truthiness — an empty
+                    # OPTION_ALIAS is a statement, an absent one is not.
+                    if "OPTION_ALIAS" in (getattr(self, "_source_attrs", None) or ()):
+                        chosen._alias = self.source_option_alias or ""
                     chosen._base_cost = opt.base_cost
                     chosen._selected = True
                     chosen.parent = self

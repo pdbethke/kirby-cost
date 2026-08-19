@@ -62,9 +62,5 @@ class Multiform(Power, xmlid="MULTIFORM"):
         self.file_path = None
         self.file_association_last_check = None
     
-    @property
-    def adder_string(self) -> str:
-        """Get adder string (stub)."""
-        return ""
     
 

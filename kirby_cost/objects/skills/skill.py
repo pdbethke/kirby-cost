@@ -580,11 +580,6 @@ class Skill(GenericObject):
         
         return string2
     
-    @property
-    def adder_string(self) -> str:
-        """Get adder string for display (stub)."""
-        # Would build string from assigned adders
-        return ""
     
     
     def dialog(self, bl: bool = False, bl2: bool = False):

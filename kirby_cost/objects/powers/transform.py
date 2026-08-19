@@ -66,13 +66,5 @@ class Transform(Power, xmlid="TRANSFORM"):
         
         return output
     
-    @property
-    def adder_string(self) -> str:
-        """Get adder string (excluding HEALEDBY)."""
-        adders = []
-        for adder in self.assigned_adders:
-            if adder.xmlid != "HEALEDBY" and adder.display_in_string:
-                adders.append(adder.alias)
-        return ", ".join(adders)
     
 

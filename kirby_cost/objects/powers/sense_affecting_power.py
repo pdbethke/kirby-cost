@@ -213,9 +213,5 @@ class SenseAffectingPower(Power):
         
         self._selected_option = adder
     
-    @property
-    def adder_string(self) -> str:
-        """Get adder string (stub)."""
-        return ""
     
 

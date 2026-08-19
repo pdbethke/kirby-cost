@@ -74,13 +74,5 @@ class Possession(Power, xmlid="POSSESSION"):
         
         return output
     
-    @property
-    def adder_string(self) -> str:
-        """Get adder string (excluding required ones)."""
-        adders = []
-        for adder in self.assigned_adders:
-            if not adder.is_required and adder.display_in_string:
-                adders.append(adder.alias)
-        return ", ".join(adders)
     
 

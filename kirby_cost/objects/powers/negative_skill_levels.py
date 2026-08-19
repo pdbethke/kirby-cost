@@ -47,9 +47,5 @@ class NegativeSkillLevels(Power, xmlid="NEGATIVESKILLLEVELS"):
         
         return output
     
-    @property
-    def adder_string(self) -> str:
-        """Get adder string (stub)."""
-        return ""
     
 

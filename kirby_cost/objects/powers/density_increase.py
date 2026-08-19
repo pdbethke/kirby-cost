@@ -92,9 +92,5 @@ class DensityIncrease(Power, xmlid="DENSITYINCREASE"):
     def ed_increase(self, value: float) -> None:
         self._ed_increase = value
     
-    @property
-    def adder_string(self) -> str:
-        """Get adder string (stub)."""
-        return ""
     
 

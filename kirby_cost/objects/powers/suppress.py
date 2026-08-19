@@ -63,9 +63,5 @@ class Suppress(Power, xmlid="SUPPRESS"):
         """Convert value to fraction string (stub)."""
         return str(value)
     
-    @property
-    def adder_string(self) -> str:
-        """Get adder string (stub)."""
-        return ""
     
 

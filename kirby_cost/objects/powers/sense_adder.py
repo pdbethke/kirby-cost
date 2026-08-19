@@ -339,9 +339,5 @@ class SenseAdder(Power):
         """Check if included in template (stub)."""
         return True
     
-    @property
-    def adder_string(self) -> str:
-        """Get adder string (stub)."""
-        return ""
     
 
