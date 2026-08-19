@@ -79,7 +79,7 @@ class SenseAdder(Power):
         self.sense_groups_defined: bool = True
 
         # Add to static list if valid
-        if self.xmlid and self.xmlid.strip() and self.included_in_template():
+        if self.xmlid and self.xmlid.strip() and self.included_in_template:
             # Remove existing if present
             existing = GenericObject.find_object_by_id(
                 SenseAdder._all_sense_adders, self.xmlid)
@@ -335,6 +335,7 @@ class SenseAdder(Power):
             else:
                 self._base_cost = float(self.sense_cost)
     
+    @property
     def included_in_template(self) -> bool:
         """Check if included in template (stub)."""
         return True

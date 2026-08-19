@@ -84,7 +84,8 @@ class Size(Characteristic, xmlid="SIZE"):
             return self.increase(CharacteristicType.PRE) * math.floor(self.characteristic_value(active_hero) / float(self.increase_levels(CharacteristicType.PRE)))
         return 0.0
     
-    def display_notes(self, active_hero: Optional['Hero'] = None) -> str:
+    @property
+    def display_notes(self) -> str:
         """Get display notes with size information."""
         # Calculate dimensions
         d2 = self.start_length

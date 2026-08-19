@@ -198,8 +198,10 @@ class Speed(Characteristic, xmlid="SPD"):
         """Get characteristic value (overrides base class)."""
         return round_down(self.get_base_value(active_hero) + float(self._levels))
     
-    def display_notes(self, active_hero: Optional['Hero'] = None) -> str:
+    @property
+    def display_notes(self) -> str:
         """Get display notes with phase information."""
+        active_hero = _active_hero()
         string = ""
         string2 = ""
         

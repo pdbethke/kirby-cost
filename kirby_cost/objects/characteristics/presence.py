@@ -48,8 +48,10 @@ class Presence(Characteristic, xmlid="PRE"):
         
         return f"{string}d6"
     
-    def display_notes(self, active_hero: Optional['Hero'] = None) -> str:
+    @property
+    def display_notes(self) -> str:
         """Get display notes with PRE attack."""
+        active_hero = _active_hero()
         return f"PRE Attack: {self.pre_attack(active_hero)}"
     
     def calc_base_value(self, active_hero: Optional['Hero'] = None) -> None:

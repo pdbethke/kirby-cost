@@ -28,10 +28,10 @@ class ProfessionalSkill(Skill, xmlid="PROFESSIONAL_SKILL"):
         # Skill already overrides it; this was its missed neighbour.
         self._level_cost = 1.0
     
-    def roll_value(self, active_hero: Optional['Hero'] = None) -> int:
+    @property
+    def roll_value(self) -> int:
         """Get roll value."""
-        if active_hero is None:
-            active_hero = self._get_active_hero()
+        active_hero = self._get_active_hero()
         
         n = 0
         if self.is_familiarity:
@@ -68,10 +68,10 @@ class ProfessionalSkill(Skill, xmlid="PROFESSIONAL_SKILL"):
         
         return n
     
-    def secondary_roll_value(self, active_hero: Optional['Hero'] = None) -> int:
+    @property
+    def secondary_roll_value(self) -> int:
         """Get secondary roll value."""
-        if active_hero is None:
-            active_hero = self._get_active_hero()
+        active_hero = self._get_active_hero()
         
         n = 0
         if self.is_familiarity:

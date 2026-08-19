@@ -356,8 +356,14 @@ class Power(CharAffectingObject):
     def quantity(self) -> int:
         """Get the quantity."""
         return self._quantity
-    
+
+    @quantity.setter
     def quantity(self, quantity: int) -> None:
-        """Set the quantity."""
+        """Set the quantity.
+
+        This decorator was missing, so the setter REPLACED the property and
+        `power.quantity` returned a bound method — truthy, never equal to a
+        number, and silently wrong anywhere it was compared.
+        """
         self._quantity = quantity
 

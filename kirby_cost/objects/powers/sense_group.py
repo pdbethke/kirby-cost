@@ -38,7 +38,7 @@ class SenseGroup(Power):
 
         # Add to all groups if valid (skip during clear() — clear() appends
         # explicitly after setting the real xmlid)
-        if not SenseGroup._initializing and self.xmlid and self.xmlid.strip() and self.included_in_template():
+        if not SenseGroup._initializing and self.xmlid and self.xmlid.strip() and self.included_in_template:
             while self in SenseGroup._all_groups:
                 SenseGroup._all_groups.remove(self)
             SenseGroup._all_groups.append(self)
@@ -193,6 +193,7 @@ class SenseGroup(Power):
         """Hash based on XML ID."""
         return hash(self.xmlid)
     
+    @property
     def included_in_template(self) -> bool:
         """Check if included in template (stub)."""
         return True

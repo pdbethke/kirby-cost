@@ -755,7 +755,7 @@ class Characteristic(CharAffectingObject):
         # `end_usage` is a METHOD here and a PROPERTY on GenericObject — this
         # class overrides one with the other. Reading it without the call
         # compares a bound method to an int and raises.
-        if self.end_usage() > 0 and not _use_wg():
+        if self.end_usage > 0 and not _use_wg():
             if (_active_hero_has_endurance_reserve()
                     and GenericObject.find_object_by_id(
                         self.assigned_modifiers, "ENDRESERVEOREND") is None):
@@ -1061,7 +1061,8 @@ class Characteristic(CharAffectingObject):
         # since we need rules integration to know if NCM applies
         return 0
 
-    def end_usage(self, active_hero: Optional['Hero'] = None) -> int:
+    @property
+    def end_usage(self) -> int:
         """
         Get END usage for this characteristic.
         
