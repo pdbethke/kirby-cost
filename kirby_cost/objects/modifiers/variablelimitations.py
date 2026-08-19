@@ -89,9 +89,9 @@ class VariableLimitations(Modifier, xmlid="VARIABLELIMITATIONS"):
         if level_cost != 0.0 and level_value != 0.0:
             d2 = float(self._levels) * level_cost + self.base_cost / (level_cost / level_value)
             d2 = round_down(d2 * 4.0) / 4.0
-            string2 = string2 + "requires " + self.fraction(d2) + " worth of Limitations; "
+            string2 = string2 + "requires " + self.get_fraction(d2) + " worth of Limitations; "
         else:
-            string2 = string2 + "requires " + self.fraction(self.base_cost) + " worth of Limitations; "
+            string2 = string2 + "requires " + self.get_fraction(self.base_cost) + " worth of Limitations; "
         
         # Add adders string
         if string.strip():
@@ -101,7 +101,7 @@ class VariableLimitations(Modifier, xmlid="VARIABLELIMITATIONS"):
         if self.comments.strip():
             string2 = string2 + self.comments + "; "
         
-        string2 = string2 + self.fraction(d) + ")"
+        string2 = string2 + self.get_fraction(d) + ")"
         
         return string2
     

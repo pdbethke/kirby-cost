@@ -55,8 +55,4 @@ class LifeSupport(Power, xmlid="LIFESUPPORT"):
         
         return output
     
-    @property
-    def modifier_string(self) -> str:
-        """Get modifier string (stub)."""
-        return ""
 

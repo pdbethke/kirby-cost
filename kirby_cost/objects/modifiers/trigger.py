@@ -128,6 +128,6 @@ class Trigger(Modifier, xmlid="TRIGGER"):
         if self.comments.strip():
             string2 = string2 + self.comments + "; "
         
-        string2 = string2 + self.fraction(d) + ")"
+        string2 = string2 + self.get_fraction(d) + ")"
         
         return string2

@@ -90,7 +90,7 @@ class CannotEscapeWithTeleport(Modifier, xmlid="NOTELEPORT"):
         if d < self._minimum_cost and self.min_set:
             d = self._minimum_cost
         
-        string2 = string2 + self.fraction(d) + ")"
+        string2 = string2 + self.get_fraction(d) + ")"
         n2 -= 1
         
         # Close remaining parentheses

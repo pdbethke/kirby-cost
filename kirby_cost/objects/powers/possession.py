@@ -83,8 +83,4 @@ class Possession(Power, xmlid="POSSESSION"):
                 adders.append(adder.alias)
         return ", ".join(adders)
     
-    @property
-    def modifier_string(self) -> str:
-        """Get modifier string (stub)."""
-        return ""
 

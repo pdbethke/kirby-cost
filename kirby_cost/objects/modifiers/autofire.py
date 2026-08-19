@@ -77,7 +77,7 @@ class Autofire(Modifier, xmlid="AUTOFIRE"):
             else:
                 if string:
                     string = string + ", "
-                string = string + adder.alias + " (" + self.fraction(adder.base_cost) + ")"
+                string = string + adder.alias + " (" + self.get_fraction(adder.base_cost) + ")"
                 d -= adder.base_cost
         
         # Add input
@@ -98,7 +98,7 @@ class Autofire(Modifier, xmlid="AUTOFIRE"):
         if self.comments.strip():
             string2 = string2 + self.comments + "; "
         
-        string2 = string2 + self.fraction(d) + ")"
+        string2 = string2 + self.get_fraction(d) + ")"
         
         # Append adders string
         if string.strip():

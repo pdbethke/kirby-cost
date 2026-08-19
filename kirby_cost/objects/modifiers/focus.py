@@ -115,7 +115,7 @@ class Focus(Modifier, xmlid="FOCUS"):
         if adder_string.strip():
             result = result + adder_string + "; "
         
-        result = result + self.fraction(total_value) + ")"
+        result = result + self.get_fraction(total_value) + ")"
         
         return result
     

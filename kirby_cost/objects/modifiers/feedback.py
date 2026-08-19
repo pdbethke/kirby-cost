@@ -47,7 +47,7 @@ class Feedback(Modifier, xmlid="FEEDBACK"):
                 continue
             if string:
                 string = string + ", "
-            string = string + adder.column2_output + " (" + self.fraction(adder.base_cost) + ")"
+            string = string + adder.column2_output + " (" + self.get_fraction(adder.base_cost) + ")"
             d -= adder.base_cost
         
         # Add input
@@ -96,7 +96,7 @@ class Feedback(Modifier, xmlid="FEEDBACK"):
         if d < self._minimum_cost and self.min_set:
             d = self._minimum_cost
         
-        string2 = string2 + self.fraction(d) + ")"
+        string2 = string2 + self.get_fraction(d) + ")"
         n2 -= 1
         
         # Close remaining parentheses

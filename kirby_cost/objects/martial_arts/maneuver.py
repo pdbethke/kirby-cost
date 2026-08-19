@@ -570,22 +570,6 @@ class Maneuver(GenericObject, xmlid="MANEUVER"):
         
         return ""
     
-    @property
-    def modifier_string(self) -> str:
-        """Get modifier string for display."""
-        # Build string from assigned modifiers
-        if not hasattr(self, 'assigned_modifiers') or not self._assigned_modifiers:
-            return ""
-        
-        parts = []
-        for mod in self._assigned_modifiers:
-            alias = getattr(mod, 'alias', '') or getattr(mod, 'display', '') or mod.xmlid
-            if alias:
-                parts.append(alias)
-        
-        if parts:
-            return " (" + ", ".join(parts) + ")"
-        return ""
     
     def set_ranged(self, ranged: int) -> None:
         """Set ranged value."""

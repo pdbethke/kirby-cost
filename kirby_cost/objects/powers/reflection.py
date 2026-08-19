@@ -56,8 +56,4 @@ class Reflection(Power, xmlid="REFLECTION"):
         """Get adder string (stub)."""
         return ""
     
-    @property
-    def modifier_string(self) -> str:
-        """Get modifier string (stub)."""
-        return ""
 

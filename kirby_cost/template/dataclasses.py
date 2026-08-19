@@ -13,6 +13,12 @@ class OptionTemplate:
 
     xmlid: str
     display: str = ""
+    #: What HD PRINTS for this option, which is not always what it CALLS it.
+    #: `<OPTION XMLID="HALFEND" DISPLAY="Half END" ALIAS="1/2 END">` names
+    #: itself twice and the sheet shows the second one. Java stores an option
+    #: as an Adder and reads `getAlias()`, which falls back to display only
+    #: when no alias was given (GenericObject.java:1238).
+    alias: str = ""
     base_cost: float = 0.0
     level_cost: float = 0.0
     level_value: float = 0.0

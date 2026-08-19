@@ -586,11 +586,6 @@ class Skill(GenericObject):
         # Would build string from assigned adders
         return ""
     
-    @property
-    def modifier_string(self) -> str:
-        """Get modifier string for display (stub)."""
-        # Would build string from assigned modifiers
-        return ""
     
     def dialog(self, bl: bool = False, bl2: bool = False):
         """Get the skill dialog (stub)."""

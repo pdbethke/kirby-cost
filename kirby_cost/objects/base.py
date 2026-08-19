@@ -309,7 +309,7 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
                     chosen = _Adder()
                     chosen.xmlid = opt.xmlid
                     chosen._display = opt.display
-                    chosen._alias = opt.display
+                    chosen._alias = opt.alias or opt.display
                     chosen._base_cost = opt.base_cost
                     chosen._selected = True
                     chosen.parent = self

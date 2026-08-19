@@ -92,17 +92,6 @@ class Coughing(Power, xmlid="COUGHING"):
         # 2m per die
         return self._levels * 2
     
-    @property
-    def modifier_string(self) -> str:
-        """Get modifier string."""
-        modifiers = []
-        for mod in self.assigned_modifiers:
-            if mod.display_in_string:
-                modifiers.append(mod.alias or mod.display)
-        
-        if modifiers:
-            return " (" + ", ".join(modifiers) + ")"
-        return ""
 
 
 class CoughingExtension(PowerExtension):

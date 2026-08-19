@@ -202,7 +202,7 @@ class Charges(Modifier, xmlid="CHARGES"):
         if self.comments.strip():
             string9 = string9 + self.comments + "; "
         
-        string9 = string9 + self.fraction(d) + ")"
+        string9 = string9 + self.get_fraction(d) + ")"
         
         return string9
     

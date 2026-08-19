@@ -72,7 +72,7 @@ class VariableEffect(Modifier, xmlid="VARIABLEEFFECT"):
         for adder in self.assigned_adders:
             if string:
                 string = string + ", "
-            string = string + adder.column2_output + " (" + self.fraction(adder.base_cost) + ")"
+            string = string + adder.column2_output + " (" + self.get_fraction(adder.base_cost) + ")"
             d -= adder.base_cost
         
         # Add input
@@ -108,7 +108,7 @@ class VariableEffect(Modifier, xmlid="VARIABLEEFFECT"):
             string2 = string2 + self.comments + "; "
         
         # Add fraction of total value
-        string2 = string2 + self.fraction(d) + ")"
+        string2 = string2 + self.get_fraction(d) + ")"
         
         # Close any extra parentheses
         paren_count -= 1
