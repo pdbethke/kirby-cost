@@ -637,6 +637,72 @@ class Characteristic(CharAffectingObject):
         
         return n
     
+
+    @property
+    def column2_output(self) -> str:
+        """What HD prints for this characteristic on the sheet.
+
+        Ported from ``Characteristic.getColumn2Output``
+        (Characteristic.java:1006). This class inherited GenericObject's
+        default — the alias alone — so HD's ``+0 DEX`` came out as ``DEX``, on
+        14,217 of the 27,354 objects whose display text disagreed with HD
+        across the corpus. Half of the whole display gap was this one method.
+        """
+        levels = self.levels
+        alias = self._alias or ""
+        name = (self._name or "").strip()
+
+        # A characteristic bought at no levels purely to carry modifiers reads
+        # the other way round: the modifiers are the subject and the
+        # characteristic is what they are applied TO. HD strips the leading
+        # comma that modifier_string always carries.
+        if levels == 0 and self.add_modifiers_to_base:
+            mods = (self.modifier_string or "").strip()
+            if mods:
+                if mods.startswith(","):
+                    mods = mods[1:].strip()
+                mods += f" applied to {alias}"
+                if name:
+                    mods = f"<i>{name}:</i>  {mods}"
+                return mods
+
+        ret = "+" if levels >= 0 else ""
+        if name:
+            ret = f"<i>{name}:</i>  {ret}"
+        ret += f"{levels} {alias}"
+
+        if self.input and self.input.strip():
+            ret += f":  {self.input}"
+
+        adders = (self.adder_string or "").strip()
+        option = self._selected_option
+        if option is not None:
+            ret += f" ({option.alias or ''}"
+            if adders:
+                ret += f"; {adders}"
+            ret += ")"
+        elif adders:
+            ret += f" ({adders})"
+
+        ret += self.modifier_string or ""
+
+        # Only when the character actually HAS an Endurance Reserve to draw
+        # on — HD looks it up on the active hero rather than assuming.
+        # `end_usage` is a METHOD here and a PROPERTY on GenericObject — this
+        # class overrides one with the other. Reading it without the call
+        # compares a bound method to an int and raises.
+        if self.end_usage() > 0 and not _use_wg():
+            if (_active_hero_has_endurance_reserve()
+                    and GenericObject.find_object_by_id(
+                        self.assigned_modifiers, "ENDRESERVEOREND") is None):
+                ret += (" (uses END Reserve)" if self.use_end_reserve
+                        else " (uses Personal END)")
+
+        if self.add_modifiers_to_base:
+            ret += " (Modifiers affect Base Characteristic)"
+
+        return ret
+
     # ═══════════════════════════════════════════════════════════
     #  Cost calculations — ported from Characteristic.java
     # ═══════════════════════════════════════════════════════════
@@ -1129,3 +1195,29 @@ class Characteristic(CharAffectingObject):
     # Additional methods will be added in subsequent updates
     # This is a large class with many methods, so we'll build it incrementally
 
+
+def _use_wg() -> bool:
+    """The Writers Guide preference, defaulting to off when none is loaded."""
+    try:
+        from kirby_cost.core.context import EngineContext
+        return bool(EngineContext.prefs().use_wg)
+    except Exception:  # noqa: BLE001 — a missing preference is not an error here
+        return False
+
+
+def _active_hero_has_endurance_reserve() -> bool:
+    """Whether the active hero carries an ENDURANCERESERVE power.
+
+    HD reads this off the ACTIVE hero, so it is global state, and global state
+    is what produced this project's longest-running divergences. Kept narrow
+    and failing closed: no hero, no reserve, no note.
+    """
+    try:
+        from kirby_cost.core.context import EngineContext
+        hero = EngineContext.active_hero()
+        if hero is None:
+            return False
+        return GenericObject.find_object_by_id(
+            getattr(hero, "powers", []) or [], "ENDURANCERESERVE") is not None
+    except Exception:  # noqa: BLE001
+        return False
