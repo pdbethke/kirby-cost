@@ -349,12 +349,26 @@ class Skill(GenericObject):
         return d
     
     def _get_active_hero(self) -> Optional['Hero']:
-        """Get the active hero."""
-        # Check if hero was set directly on this object
-        if hasattr(self, '_hero') and self._hero is not None:
+        """The character this skill belongs to.
+
+        Java reads ``HeroDesigner.getActiveHero()`` in six places here, and
+        every one of them decides a ROLL: a characteristic-based skill is
+        ``9 + (CHAR/5)``, so without the character there is no roll to state.
+
+        This returned None unconditionally until 2026-08-19, and the comment
+        where the lookup belonged said so. Nothing failed, because the caller
+        has a no-hero fallback that assumes a characteristic of 10 — and
+        ``Rules.general_level`` is also 10, so the fallback agreed with itself
+        and produced a plausible 11- for every PRE, DEX or INT skill in the
+        corpus. Costs never noticed: they do not read the roll.
+        """
+        if getattr(self, '_hero', None) is not None:
             return self._hero
-        # This would normally come from HeroDesigner.getActiveHero()
-        return None
+        try:
+            from kirby_cost.core.context import EngineContext
+            return EngineContext.active_hero()
+        except Exception:  # noqa: BLE001
+            return None
     
     def _is_focus(self) -> bool:
         """Check if this skill has FOCUS modifier."""
@@ -387,7 +401,7 @@ class Skill(GenericObject):
             
             if char is not None and char.xmlid != "GENERAL":
                 n = (rules.skill_roll_base + 
-                     int(round_half_up(char.primary_value() / rules.skill_roll_denominator) + 
+                     int(round_half_up(char.get_primary_value(self._get_active_hero()) / rules.skill_roll_denominator) + 
                          float(self._levels) * self._level_value))
             elif self.characteristic == 0:
                 n = (rules.skill_roll_base + 
@@ -426,10 +440,10 @@ class Skill(GenericObject):
             
             if char is not None and char.xmlid != "GENERAL":
                 n3 = (rules.skill_roll_base + 
-                      int(round_half_up(char.primary_value() / rules.skill_roll_denominator) + 
+                      int(round_half_up(char.get_primary_value(self._get_active_hero()) / rules.skill_roll_denominator) + 
                           float(self._levels) * self._level_value))
                 n4 = (rules.skill_roll_base + 
-                      int(round_half_up(char.secondary_value() / rules.skill_roll_denominator) + 
+                      int(round_half_up(char.get_secondary_value(self._get_active_hero()) / rules.skill_roll_denominator) + 
                           float(self._levels) * self._level_value))
             elif self.characteristic == 0:
                 n3 = n4 = (rules.skill_roll_base + 

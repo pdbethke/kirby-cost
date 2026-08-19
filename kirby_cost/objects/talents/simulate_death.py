@@ -122,7 +122,7 @@ class SimulateDeath(Talent, xmlid="SIMULATE_DEATH"):
             char = active_hero.characteristic(self.characteristic)
             if char and char.xmlid != "GENERAL":
                 # Calculate based on characteristic
-                primary_val = char.primary_value()
+                primary_val = char.get_primary_value(active_hero)
                 roll = int(round_half_up(9.0 + primary_val / 5.0 + 
                                                  self._levels * self._level_value))
             elif char and char.xmlid == "GENERAL":

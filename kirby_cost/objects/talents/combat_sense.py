@@ -124,8 +124,8 @@ class CombatSense(Talent, xmlid="COMBAT_SENSE"):
             char = active_hero.characteristic(self.characteristic)
             if char and char.xmlid != "GENERAL":
                 # Calculate based on characteristic
-                primary_val = char.primary_value()
-                secondary_val = char.secondary_value()
+                primary_val = char.get_primary_value(active_hero)
+                secondary_val = char.get_secondary_value(active_hero)
                 roll_primary = int(round_half_up(9.0 + primary_val / 5.0 + 
                                                           self._levels * self._level_value))
                 roll_secondary = int(round_half_up(9.0 + secondary_val / 5.0 + 
