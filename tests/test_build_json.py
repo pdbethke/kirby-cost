@@ -101,3 +101,43 @@ def test_to_build_json_emits_subpowers_and_roundtrips():
     cp2 = [p for p in again.powers if p.xmlid == "COMPOUNDPOWER"][0]
     assert len(cp2.powers) == 2
     assert round(cp2.real_cost) == 45
+
+
+def test_user_wording_and_notes_survive_the_build_doc():
+    """TEXT is the user's own words, and the build doc used to eat them.
+
+    HD stores TEXT only when the user has typed over the display string it
+    would generate — ``setTextOutput`` stores null when the text matches
+    ``getColumn2Output()``, and ``getSaveXML`` writes the attribute only when
+    something is stored (GenericObject.java:1884, :1916). So TEXT in a
+    document is never incidental: it is the one place a character carries
+    wording HD did not produce, and 117 objects in the corpus carry it.
+
+    The .hdc writer round-tripped it and this exporter did not, so the SAME
+    character kept its overrides through one export shape and lost them
+    through the other. NOTES was worse than absent: ``_ATTR`` accepted it on
+    input and nothing emitted it, which reads as support and behaves as a
+    delete.
+    """
+    doc = {
+        "powers": [{
+            "id": 1,
+            "xmlid": "ENERGYBLAST",
+            "levels": 5,
+            "text": "<i>Sunbolt:</i>  a wording HD would never generate",
+            "notes": "remember to ask the GM about this one",
+        }],
+    }
+    hero = build_from_json(doc)
+    power = hero.powers[0]
+    assert power.text_output == "<i>Sunbolt:</i>  a wording HD would never generate"
+    assert power.notes == "remember to ask the GM about this one"
+
+    out = to_build_json(hero)[ "powers"][0]
+    assert out["text"] == doc["powers"][0]["text"], "the user's wording was dropped"
+    assert out["notes"] == doc["powers"][0]["notes"], "the user's notes were dropped"
+
+    # And again, so the second lap cannot quietly differ from the first.
+    again = build_from_json(to_build_json(hero)).powers[0]
+    assert again.text_output == power.text_output
+    assert again.notes == power.notes
