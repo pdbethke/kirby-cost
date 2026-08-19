@@ -124,6 +124,21 @@ class Adder(GenericObject):
             ret += f":  +{self._levels}"
         return ret
 
+    def __str__(self) -> str:
+        """Java ``Adder.toString()``: the alias once the adder is selected.
+
+        This matters only in one place, and it is not obvious: sorting.
+        ``getSortingValue()`` is ``toString()``, and Sense.getAdderString sorts
+        on it — so a Detect's adders order by what they are CALLED, not by
+        their xmlid. Ours returned the xmlid, so ANALYZESENSE sorted before
+        DISCRIMINATORY and the comparator's special case (which rewrites
+        "ANALYZE" to "DISCRIMINATORYANALYZE" so Analyze follows
+        Discriminatory) never matched anything.
+        """
+        if self.is_selected:
+            return self.alias or ""
+        return super().__str__()
+
     @property
     def is_required(self) -> bool:
         """Check if this adder is required."""
