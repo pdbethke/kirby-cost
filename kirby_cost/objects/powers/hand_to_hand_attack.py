@@ -91,7 +91,10 @@ class HandToHandAttack(Power, xmlid="HANDTOHANDATTACK"):
         
         # Add input (defense type) if present
         if self.input and self.input.strip():
-            output += f" (vs. {self.input})"
+            # Java: `ret += ":  " + getInput()` — HandToHandAttack names what
+            # the attack IS, not a defence it works against. The "(vs. X)"
+            # form here was copied from EnergyBlast and belongs to neither.
+            output += f":  {self.input}"
         
         # Add selected option
         if self._selected_option:

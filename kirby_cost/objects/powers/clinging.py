@@ -71,10 +71,6 @@ class Clinging(Power, xmlid="CLINGING"):
         
         return output
     
-    @property
-    def all_assigned_modifiers(self):
-        """Get all assigned modifiers (stub)."""
-        return self.assigned_modifiers
     
     @property
     def adder_string(self) -> str:

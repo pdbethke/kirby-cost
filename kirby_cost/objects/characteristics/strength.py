@@ -389,12 +389,4 @@ class Strength(Characteristic, xmlid="STR"):
         """Check if this uses END Reserve."""
         return self._use_end_reserve if hasattr(self, 'use_end_reserve') else False
     
-    @property
-    def all_assigned_modifiers(self) -> List:
-        """Get all assigned modifiers including from parent list."""
-        modifiers = list(self.assigned_modifiers)
-        parent = self._parent
-        if parent is not None:
-            modifiers.extend(parent.assigned_modifiers)
-        return modifiers
 

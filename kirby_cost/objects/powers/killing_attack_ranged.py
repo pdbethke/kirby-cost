@@ -119,10 +119,6 @@ class KillingAttackRanged(Power, xmlid="RKA"):
         
         return damage_str
     
-    @property
-    def all_assigned_modifiers(self):
-        """Get all assigned modifiers (stub)."""
-        return self.assigned_modifiers
     
     @property
     def column2_output(self) -> str:
@@ -132,7 +128,7 @@ class KillingAttackRanged(Power, xmlid="RKA"):
         if self._name and self._name.strip():
             output = f"<i>{self._name}:</i>  {output}"
         
-        if self.input and self.input.strip():
+        if self.input and self.input.strip() and not _use_wg():
             output += f" (vs. {self.input})"
         
         if self._selected_option:
@@ -157,3 +153,14 @@ class KillingAttackRanged(Power, xmlid="RKA"):
         return ""
     
 
+
+
+def _use_wg() -> bool:
+    """HD's 6E display preference. Java reads it inline as
+    `HeroDesigner.getInstance().getPrefs().useWG()`; when it is on, the
+    "(vs. ED)" defence note is not printed."""
+    try:
+        from kirby_cost.core.context import EngineContext
+        return bool(EngineContext.prefs().use_wg)
+    except Exception:  # noqa: BLE001
+        return True

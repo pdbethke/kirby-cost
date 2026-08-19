@@ -3,8 +3,8 @@
   "_measured": {
     "date": "2026-08-19",
     "strings_compared": 91692,
-    "exact": 80182,
-    "wrong": 11510,
+    "exact": 80833,
+    "wrong": 10859,
     "raised": 0,
     "gap_classes": 260
   },

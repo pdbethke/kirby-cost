@@ -90,7 +90,7 @@ class EnergyBlast(Power, xmlid="ENERGYBLAST"):
         
         # Add input (defense type) if present
         # Stub: would check preferences for WG format
-        if self.input and self.input.strip():
+        if self.input and self.input.strip() and not _use_wg():
             output += f" (vs. {self.input})"
         
         # Add selected option
@@ -127,3 +127,14 @@ class EnergyBlast(Power, xmlid="ENERGYBLAST"):
         return ", ".join(adders)
     
 
+
+
+def _use_wg() -> bool:
+    """HD's 6E display preference. Java reads it inline as
+    `HeroDesigner.getInstance().getPrefs().useWG()`; when it is on, the
+    "(vs. ED)" defence note is not printed."""
+    try:
+        from kirby_cost.core.context import EngineContext
+        return bool(EngineContext.prefs().use_wg)
+    except Exception:  # noqa: BLE001
+        return True
