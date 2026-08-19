@@ -205,14 +205,6 @@ class KnowledgeSkill(Skill, xmlid="KNOWLEDGE_SKILL"):
                 self._alias = "CK"
                 self._display = "CK"
     
-    @property
-    def all_assigned_modifiers(self) -> List:
-        """Get all assigned modifiers including from parent list."""
-        modifiers = list(self.assigned_modifiers)
-        parent = self._parent
-        if parent is not None:
-            modifiers.extend(parent.assigned_modifiers)
-        return modifiers
 
 
 

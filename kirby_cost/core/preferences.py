@@ -21,7 +21,12 @@ class Preferences:
     def __init__(self):
         """Initialize preferences with defaults."""
         self._use_abbreviations: bool = True
-        self._use_wg: bool = False
+        #: HD's 6E default is ON (AppPrefs.useWG() returns true), and the
+        #: oracle runs with it. It suppresses the 5E "(vs. ED)" defence note
+        #: and the "(uses Personal END)" tail, and selects wg abbreviations
+        #: in getAlias(). This port defaulted it OFF, so every attack power
+        #: printed a defence HD has not shown since 5th edition.
+        self._use_wg: bool = True
         self._display_active_points: bool = True
         self._sources: List[str] = []
         self._native_literacy_free: bool = False
