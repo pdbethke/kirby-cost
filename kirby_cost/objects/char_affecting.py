@@ -352,10 +352,16 @@ class CharAffectingObject(GenericObject):
         if char_type in (CharacteristicType.LEAPING, CharacteristicType.RUNNING, CharacteristicType.SWIMMING):
             # Check if it's a Characteristic and has negative values
             if hasattr(obj, 'get_primary_value') and hasattr(obj, 'get_secondary_value'):
-                primary = obj.primary_value()
-                secondary = obj.secondary_value()
-                # Can be figured if either primary or secondary is not negative
-                return not (primary < 0.0) or not (secondary < 0.0)
+                # The guard names these methods and the calls used
+                # `primary_value()` / `secondary_value()`, which are not methods
+                # — AttributeError: 'float' object is not callable. Unreachable
+                # until the loader began building Running/Swimming/Leaping
+                # objects, since only they reach this branch.
+                primary = obj.get_primary_value()
+                secondary = obj.get_secondary_value()
+                # Java: false only when BOTH are negative
+                # (CharAffectingObject.java:221).
+                return not (primary < 0.0 and secondary < 0.0)
             return True
         
         # Check for NOFIGURED modifier

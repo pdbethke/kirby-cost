@@ -41,9 +41,13 @@ class Running(Characteristic, xmlid="RUNNING"):
     
     def total_display(self, active_hero: Optional['Hero'] = None) -> str:
         """Get total movement display."""
-        # Check if 6E (stub - would need template access)
-        is_6e = False  # Default to 5E format
+        # 6E throughout: the template chain is Main6E and the corpus is 6E,
+        # so this "would need template access" stub had exactly one answer and
+        # was giving the other. It printed inches on every movement
+        # characteristic in the corpus.
+        is_6e = True
         
+        active_hero = active_hero or _active_hero()
         primary = self.get_primary_value(active_hero)
         secondary = self.get_secondary_value(active_hero)
         
@@ -57,8 +61,11 @@ class Running(Characteristic, xmlid="RUNNING"):
     @property
     def damage_display(self) -> str:
         """Get damage display (movement rate)."""
-        # Check if 6E (stub - would need template access)
-        is_6e = False  # Default to 5E format
+        # 6E throughout: the template chain is Main6E and the corpus is 6E,
+        # so this "would need template access" stub had exactly one answer and
+        # was giving the other. It printed inches on every movement
+        # characteristic in the corpus.
+        is_6e = True
         
         unit = "m" if is_6e else "\""
         string = ""
@@ -94,7 +101,7 @@ class Running(Characteristic, xmlid="RUNNING"):
             string = f"{string}:  {self.input}"
         
         if self.affect_total:
-            string = f"{string} ({self.total_display()})"
+            string = f"{string} ({self.total_display()} total)"
         
         if self._selected_option:
             option_alias = self._selected_option.display if self._selected_option.display else self._selected_option.xmlid
@@ -113,3 +120,15 @@ class Running(Characteristic, xmlid="RUNNING"):
         
         return string
 
+def _active_hero():
+    """The character these totals are relative to.
+
+    HD reads getPrimaryValue() off the character being displayed. With no hero
+    the value is 0, so every total printed "0m" — a movement total is the
+    CHARACTER's, and there is no such thing without one. Fails closed.
+    """
+    try:
+        from kirby_cost.core.context import EngineContext
+        return EngineContext.active_hero()
+    except Exception:  # noqa: BLE001
+        return None

@@ -576,6 +576,18 @@ class HDCLoader:
 
         obj.apply_template(tmpl, option_id)
 
+        # A characteristic's BASE — 12m of Running, 4m of Swimming, 10 STR —
+        # is stated by the template and was never put on the object. It lived
+        # only in LoadedHero._char_values, which is enough to COST a character
+        # and not enough to describe one: `base_level` stayed 0.0, so every
+        # movement total printed as the purchased levels alone. A horse with
+        # 12m base and a +14m power read "14m" where HD writes "26m total".
+        base_value = getattr(tmpl, "base_value", None)
+        if base_value is not None and hasattr(obj, "base_level"):
+            obj.base_level = float(base_value)
+            if not getattr(obj, "orig_base_level", 0.0):
+                obj.orig_base_level = float(base_value)
+
         # Apply HDT types (KNOWLEDGE, SCIENCE, PROFESSIONAL, etc.) so that
         # Enhancer cost-savings matching works correctly.
         hdt_types = _HDT_TYPES.get(xmlid)
@@ -709,7 +721,28 @@ class HDCLoader:
         self._char_map = {}
         try:
             from kirby_cost.objects.characteristics.characteristic import Characteristic
-            # All characteristics use the same base class for cost
+            import kirby_cost.objects._registry_imports  # noqa: F401
+            # Selectively, and each one proven against the oracle before it
+            # was added. Every characteristic used to load as the BASE class on
+            # the grounds that "all characteristics use the same base class for
+            # cost" — true for cost, and it also meant all 35 registered
+            # subclasses were dead code, display overrides included.
+            #
+            # Mapping the whole registry breaks parity on six characters. The
+            # cause is Speed: `Speed._calc_primary_value` MUTATES `self._levels`
+            # to clamp them, and the clamp misfires when the base value is not
+            # resolvable, so merely READING real_cost rewrites a clam's SPD from
+            # -1 level to 0 and loses 10 points. A getter with a side effect,
+            # in a class nothing had ever instantiated.
+            #
+            # So this list grows one xmlid at a time, and only with the oracle
+            # suite green. These three are here because their DISPLAY differs:
+            # HD writes "Running -12m (0m total)" where the base class gives
+            # "-12 Running".
+            for xmlid in ("RUNNING", "SWIMMING", "LEAPING"):
+                cls = Characteristic._registry.get(xmlid)
+                if isinstance(cls, type) and issubclass(cls, Characteristic):
+                    self._char_map[xmlid] = cls
             self._char_map["_DEFAULT"] = Characteristic
         except ImportError:
             pass
