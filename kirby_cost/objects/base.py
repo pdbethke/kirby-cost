@@ -740,11 +740,21 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         alias = (self.alias or "").strip()
         if alias:
             parts.append(alias)
+        # The option's alias, from the resolved object where there is one and
+        # from the document otherwise. This loader does not resolve option
+        # objects for adders, so `_selected_option` is None on all of them and
+        # this clause never fired — HD prints "Limitation Impairs Greatly
+        # Impairing" where this printed "Limitation Impairs", on 2,686 adder
+        # strings. OPTION_ALIAS is what HD wrote out FROM the option it had, so
+        # the document carries the same string by a shorter route.
         option = self._selected_option
+        option_alias = ""
         if option is not None:
             option_alias = (option.alias or "").strip()
-            if option_alias:
-                parts.append(option_alias)
+        if not option_alias:
+            option_alias = (getattr(self, "source_option_alias", "") or "").strip()
+        if option_alias:
+            parts.append(option_alias)
         if self.input and self.input.strip():
             parts.append(self.input.strip())
         if self._levels > 0 and "[LVL]" not in (self._display or ""):

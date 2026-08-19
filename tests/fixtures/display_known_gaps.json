@@ -3,10 +3,10 @@
   "_measured": {
     "date": "2026-08-19",
     "strings_compared": 91692,
-    "exact": 65180,
-    "wrong": 26432,
+    "exact": 70211,
+    "wrong": 21401,
     "raised": 80,
-    "gap_classes": 272
+    "gap_classes": 269
   },
   "gaps": [
     "adder_string|ActiveSonar",
@@ -15,16 +15,13 @@
     "adder_string|ChangeEnvironment",
     "adder_string|Characteristic",
     "adder_string|Clairsentience",
-    "adder_string|Contact",
     "adder_string|Cramming",
     "adder_string|Detect",
     "adder_string|DimensionalSingle",
-    "adder_string|Disadvantage",
     "adder_string|Entangle",
     "adder_string|ExtraDimensionalMovement",
     "adder_string|Flight",
     "adder_string|ForceField",
-    "adder_string|ForceWall",
     "adder_string|Forgery",
     "adder_string|FringeBenefit",
     "adder_string|Gambling",

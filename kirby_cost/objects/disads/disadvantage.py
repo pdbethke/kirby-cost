@@ -14,6 +14,29 @@ from kirby_cost.core.context import EngineContext
 from kirby_cost.io.xml_utility import XMLUtility
 
 
+def _option_alias(adder) -> str:
+    """What HD would print for this adder's selected option.
+
+    HD reads ``getSelectedOption().getAlias()`` — the template's option object.
+    This loader never resolves that object for adders, so ``selected_option`` is
+    None on every one of them and the display code below, which is a faithful
+    port, had nothing to read.
+
+    The document states the same string outright. HD writes OPTION_ALIAS from
+    the option it selected, so the file's own value IS the option's alias:
+    ``OPTION_ALIAS="(Frequently"`` on a Physical Complication's OCCURS adder.
+    Using it is not an approximation; it is the same string by a shorter route,
+    and it keeps this a display-only change. Resolving the option objects
+    properly belongs in the loader, where it would also touch cost paths
+    (Skill reads ``available_adders``), and that is a separate job with its own
+    parity risk.
+    """
+    option = getattr(adder, "selected_option", None)
+    if option is not None and (option.alias or "").strip():
+        return option.alias
+    return getattr(adder, "source_option_alias", "") or ""
+
+
 class Disadvantage(GenericObject):
     """
     Disadvantage (Complication) class.
@@ -161,17 +184,23 @@ class Disadvantage(GenericObject):
         paren_count = 0
         adder_count = 0
         
-        # Process available adders
-        for adder in self.available_adders:
+        # HD walks the TEMPLATE's adder list so that `adder_count` counts
+        # template position, including adders this character did not buy. That
+        # list is empty here — the loader never populates it — so the document's
+        # own order stands in. It agrees wherever a character bought every adder
+        # its template offers, which the corpus says is the normal case; where
+        # it does not, the ledger will say so rather than this pretending.
+        _available = self.available_adders or self.assigned_adders
+        for adder in _available:
             adder_count += 1
             if adder not in self.assigned_adders:
                 continue
-            
+
             assigned_adder = self.assigned_adders[self.assigned_adders.index(adder)]
             
             # Handle required adders with selected options
-            if assigned_adder.is_required and assigned_adder.selected_option:
-                option_alias = assigned_adder.selected_option.alias
+            if assigned_adder.is_required:
+                option_alias = _option_alias(assigned_adder)
                 if option_alias and option_alias.strip():
                     if option_alias.strip().startswith("("):
                         output = output + " "
@@ -192,10 +221,11 @@ class Disadvantage(GenericObject):
             
             # Handle optional adders
             adder_str = assigned_adder.alias
-            if assigned_adder.selected_option:
+            _opt = _option_alias(assigned_adder)
+            if _opt:
                 if adder_str.strip():
                     adder_str = adder_str + ":  "
-                adder_str = adder_str + assigned_adder.selected_option.alias
+                adder_str = adder_str + _opt
             
             if assigned_adder.input and assigned_adder.input.strip():
                 if adder_str.strip():
@@ -223,14 +253,15 @@ class Disadvantage(GenericObject):
         adder_count = 0
         for adder in self.assigned_adders:
             adder_count += 1
-            if adder in self.available_adders:
+            if adder in _available:
                 continue
             
             adder_str = adder.alias
-            if adder.selected_option:
+            _opt = _option_alias(adder)
+            if _opt:
                 if adder_str.strip():
                     adder_str = adder_str + ":  "
-                adder_str = adder_str + adder.selected_option.alias
+                adder_str = adder_str + _opt
             
             if adder.input and adder.input.strip():
                 if adder_str.strip():
