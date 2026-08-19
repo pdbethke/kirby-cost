@@ -516,9 +516,25 @@ class HDCLoader:
         """
         return getattr(self, "_active_provider", None) or self._provider
 
-    def _get_template_data(self, xmlid: str) -> Optional["TemplateData"]:
-        """Look up a TemplateData by XMLID via the active provider."""
-        return self._provider_in_use.get_template_data(xmlid)
+    def _get_template_data(self, xmlid: str,
+                           obj: Optional[GenericObject] = None) -> Optional["TemplateData"]:
+        """Look up a TemplateData by XMLID via the active provider.
+
+        *obj* names the KIND of thing being looked up, which matters for
+        exactly one xmlid: REPUTATION is both a Perk and a Disadvantage, with
+        different adders, and the flat index is first-wins. Without this a
+        Negative Reputation resolves against the Perk's HOWWIDE/HOWWELL.
+        """
+        provider = self._provider_in_use
+        section = _template_section(obj)
+        if section is not None:
+            try:
+                return provider.get_template_data(xmlid, section)
+            except TypeError:
+                # A consumer's own TemplateProvider need only implement the
+                # one-argument form; the protocol has not changed.
+                pass
+        return provider.get_template_data(xmlid)
 
     def _get_maneuver_template(self, display: str) -> Optional["TemplateData"]:
         """Look up a maneuver's TemplateData by its DISPLAY.
@@ -557,7 +573,7 @@ class HDCLoader:
             if tmpl is not None and not obj._base_cost_from_xml:
                 obj.base_cost = tmpl.base_cost
         else:
-            tmpl = self._get_template_data(xmlid)
+            tmpl = self._get_template_data(xmlid, obj)
         if tmpl is None:
             return
 
@@ -604,9 +620,10 @@ class HDCLoader:
         mod.apply_template(tmpl, option_id)
 
     def _apply_template_to_adder(self, adder: Adder, parent_xmlid: str, adder_xmlid: str,
-                                  option_id: str = None) -> None:
+                                  option_id: str = None,
+                                  parent: Optional[GenericObject] = None) -> None:
         """Apply template defaults to an adder from parent's adder definitions."""
-        tmpl = self._get_template_data(parent_xmlid)
+        tmpl = self._get_template_data(parent_xmlid, parent)
         if tmpl is None:
             # Even without a template, apply MINCOST for adder-based skills
             if not adder.min_set and parent_xmlid in _ADDER_MINCOST_SKILLS:
@@ -1425,7 +1442,7 @@ class HDCLoader:
                 # false (BOREALIS lost its -5 INTUITIONAL adder).
                 if adder_opt:
                     adder.option_id = adder_opt
-                self._apply_template_to_adder(adder, obj.xmlid, adder.xmlid,
+                self._apply_template_to_adder(adder, obj.xmlid, adder.xmlid, parent=obj,
                                                option_id=adder_opt if adder_opt else None)
                 obj._assigned_adders.append(adder)
 
@@ -1559,9 +1576,7 @@ class HDCLoader:
 
         if obj_type == "disad":
             from kirby_cost.objects.disads.disadvantage import Disadvantage
-            return Disadvantage.get_instance(None) if xmlid_upper in (
-                "ENRAGED", "HUNTED", "REPUTATION", "SUSCEPTIBILITY"
-            ) else Disadvantage()
+            return Disadvantage.for_xmlid(xmlid_upper)
 
         # Powers (and perks, talents, complications) — use registry
         cls = self._get_power_cls(xmlid_upper)
@@ -1722,3 +1737,21 @@ class HDCLoader:
         self._apply_adder_types(adder)
 
         return adder
+
+
+def _template_section(obj) -> Optional[str]:
+    """Which section of the .hdt defines *obj*'s kind.
+
+    Only needed to separate the two REPUTATIONs; every other xmlid in the
+    template is unambiguous, so anything else answers None and takes the
+    flat index.
+    """
+    if obj is None:
+        return None
+    from kirby_cost.objects.disads.disadvantage import Disadvantage
+    if isinstance(obj, Disadvantage):
+        return "disadvantages"
+    from kirby_cost.objects.perks.perk import Perk
+    if isinstance(obj, Perk):
+        return "perks"
+    return None

@@ -118,6 +118,8 @@ def _adder(entry: dict[str, Any]) -> AdderTemplate:
     return AdderTemplate(
         xmlid=entry.get("xmlid") or "",
         display=entry.get("display") or "",
+        alias=(a.get("ALIAS") or ""),
+        required=bool(entry.get("required")),
         base_cost=_f(a, "BASECOST"),
         level_cost=_f(a, "LVLCOST"),
         level_value=_level_value(a),
@@ -332,6 +334,13 @@ class HDTTemplateProvider:
             )
         self.path = resolved
         self._index: dict[str, TemplateData] = {}
+        #: (section, xmlid) -> TemplateData, for the one xmlid that
+        #: means two different things. REPUTATION is both a Perk and a
+        #: Disadvantage with different adders, and the flat index is
+        #: first-wins, so the perk owned the name and a Negative
+        #: Reputation was rendered against HOWWIDE/HOWWELL instead of
+        #: RECOGNIZED/EXTREME. Everything else resolves by xmlid alone.
+        self._by_section: dict[tuple[str, str], TemplateData] = {}
         self._adder_types: dict[str, list[str]] = {}
         self._maneuvers: dict[str, TemplateData] = {}
         # Providers for sibling templates, shared across the family — see
@@ -439,13 +448,21 @@ class HDTTemplateProvider:
                     if (entry.get("xmlid") in ("SENSE", "SENSEGROUP")) != pass_senses:
                         continue
                     xmlid = _identity(entry)
-                    if not xmlid or xmlid in self._index:
+                    if not xmlid:
+                        continue
+                    if xmlid in self._index:
+                        # Already claimed by an earlier section, but this
+                        # section's own definition is still the right one for
+                        # a caller that knows which kind of object it holds.
+                        self._by_section.setdefault(
+                            (section, xmlid), _template_data(entry, is_power=is_power))
                         continue
                     data = _template_data(entry, is_power=is_power)
                     synthetic = _sense_group_options(xmlid, entry, groups)
                     if synthetic:
                         data = replace(data, options=synthetic)
                     self._index[xmlid] = data
+                    self._by_section.setdefault((section, xmlid), data)
                     self._index_nested(entry, is_power=is_power)
                     self._index_adder_types(_all_adders(entry))
 
@@ -634,7 +651,20 @@ class HDTTemplateProvider:
         """display -> TemplateData for every maneuver the template defines."""
         return self._maneuvers
 
-    def get_template_data(self, xmlid: str) -> Optional[TemplateData]:
+    def get_template_data(self, xmlid: str,
+                          section: str | None = None) -> Optional[TemplateData]:
+        """The template entry for *xmlid*.
+
+        *section* disambiguates the one name that means two things — pass
+        "disadvantages" for a complication so a Negative Reputation is not
+        resolved against the Perk of the same name. Unknown or absent
+        sections fall through to the flat first-wins index, which is right
+        for every other xmlid in the template.
+        """
+        if section is not None:
+            found = self._by_section.get((section, xmlid))
+            if found is not None:
+                return found
         return self._index.get(xmlid)
 
     def __len__(self) -> int:

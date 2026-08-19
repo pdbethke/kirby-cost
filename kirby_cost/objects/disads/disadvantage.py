@@ -14,27 +14,7 @@ from kirby_cost.core.context import EngineContext
 from kirby_cost.io.xml_utility import XMLUtility
 
 
-def _option_alias(adder) -> str:
-    """What HD would print for this adder's selected option.
-
-    HD reads ``getSelectedOption().getAlias()`` — the template's option object.
-    This loader never resolves that object for adders, so ``selected_option`` is
-    None on every one of them and the display code below, which is a faithful
-    port, had nothing to read.
-
-    The document states the same string outright. HD writes OPTION_ALIAS from
-    the option it selected, so the file's own value IS the option's alias:
-    ``OPTION_ALIAS="(Frequently"`` on a Physical Complication's OCCURS adder.
-    Using it is not an approximation; it is the same string by a shorter route,
-    and it keeps this a display-only change. Resolving the option objects
-    properly belongs in the loader, where it would also touch cost paths
-    (Skill reads ``available_adders``), and that is a separate job with its own
-    parity risk.
-    """
-    option = getattr(adder, "selected_option", None)
-    if option is not None and (option.alias or "").strip():
-        return option.alias
-    return getattr(adder, "source_option_alias", "") or ""
+from kirby_cost.objects.base import option_alias as _option_alias
 
 
 class Disadvantage(GenericObject):
@@ -58,6 +38,36 @@ class Disadvantage(GenericObject):
         if element is not None:
             self._init(element)
     
+    @classmethod
+    def for_xmlid(cls, xmlid: str) -> 'Disadvantage':
+        """The class HD uses for this complication.
+
+        Four complications print nothing like the generic one — Hunted names
+        its hunter and orders three parenthesised clauses; Enraged leads with
+        the word "Berserk"; Reputation and Susceptibility punctuate
+        differently — and Java gives each its own class.
+
+        This existed as `get_instance(element)` and the loader called it with
+        None, so `XMLUtility.get_value(None, "XMLID")` found nothing and every
+        one of them fell back to the generic Disadvantage. The four-way branch
+        had never run. The loader already knows the xmlid at the call site;
+        taking it directly removes the element it was never given.
+        """
+        key = (xmlid or "").strip().upper()
+        if key == "ENRAGED":
+            from kirby_cost.objects.disads.enraged import Enraged
+            return Enraged()
+        if key == "HUNTED":
+            from kirby_cost.objects.disads.hunted import Hunted
+            return Hunted()
+        if key == "REPUTATION":
+            from kirby_cost.objects.disads.reputation import Reputation
+            return Reputation()
+        if key == "SUSCEPTIBILITY":
+            from kirby_cost.objects.disads.susceptibility import Susceptibility
+            return Susceptibility()
+        return cls()
+
     @classmethod
     def get_instance(cls, element) -> 'Disadvantage':
         """
@@ -122,6 +132,70 @@ class Disadvantage(GenericObject):
             return True
         return False
     
+    # ── How the four specialised complications differ ─────────────────
+    #
+    # Java gives Enraged, Hunted, Reputation and Susceptibility their own
+    # getColumn2Output, and diffing them against this one shows the whole
+    # difference is four small things. They are named here rather than
+    # copied into four near-identical 150-line methods, which is what the
+    # Java does and what makes the differences so easy to miss.
+
+    #: Whether the adder loops advance their counter. Susceptibility's do
+    #: not, so its `count == 1` branch can never fire and every separator
+    #: falls through to the default.
+    _counts_adders: bool = True
+    #: Separator before the FIRST adder, and before every later one.
+    #: Susceptibility swaps these two; Reputation uses ", " for the first
+    #: adder in its required branch only.
+    _first_adder_sep: str = " "
+    _later_adder_sep: str = ", "
+    _first_required_sep: str | None = None      # None = use _first_adder_sep
+    #: Whether an already-open bracket makes the next one continue with "; "
+    #: rather than nest. Reputation does this and drops the new bracket's
+    #: opening "(" when it happens.
+    _merges_brackets: bool = False
+    #: Whether an adder's own displayInString flag is honoured in the adder
+    #: loops. Enraged sets it False on BERSERK after printing it in the head,
+    #: and relies on this to not print it twice.
+    _honours_display_in_string: bool = False
+    #: Whether the object's input is printed after the modifiers. Enraged
+    #: prints it in the head instead.
+    _input_after_modifiers: bool = True
+
+    def _column2_head(self) -> str:
+        """Anything this complication prints before its modifiers."""
+        return ""
+
+    def _adder_sep(self, count: int, parens: int, *, required: bool = False) -> str:
+        """What goes between the previous clause and this adder."""
+        if count == 1:
+            if required and self._first_required_sep is not None:
+                return self._first_required_sep
+            return self._first_adder_sep
+        if parens > 0:
+            return self.adder_separator + " "
+        return self._later_adder_sep
+
+    def _adder_walk(self):
+        """The adders to render, paired with their position in the TEMPLATE.
+
+        Returns ``(walk, in_template)`` where *walk* is a list of
+        ``(position, assigned_adder_or_None)`` in the template's declared
+        order, and *in_template* is the set of xmlids the template offers —
+        used by the custom-adder pass to skip what this loop already printed.
+
+        With no template entry there is no order to walk, so the document's
+        own order stands in.
+        """
+        from kirby_cost.objects.base import GenericObject
+        order = getattr(self, "_template_adder_order", None)
+        if not order:
+            return ([(i + 1, a) for i, a in enumerate(self.assigned_adders)],
+                    set())
+        walk = [(pos, GenericObject.find_object_by_id(self.assigned_adders, xmlid))
+                for pos, xmlid in enumerate(order, 1)]
+        return walk, set(order)
+
     @property
     def column2_output(self) -> str:
         """
@@ -132,7 +206,8 @@ class Disadvantage(GenericObject):
         """
         output = self._alias
         output = output + ": "
-        
+        output = output + self._column2_head()
+
         # Process modifiers
         modifier_count = 0
         for modifier in self.assigned_modifiers:
@@ -177,42 +252,47 @@ class Disadvantage(GenericObject):
                 modifier_count += 1
         
         # Add input
-        if self.input and self.input.strip():
+        if self._input_after_modifiers and self.input and self.input.strip():
             output = output + " " + self.input
         
         # Process adders
         paren_count = 0
         adder_count = 0
         
-        # HD walks the TEMPLATE's adder list so that `adder_count` counts
-        # template position, including adders this character did not buy. That
-        # list is empty here — the loader never populates it — so the document's
-        # own order stands in. It agrees wherever a character bought every adder
-        # its template offers, which the corpus says is the normal case; where
-        # it does not, the ledger will say so rather than this pretending.
-        _available = self.available_adders or self.assigned_adders
-        for adder in _available:
-            adder_count += 1
-            if adder not in self.assigned_adders:
+        # HD walks the TEMPLATE's adder list, not the character's. `count`
+        # increments BEFORE the "did they buy it" check, so it is the adder's
+        # position in the TEMPLATE — which decides both the order the clauses
+        # print in and whether the `count == 1` branch fires. Hunted is where
+        # the difference shows: its template lists NCI third and MOTIVATION
+        # sixth, so HD prints "(Mo Pow; NCI; Harshly Punish)" where document
+        # order gives "(Mo Pow; Harshly Punish; NCI)".
+        #
+        # `available_adders` is never populated by the loader, so this reads
+        # the order the template itself declared (captured in apply_template).
+        _walk, _in_template = self._adder_walk()
+        for adder_count, assigned_adder in _walk:
+            if assigned_adder is None:
                 continue
-
-            assigned_adder = self.assigned_adders[self.assigned_adders.index(adder)]
+            if not self._counts_adders:
+                adder_count = 0
+            if (self._honours_display_in_string
+                    and not assigned_adder.display_in_string):
+                continue
             
             # Handle required adders with selected options
             if assigned_adder.is_required:
                 option_alias = _option_alias(assigned_adder)
                 if option_alias and option_alias.strip():
                     if option_alias.strip().startswith("("):
-                        output = output + " "
-                        if ")" not in option_alias:
+                        if self._merges_brackets and paren_count > 0:
+                            output = output + "; "
+                            option_alias = option_alias.strip()[1:]
+                        elif ")" not in option_alias:
                             paren_count += 1
+                        output = output + " "
                     else:
-                        if adder_count == 1:
-                            output = output + " "
-                        elif paren_count > 0:
-                            output = output + self.adder_separator + " "
-                        else:
-                            output = output + ", "
+                        output += self._adder_sep(adder_count, paren_count,
+                                                  required=True)
                     output = output + option_alias
                     continue
             
@@ -236,24 +316,25 @@ class Disadvantage(GenericObject):
                 continue
             
             if adder_str.strip().startswith("("):
-                output = output + " "
-                if ")" not in adder_str:
+                if self._merges_brackets and paren_count > 0:
+                    output = output + "; "
+                    adder_str = adder_str.strip()[1:]
+                elif ")" not in adder_str:
                     paren_count += 1
+                output = output + " "
             else:
-                if adder_count == 1:
-                    output = output + " "
-                elif paren_count > 0:
-                    output = output + self.adder_separator + " "
-                else:
-                    output = output + ", "
+                output += self._adder_sep(adder_count, paren_count)
             
             output = output + adder_str
         
         # Process assigned adders not in available list
         adder_count = 0
         for adder in self.assigned_adders:
-            adder_count += 1
-            if adder in _available:
+            if self._counts_adders:
+                adder_count += 1
+            if self._honours_display_in_string and not adder.display_in_string:
+                continue
+            if adder.xmlid in _in_template:
                 continue
             
             adder_str = adder.alias
@@ -272,16 +353,14 @@ class Disadvantage(GenericObject):
                 continue
             
             if adder_str.strip().startswith("("):
-                output = output + " "
-                if ")" not in adder_str:
+                if self._merges_brackets and paren_count > 0:
+                    output = output + "; "
+                    adder_str = adder_str.strip()[1:]
+                elif ")" not in adder_str:
                     paren_count += 1
+                output = output + " "
             else:
-                if adder_count == 1:
-                    output = output + " "
-                elif paren_count > 0:
-                    output = output + self.adder_separator + " "
-                else:
-                    output = output + ", "
+                output += self._adder_sep(adder_count, paren_count)
             
             output = output + adder_str
         

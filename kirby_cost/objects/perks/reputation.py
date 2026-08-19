@@ -9,7 +9,7 @@ Reputation represents the character's reputation (positive or negative).
 from typing import Optional
 from kirby_cost.objects.perks.perk import Perk
 from kirby_cost.objects.adder import Adder
-from kirby_cost.objects.base import GenericObject
+from kirby_cost.objects.base import GenericObject, option_alias
 from kirby_cost.objects.powers.automaton import Automaton
 from kirby_cost.core.context import EngineContext
 from kirby_cost.util.rounder import round_half_down, round_half_up
@@ -70,10 +70,16 @@ class Reputation(Perk, xmlid="REPUTATION"):
         if how_well and how_wide:
             how_well.display_in_string = False
             how_wide.display_in_string = False
+            # Java dereferences getSelectedOption() here with no null check,
+            # because in HD the option object always exists. This loader never
+            # resolves option objects for adders, so both were None and this
+            # raised AttributeError — which `getattr(obj, field, None)` in the
+            # display survey silently turned into None, so 12 Positive
+            # Reputations read as a missing string rather than as a crash.
             output = output + " ("
-            output = output + how_wide.selected_option.alias
+            output = output + option_alias(how_wide)
             output = output + ") "
-            output = output + how_well.selected_option.alias
+            output = output + option_alias(how_well)
         
         # Add levels
         output = output + f", +{self._levels}/+{self._levels}d6"

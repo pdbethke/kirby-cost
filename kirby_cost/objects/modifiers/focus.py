@@ -8,7 +8,7 @@ Validates power type restrictions. Uses base class getColumn2Output().
 """
 
 from kirby_cost.objects.modifier import Modifier
-from kirby_cost.objects.base import GenericObject
+from kirby_cost.objects.base import GenericObject, option_alias
 
 
 class Focus(Modifier, xmlid="FOCUS"):
@@ -69,15 +69,15 @@ class Focus(Modifier, xmlid="FOCUS"):
         
         for adder in self.assigned_adders:
             if adder.xmlid == "MOBILITY" and adder.selected_option:
-                mobility = adder.selected_option.alias
+                mobility = option_alias(adder)
                 continue
             if adder.xmlid == "BREAKABILITY" and adder.selected_option:
-                breakability = adder.selected_option.alias
+                breakability = option_alias(adder)
                 continue
             if adder.xmlid == "EXPENDABILITY":
                 expendability = "Expendable"
                 if adder.selected_option:
-                    expendability_option = adder.selected_option.alias
+                    expendability_option = option_alias(adder)
                 continue
             if adder_string:
                 adder_string = adder_string + ", "

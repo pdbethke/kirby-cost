@@ -9,7 +9,7 @@ Danger Sense allows sensing danger before it happens.
 from typing import Optional, List
 from kirby_cost.objects.talents.talent import Talent
 from kirby_cost.objects.adder import Adder
-from kirby_cost.objects.base import GenericObject
+from kirby_cost.objects.base import GenericObject, option_alias
 from kirby_cost.objects.characteristics.characteristic import Characteristic
 from kirby_cost.core.context import EngineContext
 from kirby_cost.util.rounder import round_half_down, round_half_up
@@ -126,13 +126,13 @@ class DangerSense(Talent, xmlid="DANGER_SENSE"):
         if area_adder:
             area_adder.display_in_string = False
             if area_adder.is_selected:
-                area_str = area_adder.selected_option.alias
+                area_str = option_alias(area_adder)
         
         sensitivity_adder = GenericObject.find_object_by_id(self.assigned_adders, "SENSITIVITY")
         if sensitivity_adder:
             sensitivity_adder.display_in_string = False
             if sensitivity_adder.is_selected:
-                sensitivity_str = sensitivity_adder.selected_option.alias
+                sensitivity_str = option_alias(sensitivity_adder)
         
         # Add name if present
         if self._name and self._name.strip():

@@ -173,6 +173,10 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         self._available_modifiers: List['Modifier'] = []
         self._assigned_adders: List['Adder'] = []
         self._available_adders: List['Adder'] = []
+        #: xmlids of the adders this object's template offers, in the
+        #: template's own order. Set by apply_template; empty for an
+        #: object with no template entry.
+        self._template_adder_order: List[str] = []
         self._options: List['Adder'] = []
         self._selected_option: Optional['Adder'] = None
         
@@ -259,6 +263,13 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         take precedence over both.
         """
         from kirby_cost.template.dataclasses import OptionTemplate  # noqa: F811
+
+        # The ORDER of the template's adders, which the display layer needs
+        # and the cost layer does not. HD walks this list rather than the
+        # character's own, so the clauses print in the order the template
+        # defines them regardless of the order they sit in the HDC file.
+        if getattr(tmpl, "adders", None):
+            self._template_adder_order = list(tmpl.adders.keys())
 
         option_set_lc = False
         option_set_lv = False
@@ -764,6 +775,31 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
             else:
                 parts.append(f"+{self._levels * self.level_multiplier}")
         return " ".join(parts)
+
+    def get_text_output(self) -> str:
+        """What the sheet shows for this object.
+
+        Java ``GenericObject.getTextOutput()`` (line 1897). ``TEXT`` in an HDC
+        file is a USER OVERRIDE — something the player typed to replace the
+        generated line — not a cached render of it. When it is absent the
+        object describes itself; when it is present it wins outright, and no
+        amount of fixing the display layer will change what that object prints.
+        """
+        return self.text_output.strip() or self.column2_output
+
+    def nameless_column2_output(self) -> str:
+        """The same line without the player's own name in front of it.
+
+        Java sets the name aside, renders, and puts it back
+        (GenericObject.java:2153) — the name is prepended by the renderer, so
+        the only way to omit it is to make it briefly not exist.
+        """
+        holder = self._name
+        self._name = ""
+        try:
+            return self.get_text_output()
+        finally:
+            self._name = holder
 
     @property
     def modifier_string(self) -> str:
@@ -1315,3 +1351,26 @@ def _show_common_limitations() -> bool:
         return bool(EngineContext.prefs().show_common_limitations)
     except Exception:  # noqa: BLE001
         return True
+
+
+def option_alias(adder) -> str:
+    """What HD would print for this adder's selected option.
+
+    HD reads ``getSelectedOption().getAlias()`` — the template's option object.
+    This loader never resolves that object for adders, so ``selected_option`` is
+    None on every one of them and the display code below, which is a faithful
+    port, had nothing to read.
+
+    The document states the same string outright. HD writes OPTION_ALIAS from
+    the option it selected, so the file's own value IS the option's alias:
+    ``OPTION_ALIAS="(Frequently"`` on a Physical Complication's OCCURS adder.
+    Using it is not an approximation; it is the same string by a shorter route,
+    and it keeps this a display-only change. Resolving the option objects
+    properly belongs in the loader, where it would also touch cost paths
+    (Skill reads ``available_adders``), and that is a separate job with its own
+    parity risk.
+    """
+    option = getattr(adder, "selected_option", None)
+    if option is not None and (option.alias or "").strip():
+        return option.alias
+    return getattr(adder, "source_option_alias", "") or ""

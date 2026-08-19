@@ -128,7 +128,13 @@ def _survey() -> tuple[dict, collections.Counter, int]:
                 compared += 1
                 key = f"{field}|{cls}"
                 try:
-                    mine = getattr(obj, field, None)
+                    # No default. `getattr(obj, field, None)` swallows any
+                    # AttributeError raised INSIDE the property and hands back
+                    # None, so a crash in the display code is indistinguishable
+                    # from a string this engine does not produce. That masked
+                    # a real AttributeError in the Reputation perk for as long
+                    # as this survey has existed.
+                    mine = getattr(obj, field)
                 except Exception as exc:  # noqa: BLE001
                     tally["raised"] += 1
                     gaps[key].append(f"{path.stem}: raised {type(exc).__name__}")

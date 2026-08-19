@@ -6,6 +6,7 @@ Converted from com.hero.objects.powers.Transform.java
 Power to transform objects.
 """
 
+from kirby_cost.objects.base import option_alias
 from kirby_cost.objects.powers.power import Power
 
 
@@ -38,7 +39,7 @@ class Transform(Power, xmlid="TRANSFORM"):
             if adder.xmlid == "HEALEDBY":
                 adder.display_in_string = False
                 if adder.selected_option:
-                    healed_by = adder.selected_option.alias
+                    healed_by = option_alias(adder)
                 break
         
         if (self.input and self.input.strip()) or healed_by:
