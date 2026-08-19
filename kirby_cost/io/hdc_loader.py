@@ -1726,6 +1726,30 @@ class HDCLoader:
         elif sel_str.upper().startswith("N"):
             adder._selected = False
 
+        # The adder's SELECTED OPTION, as an object.
+        #
+        # Java keeps it as an Adder and reads it back through
+        # getSelectedOption(); roughly a dozen display methods dereference it
+        # UNGUARDED, because in HD it always exists. This loader consumed the
+        # option's costs and dropped the object, so it was None on every adder
+        # in the corpus — which is why Life Support printed "Eating:" with
+        # nothing after the colon, and why two display methods raised
+        # AttributeError instead.
+        #
+        # HD restores the option from the template by OPTIONID and then writes
+        # OPTION_ALIAS onto it, so the document carries both halves and no
+        # template lookup is needed. Display-only: the costs were already
+        # applied by apply_adder_template.
+        option_id = elem.get("OPTIONID") or elem.get("OPTION") or ""
+        if option_id.strip():
+            chosen = Adder()
+            chosen.xmlid = option_id.strip()
+            chosen._alias = elem.get("OPTION_ALIAS") or ""
+            chosen._display = chosen._alias
+            chosen._selected = True
+            chosen.parent = adder
+            adder._selected_option = chosen
+
         # Load nested adders
         for sub_elem in elem.findall("ADDER"):
             sub = self._build_adder(sub_elem)
