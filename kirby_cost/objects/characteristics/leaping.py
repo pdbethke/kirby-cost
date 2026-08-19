@@ -134,6 +134,103 @@ class Leaping(Characteristic, xmlid="LEAPING"):
         else:
             self.base_value = float(self.max_val) - d
         
+    #: 6E throughout: the corpus and the template chain are 6E, so distances
+    #: are metres. HD carries an inches form for earlier editions.
+    UNIT = "m"
+
+    def _distance(self, value: float, *, upward: bool) -> str:
+        """One distance, with HD's half-metre rules.
+
+        Ported from ``Leaping.getDisplayNotes`` (Leaping.java:801). Forward and
+        upward are NOT formatted the same way, and the difference matters: a
+        forward distance shows "N 1/2" only when the whole part is over 1,
+        while an upward distance below a metre prints a bare "1/2m" with no
+        leading number. Forward has no equivalent branch.
+
+        The ``getLevels() >= 0`` half of each condition is HD's: a character
+        who has SOLD leaping down does not get a fractional readout.
+        """
+        whole = round_down(value)
+        has_half = (value - whole) >= 0.5
+        if has_half and (value > 1 or self.levels >= 0):
+            return f"{whole} 1/2{self.UNIT}"
+        if upward and has_half and (value > 0 or self.levels >= 0):
+            return f"1/2{self.UNIT}"
+        return f"{whole}{self.UNIT}"
+
+    @property
+    def display_notes(self) -> str:
+        """``4m forward, 2m upward`` — the parenthetical HD prints for a leap.
+
+        A leap has two distances, and the rules relate them: "All characters
+        have a base forward leap of 4m and a base upward leap of 2m (half the
+        forward leap)" (6E Volume 2, p30). Primary and secondary are shown
+        slashed when they disagree, which happens when a power boosts only one
+        of them.
+        """
+        hero = _active_hero()
+        pf = self.get_primary_forward(hero)
+        pu = self.get_primary_upward(hero)
+        sf = self.get_secondary_forward(hero)
+        su = self.get_secondary_upward(hero)
+
+        p_for = self._distance(pf, upward=False)
+        p_up = self._distance(pu, upward=True)
+        if pf != sf or pu != su:
+            s_for = self._distance(sf, upward=False)
+            s_up = self._distance(su, upward=True)
+            return f"{p_for}/{s_for} forward, {p_up}/{s_up} upward"
+        return f"{p_for} forward, {p_up} upward"
+
+    @property
+    def damage_display(self) -> str:
+        """The levels bought, with a unit and a sign only when adding."""
+        prefix = "+" if (self.affect_total and self.levels > 0) else ""
+        return f"{prefix}{self.levels}{self.UNIT}"
+
+    @property
+    def column2_output(self) -> str:
+        """``Leaping -2m (4m forward, 2m upward)``.
+
+        Ported from ``Leaping.getColumn2Output`` (Leaping.java:737). Unlike
+        Running, the parenthetical is the two leap distances rather than a
+        single total, and unlike the base Characteristic the alias leads.
+        """
+        alias = self._alias or self._display or self.xmlid
+        name = (self._name or "").strip()
+        modifier_str = self.modifier_string or ""
+
+        if self.levels == 0 and self.add_modifiers_to_base and modifier_str.strip():
+            string = modifier_str.strip()
+            if string.startswith(","):
+                string = string[1:].strip()
+            string = f"{string} applied to {alias}"
+            if name:
+                string = f"<i>{name}:</i>  {string}"
+            return string
+
+        string = alias
+        if name:
+            string = f"<i>{name}:</i>  {string}"
+        string = f"{string} {self.damage_display}"
+        if self.affect_total:
+            string = f"{string} ({self.display_notes})"
+        if self.input and self.input.strip():
+            string = f"{string}:  {self.input}"
+
+        adder_str = (self.adder_string or "").strip()
+        if self._selected_option:
+            option = self._selected_option
+            option_alias = option.alias or option.display or option.xmlid
+            string = f"{string} ({option_alias}"
+            if adder_str:
+                string = f"{string}; {adder_str}"
+            string = f"{string})"
+        elif adder_str:
+            string = f"{string} ({adder_str})"
+
+        return f"{string}{modifier_str}"
+
     def get_primary_forward(self, active_hero: Optional['Hero'] = None) -> float:
         """Get primary forward movement."""
         self._calc_primary_forward(active_hero)
@@ -141,6 +238,13 @@ class Leaping(Characteristic, xmlid="LEAPING"):
     
     def _calc_primary_forward(self, active_hero: Optional['Hero'] = None) -> None:
         """Calculate primary forward movement."""
+        # Imported here, not at module scope: the TYPE_CHECKING import
+        # above is invisible at runtime, and this is used in an
+        # isinstance() check — NameError the moment the method runs.
+        # Unreachable until the loader began building Leaping objects.
+        from kirby_cost.objects.powers.compound_power import CompoundPower
+        from kirby_cost.objects.powers.power import Power
+
         d = 0.0
         if active_hero is not None:
             self.double_base = self.characteristic_value(active_hero)
@@ -240,6 +344,13 @@ class Leaping(Characteristic, xmlid="LEAPING"):
     
     def _calc_primary_upward(self, active_hero: Optional['Hero'] = None) -> None:
         """Calculate primary upward movement."""
+        # Imported here, not at module scope: the TYPE_CHECKING import
+        # above is invisible at runtime, and this is used in an
+        # isinstance() check — NameError the moment the method runs.
+        # Unreachable until the loader began building Leaping objects.
+        from kirby_cost.objects.powers.compound_power import CompoundPower
+        from kirby_cost.objects.powers.power import Power
+
         d = 0.0
         bl = True  # Gravity penalty flag
         
@@ -352,6 +463,13 @@ class Leaping(Characteristic, xmlid="LEAPING"):
     
     def _calc_secondary_forward(self, active_hero: Optional['Hero'] = None) -> None:
         """Calculate secondary forward movement."""
+        # Imported here, not at module scope: the TYPE_CHECKING import
+        # above is invisible at runtime, and this is used in an
+        # isinstance() check — NameError the moment the method runs.
+        # Unreachable until the loader began building Leaping objects.
+        from kirby_cost.objects.powers.compound_power import CompoundPower
+        from kirby_cost.objects.powers.power import Power
+
         d2 = 0.0
         if active_hero is not None:
             # Check powers (excluding upward-only, secondary affects)
@@ -435,6 +553,13 @@ class Leaping(Characteristic, xmlid="LEAPING"):
     
     def _calc_secondary_upward(self, active_hero: Optional['Hero'] = None) -> None:
         """Calculate secondary upward movement."""
+        # Imported here, not at module scope: the TYPE_CHECKING import
+        # above is invisible at runtime, and this is used in an
+        # isinstance() check — NameError the moment the method runs.
+        # Unreachable until the loader began building Leaping objects.
+        from kirby_cost.objects.powers.compound_power import CompoundPower
+        from kirby_cost.objects.powers.power import Power
+
         d2 = 0.0
         if active_hero is not None:
             # Check powers (excluding forward-only, secondary affects)
@@ -521,3 +646,16 @@ class Leaping(Characteristic, xmlid="LEAPING"):
         
         self.secondary_upward = min(self.get_primary_upward(active_hero) + d2, float(self.max_val))
 
+
+def _active_hero():
+    """The character these distances are relative to.
+
+    A leap is the CHARACTER's, not the characteristic's: the calculators walk
+    the hero's powers for LEAPING contributions. With no hero they return the
+    bare characteristic and the readout is wrong rather than absent.
+    """
+    try:
+        from kirby_cost.core.context import EngineContext
+        return EngineContext.active_hero()
+    except Exception:  # noqa: BLE001
+        return None
