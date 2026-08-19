@@ -19,7 +19,7 @@ import math
 from typing import ClassVar, Optional, List, TYPE_CHECKING
 from abc import ABC
 
-from kirby_cost.util.rounder import round_half_down, round_half_up
+from kirby_cost.util.rounder import round_half_down, round_half_up, round_up
 from kirby_cost.io.xml_utility import XMLUtility
 from kirby_cost.engine.cost import CostMixin, ENHANCER_DEFS
 from kirby_cost.engine.modifiers import ModifierMixin
@@ -767,22 +767,60 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
 
     @property
     def modifier_string(self) -> str:
-        """Unported. Returns "" — a stub, deliberately, not a port.
+        """Every modifier this object carries, as HD writes them on the sheet.
 
-        Java's ``getModifierString()`` (line 2062) sorts the assigned modifiers
-        by total value, pulls in the parent framework's common limitations,
-        splits advantages from limitations, and renders each through
-        ``Modifier.getColumn2Output()``. None of that display layer exists
-        here: the port's ``Modifier`` has neither ``column2_output`` nor
-        ``is_limitation``, so a partial port would emit confidently wrong
-        strings.
+        Ported from ``GenericObject.getModifierString`` (GenericObject.java:2062).
+        Advantages first, joined with ", "; then the limitations, the first of
+        which opens with "; " instead. Both groups sort by total value, and the
+        active-point note sits between them.
 
-        Twelve subclasses already stub this the same way; the base did not
-        have it at all, so Money and EnvironmentalMovement — which define no
-        override — raised AttributeError from ``column2_output``. Costs are
-        unaffected: nothing in the cost chain reads a modifier string.
+        This was a deliberate stub returning "" for as long as ``Modifier`` had
+        no ``column2_output`` of its own — a partial port would have emitted
+        confidently wrong strings, which is worse than nothing. Modifier has a
+        real one now, so this can do its half.
         """
-        return ""
+        mods = list(self.assigned_modifiers)
+
+        # A framework's limitations are shown on each slot, unless the caller
+        # has turned that off. HD reads the preference; absent one, it is on,
+        # which is HD's own default.
+        parent = self.parent
+        if parent is not None and _show_common_limitations():
+            for mod in parent.assigned_modifiers:
+                if "VPP" in (mod.types or []):
+                    continue
+                from kirby_cost.objects.frameworks import is_multipower
+                if mod.xmlid == "CHARGES" and is_multipower(parent):
+                    continue
+                shared = (mod.total_value < 0
+                          or type(parent).__name__ == "VariablePowerPool")
+                already = GenericObject.find_object_by_id(
+                    self._assigned_modifiers, mod.xmlid)
+                generic = mod.xmlid in ("GENERIC_OBJECT", "CUSTOM_MODIFIER",
+                                        "MODIFIER")
+                if shared and (already is None or generic):
+                    mods.append(mod)
+
+        mods.sort(key=lambda m: m.total_value)
+
+        ret = ""
+        for mod in mods:
+            if (mod.total_value >= 0 and mod.display_in_string
+                    and not mod.is_limitation):
+                ret += ", " + mod.column2_output
+
+        if self.display_active_cost and (
+                self.active_cost != self.total_cost
+                or self.real_cost != self.total_cost):
+            ret += f" ({round_up(self.active_cost)} Active Points)"
+
+        negatives = 0
+        for mod in mods:
+            if (mod.total_value < 0 or mod.is_limitation) and mod.display_in_string:
+                negatives += 1
+                ret += "; " if negatives == 1 else ", "
+                ret += mod.column2_output
+        return ret
 
     @property
     def adder_string(self) -> str:
@@ -1264,3 +1302,16 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         return result
     
 
+
+def _show_common_limitations() -> bool:
+    """Whether a framework's limitations repeat on every slot.
+
+    HD reads this preference (GenericObject.java:2067). Defaults to True, which
+    is HD's own default, so a missing preference does not silently drop
+    limitations a character actually has.
+    """
+    try:
+        from kirby_cost.core.context import EngineContext
+        return bool(EngineContext.prefs().show_common_limitations)
+    except Exception:  # noqa: BLE001
+        return True
