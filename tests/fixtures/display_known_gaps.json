@@ -3,10 +3,10 @@
   "_measured": {
     "date": "2026-08-19",
     "strings_compared": 91692,
-    "exact": 74067,
-    "wrong": 17545,
-    "raised": 80,
-    "gap_classes": 274
+    "exact": 75886,
+    "wrong": 15806,
+    "raised": 0,
+    "gap_classes": 272
   },
   "gaps": [
     "adder_string|ActiveSonar",
@@ -51,7 +51,6 @@
     "adder_string|WeaponFamiliarity",
     "adder_string|Weaponsmith",
     "column2_output|Absorption",
-    "column2_output|AccumulatorSkill",
     "column2_output|ActiveSonar",
     "column2_output|AdderBasedSkill",
     "column2_output|Aid",
@@ -63,7 +62,6 @@
     "column2_output|Clairsentience",
     "column2_output|Clinging",
     "column2_output|CombatLevels",
-    "column2_output|CombatSense",
     "column2_output|CompoundPower",
     "column2_output|Contact",
     "column2_output|Cramming",

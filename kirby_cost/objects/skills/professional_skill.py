@@ -47,7 +47,7 @@ class ProfessionalSkill(Skill, xmlid="PROFESSIONAL_SKILL"):
             
             if char is not None and char.xmlid != "GENERAL":
                 n3 = (active_hero.rules.skill_roll_base + 
-                      int(round_half_up(char.primary_value() / active_hero.rules.skill_roll_denominator) + 
+                      int(round_half_up(char.get_primary_value(active_hero) / active_hero.rules.skill_roll_denominator) + 
                           float(self._levels) * self._level_value))
             elif self.characteristic == 0:
                 # Would need HeroDesigner.getActiveTemplate().getGeneralLevel()
@@ -88,10 +88,10 @@ class ProfessionalSkill(Skill, xmlid="PROFESSIONAL_SKILL"):
             
             if char is not None and char.xmlid != "GENERAL":
                 n3 = (active_hero.rules.skill_roll_base + 
-                      int(round_half_up(char.primary_value() / active_hero.rules.skill_roll_denominator) + 
+                      int(round_half_up(char.get_primary_value(active_hero) / active_hero.rules.skill_roll_denominator) + 
                           float(self._levels) * self._level_value))
                 n4 = (active_hero.rules.skill_roll_base + 
-                      int(round_half_up(char.secondary_value() / active_hero.rules.skill_roll_denominator) + 
+                      int(round_half_up(char.get_secondary_value(active_hero) / active_hero.rules.skill_roll_denominator) + 
                           float(self._levels) * self._level_value))
             else:
                 if self.characteristic == 0:

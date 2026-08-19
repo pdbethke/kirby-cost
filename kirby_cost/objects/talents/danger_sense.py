@@ -202,8 +202,8 @@ class DangerSense(Talent, xmlid="DANGER_SENSE"):
         
         if int_char and int_char.per_increase > 0.0 and int_char.per_increase_levels > 0:
             # Calculate based on PER increase
-            per_primary = int_char.per_increase * int_char.primary_value() / int_char.per_increase_levels
-            per_secondary = int_char.per_increase * int_char.secondary_value() / int_char.per_increase_levels
+            per_primary = int_char.per_increase * int_char.get_primary_value(active_hero) / int_char.per_increase_levels
+            per_secondary = int_char.per_increase * int_char.get_secondary_value(active_hero) / int_char.per_increase_levels
             roll_primary = int(round_half_up(9.0 + round_half_up(per_primary)))
             roll_secondary = int(round_half_up(9.0 + round_half_up(per_secondary)))
         
