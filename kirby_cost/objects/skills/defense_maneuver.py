@@ -22,7 +22,8 @@ class DefenseManeuver(Skill, xmlid="DEFENSE_MANEUVER"):
         """Initialize DefenseManeuver."""
         super().__init__(xmlid or DefenseManeuver.XMLID)
     
-    def column2_output(self, active_hero: Optional['Hero'] = None) -> str:
+    @property
+    def column2_output(self) -> str:
         """Get column 2 output."""
         string2 = self._alias
         

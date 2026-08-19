@@ -23,7 +23,8 @@ class WeaponFamiliarity(Skill, xmlid="WEAPON_FAMILIARITY"):
         super().__init__(xmlid or WeaponFamiliarity.XMLID)
         self._alias = "WF"
     
-    def column2_output(self, active_hero: Optional['Hero'] = None) -> str:
+    @property
+    def column2_output(self) -> str:
         """Get column 2 output."""
         string3 = self._alias
         
