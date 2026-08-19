@@ -132,10 +132,5 @@ class Multipower(List):
         
         return output
     
-    @property
-    def adder_string(self) -> str:
-        """Get adder string for display (stub)."""
-        # Would build string from assigned adders
-        return ""
     
 

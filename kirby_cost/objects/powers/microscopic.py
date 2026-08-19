@@ -68,9 +68,5 @@ class Microscopic(SenseAdder, xmlid="MICROSCOPIC"):
         
         return output
     
-    @property
-    def adder_string(self) -> str:
-        """Get adder string (stub)."""
-        return ""
     
 

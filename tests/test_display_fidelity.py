@@ -65,13 +65,31 @@ def _ledger() -> set[str]:
 
 
 def _oracle_index(fixture: dict) -> dict:
-    """{element id: {field: what HD prints}}, children included."""
+    """{element id: {field: what HD prints}}, children included.
+
+    IDs are NOT unique. HD stamps them from the clock, and a character built
+    by duplicating an element carries the copy's id twice — 121 of the 655
+    fixtures do, covering 269 objects. Both sides of this comparison index by
+    id, so a collision silently pairs one engine object with another object's
+    expected strings and reports a mismatch that is not one.
+
+    Ambiguous ids are dropped from both indexes rather than resolved by
+    traversal order, which would only make the wrong pairing deterministic.
+    They are counted instead — see `tally["ambiguous"]`.
+    """
     out: dict = {}
+    seen: set = set()
 
     def walk(objects):
         for obj in objects or ():
-            if obj.get("id") is not None:
-                out[str(obj["id"])] = {f: obj.get(f) for f in FIELDS}
+            ident = obj.get("id")
+            if ident is not None:
+                key = str(ident)
+                if key in seen:
+                    out.pop(key, None)
+                else:
+                    seen.add(key)
+                    out[key] = {f: obj.get(f) for f in FIELDS}
             walk(obj.get("sub_powers"))
             walk(obj.get("modifiers"))
             walk(obj.get("adders"))
@@ -85,11 +103,18 @@ def _engine_index(hero) -> dict:
     """{element id: object}, by the same id, children included."""
     out: dict = {}
 
+    seen: set = set()
+
     def walk(objects):
         for obj in objects or ():
             ident = getattr(obj, "_id", None)
             if ident is not None:
-                out[str(ident)] = obj
+                key = str(ident)
+                if key in seen:
+                    out.pop(key, None)      # ambiguous — see _oracle_index
+                else:
+                    seen.add(key)
+                    out[key] = obj
             walk(getattr(obj, "powers", None))
             walk(getattr(obj, "_assigned_modifiers", None))
             walk(getattr(obj, "_assigned_adders", None))

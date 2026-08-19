@@ -302,9 +302,5 @@ class VariablePowerPool(List):
         real_cost = obj.real_cost_pre_list
         return f" Real Cost: {int(round_half_down(real_cost))}"
     
-    @property
-    def adder_string(self) -> str:
-        """Get adder string for display (stub)."""
-        return ""
     
 
