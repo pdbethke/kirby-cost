@@ -39,7 +39,8 @@ class TransportFamiliarity(AdderBasedSkill, xmlid="TRANSPORT_FAMILIARITY"):
                     return True
         return False
     
-    def column2_output(self, active_hero: Optional['Hero'] = None) -> str:
+    @property
+    def column2_output(self) -> str:
         """Get column 2 output."""
         string3 = self._alias
         

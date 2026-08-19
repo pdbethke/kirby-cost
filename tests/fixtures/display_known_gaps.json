@@ -3,10 +3,10 @@
   "_measured": {
     "date": "2026-08-19",
     "strings_compared": 91692,
-    "exact": 79098,
-    "wrong": 12594,
+    "exact": 80182,
+    "wrong": 11510,
     "raised": 0,
-    "gap_classes": 263
+    "gap_classes": 260
   },
   "gaps": [
     "adder_string|ActiveSonar",
@@ -55,7 +55,6 @@
     "column2_output|AdderBasedSkill",
     "column2_output|Aid",
     "column2_output|AnimalHandler",
-    "column2_output|AutofireSkills",
     "column2_output|BumpOfDirection",
     "column2_output|ChangeEnvironment",
     "column2_output|Characteristic",
@@ -71,7 +70,6 @@
     "column2_output|DamageReduction",
     "column2_output|DangerSense",
     "column2_output|Darkness",
-    "column2_output|DefenseManeuver",
     "column2_output|DensityIncrease",
     "column2_output|Desolidification",
     "column2_output|Detect",
@@ -112,7 +110,6 @@
     "column2_output|KBResistance",
     "column2_output|KillingAttackHTH",
     "column2_output|KillingAttackRanged",
-    "column2_output|KnowledgeSkill",
     "column2_output|Language",
     "column2_output|Leaping",
     "column2_output|LifeSupport",

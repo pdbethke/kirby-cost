@@ -111,10 +111,10 @@ class ProfessionalSkill(Skill, xmlid="PROFESSIONAL_SKILL"):
         
         return n
     
-    def column2_output(self, active_hero: Optional['Hero'] = None) -> str:
+    @property
+    def column2_output(self) -> str:
         """Get column 2 output."""
-        if active_hero is None:
-            active_hero = self._get_active_hero()
+        active_hero = self._get_active_hero()
         
         if self.levels_only:
             return self.get_level_only_output()

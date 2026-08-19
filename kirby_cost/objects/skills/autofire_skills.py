@@ -22,10 +22,10 @@ class AutofireSkills(Skill, xmlid="AUTOFIRE_SKILLS"):
         """Initialize AutofireSkills."""
         super().__init__(xmlid or AutofireSkills.XMLID)
     
-    def column2_output(self, active_hero: Optional['Hero'] = None) -> str:
+    @property
+    def column2_output(self) -> str:
         """Get column 2 output."""
-        if active_hero is None:
-            active_hero = self._get_active_hero()
+        active_hero = self._get_active_hero()
         
         string2 = self._selected_option.alias if self._selected_option is not None else ""
         

@@ -73,10 +73,10 @@ class KnowledgeSkill(Skill, xmlid="KNOWLEDGE_SKILL"):
         if type_str and type_str.strip():
             self.selected_type_by_display(type_str)
 
-    def column2_output(self, active_hero: Optional['Hero'] = None) -> str:
+    @property
+    def column2_output(self) -> str:
         """Get column 2 output."""
-        if active_hero is None:
-            active_hero = self._get_active_hero()
+        active_hero = self._get_active_hero()
         
         if self.levels_only:
             return self._get_level_only_output()

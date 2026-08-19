@@ -119,10 +119,10 @@ class Language(Skill, xmlid="LANGUAGES"):
         native_tongue_str = element.get("NATIVE_TONGUE", "")
         self.native_tongue = native_tongue_str and native_tongue_str.strip().upper().startswith("Y")
 
-    def column2_output(self, active_hero: Optional['Hero'] = None) -> str:
+    @property
+    def column2_output(self) -> str:
         """Get column 2 output."""
-        if active_hero is None:
-            active_hero = self._get_active_hero()
+        active_hero = self._get_active_hero()
         
         string = self._alias
         
