@@ -6,7 +6,7 @@ Adder extends GenericObject and represents adders that can be added to powers.
 """
 
 from typing import Optional, TYPE_CHECKING
-from kirby_cost.objects.base import GenericObject
+from kirby_cost.objects.base import option_alias, GenericObject
 from kirby_cost.engine.xml_attrs import XMLAttr
 
 if TYPE_CHECKING:
@@ -85,6 +85,44 @@ class Adder(GenericObject):
             self._required = True
         if tmpl.alias and not (self._alias or '').strip():
             self._alias = tmpl.alias
+
+    @property
+    def column2_output(self) -> str:
+        """``Eating: Character only has to eat once per week`` — what an adder
+        contributes to the line above it.
+
+        Ported from ``Adder.getColumn2Output`` (Adder.java). Adder inherited
+        GenericObject's default, which knows nothing about `showAlias`, the
+        selected option, or the level suffix, so Life Support rendered as
+        "(Eating:; Immunity; Immunity:; Self-Contained)" — every adder reduced
+        to its own name and a colon.
+
+        An unselected adder contributes only what its children contribute: it
+        is a GROUP, and the group heading is not itself a thing the character
+        bought.
+        """
+        adders = self.adder_string
+        ret = ""
+        if self.is_selected:
+            if self.show_alias:
+                ret += self.alias or ""
+            ret = ret.strip()
+            option = (option_alias(self) or "").strip()
+            if option:
+                if ret.strip():
+                    ret += " "
+                ret += option
+            if self.input and self.input.strip():
+                if ret.strip():
+                    ret += " "
+                ret += self.input
+        if adders.strip():
+            if ret.strip():
+                ret += ", "
+            ret += adders
+        if self._levels > 0 and "[LVL]" not in (self._display or ""):
+            ret += f":  +{self._levels}"
+        return ret
 
     @property
     def is_required(self) -> bool:

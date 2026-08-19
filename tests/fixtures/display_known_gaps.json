@@ -3,8 +3,8 @@
   "_measured": {
     "date": "2026-08-19",
     "strings_compared": 91221,
-    "exact": 82823,
-    "wrong": 8398,
+    "exact": 83793,
+    "wrong": 7428,
     "raised": 0,
     "gap_classes": 233,
     "note": "strings_compared excludes objects whose HD element ID is not unique within their character; see _oracle_index."

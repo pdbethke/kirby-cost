@@ -638,6 +638,70 @@ class Characteristic(CharAffectingObject):
         return n
     
 
+    def _modifiers_borrowed_from_powers(self) -> list:
+        """Modifiers this characteristic shows but did not buy.
+
+        Ported from ``Characteristic.calcAssignedModifiers``
+        (Characteristic.java:120). A character who buys "+12 ED" and then buys
+        Hardened ED as a POWER with ``ADD_MODIFIERS_TO_BASE="Yes"`` has one
+        defence, not two, and HD says so: the base characteristic prints
+        "+12 ED, Hardened (+1/4), Resistant (+1/2)" while the power that
+        carries those modifiers prints separately.
+
+        HD searches POWERS and EQUIPMENT, and looks inside CompoundPowers,
+        for a Characteristic with the same XMLID, a DIFFERENT id, and the
+        flag set. Matching on xmlid alone would make a characteristic borrow
+        from itself.
+
+        DISPLAY ONLY, deliberately. Java merges these into
+        ``getAssignedModifiers()``, which the cost chain also reads — but the
+        oracle prices this ED at 12 points, not at 12 x 1.75, so the merged
+        advantages do not reach its cost. Rather than reproduce that by
+        changing the list every cost path reads and hoping, the borrowed
+        modifiers are handed to the display and to nothing else.
+        """
+        if self._is_power:
+            return []
+        hero = _active_hero()
+        if hero is None:
+            return []
+
+        borrowed: list = []
+        mine = self._assigned_modifiers
+
+        def consider(obj):
+            if not isinstance(obj, Characteristic):
+                return
+            if obj.xmlid != self.xmlid or obj._id == self._id:
+                return
+            if not obj.add_modifiers_to_base:
+                return
+            for mod in obj.assigned_modifiers:
+                if (GenericObject.find_object_by_id(mine, mod.xmlid) is None
+                        and GenericObject.find_object_by_id(borrowed, mod.xmlid) is None):
+                    borrowed.append(mod)
+
+        for group in (getattr(hero, "powers", None) or (),
+                      getattr(hero, "equipment", None) or ()):
+            for obj in group:
+                consider(obj)
+                for sub in (getattr(obj, "powers", None) or ()):
+                    consider(sub)
+        return borrowed
+
+    @property
+    def modifier_string(self) -> str:
+        """As GenericObject's, plus whatever this characteristic borrows."""
+        borrowed = self._modifiers_borrowed_from_powers()
+        if not borrowed:
+            return super().modifier_string
+        original = self._assigned_modifiers
+        self._assigned_modifiers = list(original) + borrowed
+        try:
+            return super().modifier_string
+        finally:
+            self._assigned_modifiers = original
+
     @property
     def column2_output(self) -> str:
         """What HD prints for this characteristic on the sheet.
@@ -1221,3 +1285,12 @@ def _active_hero_has_endurance_reserve() -> bool:
             getattr(hero, "powers", []) or [], "ENDURANCERESERVE") is not None
     except Exception:  # noqa: BLE001
         return False
+
+
+def _active_hero():
+    """The character whose powers this characteristic may borrow from."""
+    try:
+        from kirby_cost.core.context import EngineContext
+        return EngineContext.active_hero()
+    except Exception:  # noqa: BLE001
+        return None
