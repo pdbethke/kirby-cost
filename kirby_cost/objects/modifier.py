@@ -9,7 +9,7 @@ Modifiers represent advantages and limitations that can be applied to powers.
 from typing import Optional, List, TYPE_CHECKING
 from kirby_cost.objects.base import GenericObject
 from kirby_cost.engine.xml_attrs import XMLAttr
-from kirby_cost.util.rounder import round_half_up
+from kirby_cost.util.rounder import round_half_up, round_down
 
 if TYPE_CHECKING:
     from kirby_cost.objects.adder import Adder
@@ -487,3 +487,142 @@ class Modifier(GenericObject):
         modifier = Modifier()
         modifier._init(element)
         return modifier
+
+    def get_fraction(self, val: float) -> str:
+        """The value HD prints inside a modifier's brackets.
+
+        Ported from ``Modifier.getFraction`` (Modifier.java:532). Not a general
+        decimal-to-fraction helper — ``GenericObject.fraction`` is that, and is
+        not a substitute. This always carries an explicit sign, snaps to
+        quarters by NEAREST match rather than exact equality, rolls a value
+        within a quarter of the next whole number up into it, and has a
+        separate multiplier form.
+        """
+        flag = "*" if (_flag_forced_modifiers() and self.force_allow) else ""
+        use_mult = self.use_multiplier()
+
+        if val == 0:
+            if use_mult:
+                return "x1" + flag
+            return ("-0" if self.is_limitation else "+0") + flag
+
+        if use_mult:
+            ret = "x"
+            is_neg = val < 0
+            val = abs(val)
+            frac = ""
+            check = round_down(val + 0.0000001)
+            if check < val:
+                # HD detaches the parent before recursing so the nested call
+                # cannot pick up a multiplier from it.
+                holder, self._parent = self._parent, None
+                frac = self._fraction_plain(val - check)
+                self._parent = holder
+                if frac.startswith("+"):
+                    frac = frac[1:]
+            if frac.strip():
+                frac = " " + frac
+            check += 1
+            ret += (f"1/{check}{frac}" if is_neg else f"{check}{frac}")
+            return ret + flag
+
+        return self._fraction_plain(val) + flag
+
+    def _fraction_plain(self, val: float) -> str:
+        """The non-multiplier half of getFraction, split out so the multiplier
+        branch can recurse into it without re-testing use_multiplier()."""
+        ret = "-" if val < 0 else "+"
+        val = abs(val)
+        if val > 1:
+            ret += str(int(round_down(val + 1) if self.use_multiplier()
+                           else round_down(val)))
+            val = val - round_down(val)
+        if val == 0:
+            return ret
+
+        closest_match = ""
+        closest = 1.0
+        for candidate, text in ((0.25, "1/4"), (0.5, "1/2"), (0.75, "3/4")):
+            if abs(candidate - val) < closest:
+                closest = abs(candidate - val)
+                closest_match = text
+        if abs(1 - val) < closest:
+            # Nearer the next whole number than to three quarters: absorb it.
+            closest_match = ""
+            if len(ret) > 1:
+                ret = ret[0] + str(int(ret[1:]) + 1)
+            elif ret not in ("+", "-", "x") and len(ret) == 1:
+                ret = str(int(ret) + 1)
+            elif not ret.strip() or ret.strip() == "+":
+                ret = "+1"
+            else:
+                ret = "-1"
+        if len(ret) > 1:
+            ret += " "
+        return (ret + closest_match).strip()
+
+    @property
+    def column2_output(self) -> str:
+        """``Resistant (+1/2)`` — the alias, then everything in brackets.
+
+        Ported from ``Modifier.getColumn2Output`` (Modifier.java:415). This
+        class inherited GenericObject's default, which is the alias and the
+        input and nothing else, so every modifier printed without the value
+        that makes it mean anything.
+        """
+        ret = "" if self.show_option_only else (self.alias or "")
+        val = self.total_value
+        option = self._selected_option
+
+        if (not self.show_option_in_parens and option is not None
+                and getattr(option, "display_in_string", True)
+                and (option.alias or "").strip()):
+            ret = f"{ret} {option.alias}".strip()
+        if not self.show_input_in_parens and self.input and self.input.strip():
+            if ret.strip():
+                ret += " "
+            ret += self.input
+        ret = ret.strip()
+        for nested in self.assigned_modifiers:
+            ret += f", {nested.alias}"
+
+        # An alias may open a bracket of its own — "Reduced Endurance (0 END".
+        # HD continues that one rather than opening a second.
+        paren_count = ret.count("(") - ret.count(")")
+        ret += " (" if paren_count <= 0 else "; "
+
+        if (self.show_option_in_parens and option is not None
+                and getattr(option, "display_in_string", True)
+                and (option.alias or "").strip()):
+            ret += option.alias.strip() + "; "
+        if self.show_input_in_parens and self.input and self.input.strip():
+            ret += self.input + "; "
+        for adder in self.assigned_adders:
+            if not getattr(adder, "is_selected", True):
+                continue
+            text = (adder.column2_output or "").strip()
+            if text:
+                ret += text + "; "
+        if (self.comments or "").strip():
+            ret += self.comments + "; "
+
+        if val > self._max_cost and self.max_set:
+            val = self._max_cost
+        if val < self._minimum_cost and self.min_set:
+            val = self._minimum_cost
+
+        ret += self.get_fraction(val) + ")"
+        paren_count -= 1
+        while paren_count > 0:
+            ret += ")"
+            paren_count -= 1
+        return ret
+
+
+def _flag_forced_modifiers() -> bool:
+    """The preference that marks force-allowed modifiers with an asterisk."""
+    try:
+        from kirby_cost.core.context import EngineContext
+        return bool(EngineContext.prefs().flag_forced_modifiers)
+    except Exception:  # noqa: BLE001 — a missing preference is not an error
+        return False

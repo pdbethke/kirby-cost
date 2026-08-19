@@ -3,10 +3,10 @@
   "_measured": {
     "date": "2026-08-19",
     "strings_compared": 91692,
-    "exact": 70211,
-    "wrong": 21401,
+    "exact": 71831,
+    "wrong": 19781,
     "raised": 80,
-    "gap_classes": 269
+    "gap_classes": 266
   },
   "gaps": [
     "adder_string|ActiveSonar",
@@ -94,7 +94,6 @@
     "column2_output|FlashDefense",
     "column2_output|Flight",
     "column2_output|FloatingLocation",
-    "column2_output|Follower",
     "column2_output|ForceField",
     "column2_output|ForceWall",
     "column2_output|Forgery",
@@ -213,7 +212,6 @@
     "modifier_string|Flash",
     "modifier_string|FlashDefense",
     "modifier_string|Flight",
-    "modifier_string|Follower",
     "modifier_string|ForceField",
     "modifier_string|ForceWall",
     "modifier_string|Growth",
@@ -230,7 +228,6 @@
     "modifier_string|KnowledgeSkill",
     "modifier_string|Language",
     "modifier_string|LifeSupport",
-    "modifier_string|LightningReflexesAll",
     "modifier_string|List",
     "modifier_string|MentalDefense",
     "modifier_string|MentalIllusions",
