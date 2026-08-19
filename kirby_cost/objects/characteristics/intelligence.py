@@ -42,6 +42,11 @@ class Intelligence(Characteristic, xmlid="INT"):
     
     def per_roll(self, active_hero: Optional['Hero'] = None) -> str:
         """Get PER roll string."""
+        # CompoundPower is imported under TYPE_CHECKING and used in a
+        # runtime isinstance() below — invisible until this method
+        # actually runs, which nothing made it do until Detect asked
+        # for a PER roll.
+        from kirby_cost.objects.powers.compound_power import CompoundPower
         if active_hero is None:
             return "11-"
         
@@ -61,7 +66,7 @@ class Intelligence(Characteristic, xmlid="INT"):
         # Check powers for Enhanced Perception
         for power in active_hero.powers:
             if isinstance(power, EnhancedPerception):
-                if power.selected_option is not None and power.selected_option.xmlid == "ALL":
+                if _is_all_senses(power):
                     n2 += power.levels
                 else:
                     n5 += power.levels
@@ -70,7 +75,7 @@ class Intelligence(Characteristic, xmlid="INT"):
             if isinstance(power, CompoundPower):
                 for sub_power in power.powers:
                     if EnhancedPerception and isinstance(sub_power, EnhancedPerception):
-                        if sub_power.selected_option is not None and sub_power.selected_option.xmlid == "ALL":
+                        if _is_all_senses(sub_power):
                             n2 += sub_power.levels
                         elif sub_power.selected_option is not None:
                             n5 += sub_power.levels
@@ -78,7 +83,7 @@ class Intelligence(Characteristic, xmlid="INT"):
         # Check equipment for Enhanced Perception
         for equip in active_hero.equipment:
             if isinstance(equip, EnhancedPerception):
-                if equip.selected_option is not None and equip.selected_option.xmlid == "ALL":
+                if _is_all_senses(equip):
                     n2 += equip.levels
                 else:
                     n5 += equip.levels
@@ -87,7 +92,7 @@ class Intelligence(Characteristic, xmlid="INT"):
             if isinstance(equip, CompoundPower):
                 for sub_power in equip.powers:
                     if EnhancedPerception and isinstance(sub_power, EnhancedPerception):
-                        if sub_power.selected_option is not None and sub_power.selected_option.xmlid == "ALL":
+                        if _is_all_senses(sub_power):
                             n2 += sub_power.levels
                         elif sub_power.selected_option is not None:
                             n5 += sub_power.levels
@@ -103,6 +108,11 @@ class Intelligence(Characteristic, xmlid="INT"):
     
     def primary_per_roll(self, active_hero: Optional['Hero'] = None) -> int:
         """Get primary PER roll."""
+        # CompoundPower is imported under TYPE_CHECKING and used in a
+        # runtime isinstance() below — invisible until this method
+        # actually runs, which nothing made it do until Detect asked
+        # for a PER roll.
+        from kirby_cost.objects.powers.compound_power import CompoundPower
         if active_hero is None:
             return 11
         
@@ -115,33 +125,38 @@ class Intelligence(Characteristic, xmlid="INT"):
         
         for power in active_hero.powers:
             if EnhancedPerception and isinstance(power, EnhancedPerception):
-                if power.selected_option is not None and power.selected_option.xmlid == "ALL":
+                if _is_all_senses(power):
                     n3 += power.levels
                 continue
             
             if isinstance(power, CompoundPower):
                 for sub_power in power.powers:
                     if EnhancedPerception and isinstance(sub_power, EnhancedPerception):
-                        if sub_power.selected_option is not None and sub_power.selected_option.xmlid == "ALL":
+                        if _is_all_senses(sub_power):
                             n3 += sub_power.levels
         
         # Check equipment for Enhanced Perception with ALL option
         for equip in active_hero.equipment:
             if isinstance(equip, EnhancedPerception):
-                if equip.selected_option is not None and equip.selected_option.xmlid == "ALL":
+                if _is_all_senses(equip):
                     n3 += equip.levels
                 continue
             
             if isinstance(equip, CompoundPower):
                 for sub_power in equip.powers:
                     if EnhancedPerception and isinstance(sub_power, EnhancedPerception):
-                        if sub_power.selected_option is not None and sub_power.selected_option.xmlid == "ALL":
+                        if _is_all_senses(sub_power):
                             n3 += sub_power.levels
         
         return n2 + n3
     
     def secondary_per_roll(self, active_hero: Optional['Hero'] = None) -> int:
         """Get secondary PER roll."""
+        # CompoundPower is imported under TYPE_CHECKING and used in a
+        # runtime isinstance() below — invisible until this method
+        # actually runs, which nothing made it do until Detect asked
+        # for a PER roll.
+        from kirby_cost.objects.powers.compound_power import CompoundPower
         if active_hero is None:
             return 11
         
@@ -152,7 +167,7 @@ class Intelligence(Characteristic, xmlid="INT"):
         # Check powers for Enhanced Perception
         for power in active_hero.powers:
             if isinstance(power, EnhancedPerception):
-                if power.selected_option is not None and power.selected_option.xmlid == "ALL":
+                if _is_all_senses(power):
                     n3 += power.levels
                 elif power.selected_option is not None:
                     n4 += power.levels
@@ -161,7 +176,7 @@ class Intelligence(Characteristic, xmlid="INT"):
             if isinstance(power, CompoundPower):
                 for sub_power in power.powers:
                     if EnhancedPerception and isinstance(sub_power, EnhancedPerception):
-                        if sub_power.selected_option is not None and sub_power.selected_option.xmlid == "ALL":
+                        if _is_all_senses(sub_power):
                             n3 += sub_power.levels
                         elif sub_power.selected_option is not None:
                             n4 += sub_power.levels
@@ -169,7 +184,7 @@ class Intelligence(Characteristic, xmlid="INT"):
         # Check equipment for Enhanced Perception
         for equip in active_hero.equipment:
             if isinstance(equip, EnhancedPerception):
-                if equip.selected_option is not None and equip.selected_option.xmlid == "ALL":
+                if _is_all_senses(equip):
                     n3 += equip.levels
                 elif equip.selected_option is not None:
                     n4 += equip.levels
@@ -178,10 +193,27 @@ class Intelligence(Characteristic, xmlid="INT"):
             if isinstance(equip, CompoundPower):
                 for sub_power in equip.powers:
                     if EnhancedPerception and isinstance(sub_power, EnhancedPerception):
-                        if sub_power.selected_option is not None and sub_power.selected_option.xmlid == "ALL":
+                        if _is_all_senses(sub_power):
                             n3 += sub_power.levels
                         elif sub_power.selected_option is not None:
                             n4 += sub_power.levels
         
         return n2 + n3 + n4
 
+
+
+def _is_all_senses(power) -> bool:
+    """Whether an Enhanced Perception applies to every sense group.
+
+    Java asks `getSelectedOption().getXMLID().equals("ALL")` — the OPTION
+    OBJECT, and nothing else. It is tempting to fall back to the document's
+    OPTIONID when the object has not been resolved, and that is WRONG: HD does
+    not resolve one either, because ENHANCEDPERCEPTION's template lists no
+    options at all (it is priced by ALLCOST/GROUPCOST/SENSECOST). So the
+    bonus is not applied in HD, and a character with
+    `OPTIONID="ALL" OPTION_ALIAS="all Sense Groups except Sight Group"` — a
+    file that says ALL and means all-but-one — gets no bonus either.
+    Substituting OPTIONID here made every such Detect roll 2 too high.
+    """
+    option = getattr(power, "selected_option", None)
+    return option is not None and (option.xmlid or "").upper() == "ALL"
