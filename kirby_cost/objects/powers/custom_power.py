@@ -52,6 +52,15 @@ class CustomPower(Power, xmlid="CUSTOMPOWER"):
         XMLAttr("USECUSTOMENDCOLUMN", "use_custom_column3", "yesno"),
     )
 
+    @property
+    def damage_display(self) -> str:
+        """A custom power states no damage.
+
+        Java's ``CustomPower.getDamageDisplay`` is `return ""`. Inheriting
+        Power's put a bare "0d6" on the end of every one of them.
+        """
+        return ""
+
     def __init__(self):
         """Initialize a Custom Power."""
         super().__init__()

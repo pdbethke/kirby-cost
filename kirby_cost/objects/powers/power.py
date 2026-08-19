@@ -7,6 +7,7 @@ This is the base class for all powers in Hero Designer.
 """
 
 from typing import Optional
+from kirby_cost.objects.base import GenericObject, option_alias
 from kirby_cost.objects.char_affecting import CharAffectingObject
 from kirby_cost.engine.xml_attrs import XMLAttr
 from kirby_cost.util.rounder import round_half_down, round_half_up
@@ -93,6 +94,65 @@ class Power(CharAffectingObject):
         return self.affects_characteristics()
     
     @property
+    def column2_output(self) -> str:
+        """``<i>Awkward On Land:</i>  Running -8m (total 4m)`` — the standard
+        shape every power's line is built from.
+
+        Ported from ``Power.getColumn2Output`` (Power.java). Power had none,
+        so anything that did not override it fell through to GenericObject's
+        default — the alias, the input and the comments — and lost the name,
+        the damage display, the adders and the modifiers. Java's own
+        GenericObject.getColumn2Output is just `return getDisplay()`; the
+        shape below belongs to Power, which is why inheriting the wrong one
+        was silent rather than obviously broken.
+
+        The END-reserve note is gated on useWG being off, and HD's 6E default
+        is on, so it does not print for this corpus. It is here because the
+        preference is a preference.
+        """
+        ret = f"{self.alias or ''} {self.damage_display}".strip()
+        if self._name and self._name.strip():
+            ret = f"<i>{self._name}:</i>  {ret}"
+        if self.input and self.input.strip():
+            ret += f":  {self.input}"
+        option = (option_alias(self) or "").strip()
+        if option:
+            ret += f" ({option})"
+        adders = self.adder_string
+        if adders.strip():
+            ret += f", {adders}"
+        ret += self.modifier_string
+        ret += self._end_reserve_note()
+        return ret
+
+    def _end_reserve_note(self) -> str:
+        """" (uses Personal END)" — printed only with the WG preference off.
+
+        HD writes it when the power costs END, the character has an ENDURANCE
+        RESERVE, and no ENDRESERVEOREND modifier settles the question. Shared
+        by every power's column2_output, which is why it is a method rather
+        than eight copies.
+        """
+        if self.end_usage <= 0:
+            return ""
+        from kirby_cost.core.context import EngineContext
+        try:
+            if EngineContext.prefs().use_wg:
+                return ""
+        except Exception:  # noqa: BLE001
+            return ""
+        hero = EngineContext.active_hero()
+        if hero is None:
+            return ""
+        if GenericObject.find_object_by_id(hero.powers, "ENDURANCERESERVE") is None:
+            return ""
+        if GenericObject.find_object_by_id(
+                self.all_assigned_modifiers, "ENDRESERVEOREND") is not None:
+            return ""
+        return (" (uses END Reserve)" if self.use_end_reserve
+                else " (uses Personal END)")
+
+    @property
     def damage_display(self) -> str:
         """Get the damage display string (e.g., '8d6', '12d6+1')."""
         if "[LVL]" in self._display.upper():
@@ -162,7 +222,7 @@ class Power(CharAffectingObject):
             END cost as integer
         """
         from kirby_cost.core.context import EngineContext
-        from kirby_cost.objects.base import GenericObject
+        from kirby_cost.objects.base import GenericObject, option_alias
         
         ap_per_end = self.ap_per_end
         active_cost = self.active_cost
