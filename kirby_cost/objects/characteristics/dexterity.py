@@ -26,8 +26,10 @@ class Dexterity(Characteristic, xmlid="DEX"):
         """Get characteristic type."""
         return int(CharacteristicType.DEX)
     
-    def display_notes(self, active_hero: Optional['Hero'] = None) -> str:
+    @property
+    def display_notes(self) -> str:
         """Get display notes with OCV/DCV calculations."""
+        active_hero = _active_hero()
         # In 6E, DEX doesn't show OCV/DCV in display notes
         # This would need to check template version
         # For now, return empty for 6E

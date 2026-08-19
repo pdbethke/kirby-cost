@@ -113,8 +113,10 @@ class Strength(Characteristic, xmlid="STR"):
             return string
         return f"{string}/{string2}"
     
-    def display_notes(self, active_hero: Optional['Hero'] = None) -> str:
+    @property
+    def display_notes(self) -> str:
         """Get display notes."""
+        active_hero = _active_hero()
         hth_damage = self.hth_damage_string(active_hero)
         primary_end = self.primary_end(active_hero)
         secondary_end = self.secondary_end(active_hero)

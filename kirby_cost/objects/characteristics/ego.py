@@ -28,8 +28,10 @@ class Ego(Characteristic, xmlid="EGO"):
         """Get characteristic type."""
         return int(CharacteristicType.EGO)
     
-    def display_notes(self, active_hero: Optional['Hero'] = None) -> str:
+    @property
+    def display_notes(self) -> str:
         """Get display notes with ECV calculations."""
+        active_hero = _active_hero()
         # In 6E, EGO doesn't show ECV in display notes
         # This would need to check template version
         if active_hero is None:

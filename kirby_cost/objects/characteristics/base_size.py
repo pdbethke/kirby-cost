@@ -65,7 +65,8 @@ class BaseSize(Characteristic, xmlid="BASESIZE"):
             return 1
         return levels
     
-    def display_notes(self, active_hero: Optional['Hero'] = None) -> str:
+    @property
+    def display_notes(self) -> str:
         """Get display notes with size information."""
         # Calculate dimensions
         d = self.start_length

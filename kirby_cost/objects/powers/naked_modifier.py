@@ -8,6 +8,8 @@ without buying the base power. Cost = levels * (non-private advantages).
 """
 
 import math
+from kirby_cost.objects.base import GenericObject, _show_common_limitations
+from kirby_cost.util.rounder import round_up
 from kirby_cost.objects.powers.power import Power
 from kirby_cost.objects.base import GenericObject
 from kirby_cost.util.rounder import round_half_down
@@ -178,3 +180,100 @@ class NakedModifier(Power, xmlid="NAKEDMODIFIER"):
             d += float(qty_cost)
 
         return d
+
+    def _naked_modifier_string(self) -> str:
+        """The modifiers this power SELLS, which is the whole of what it is.
+
+        Ported from ``NakedModifier.getNakedModifierString``. A Naked Advantage
+        is not a power with modifiers attached — it IS the modifier, bought
+        separately and applied to something else, so its own modifiers are its
+        subject rather than its decoration. Private modifiers are dropped
+        (they belong to `modifier_string`, which prints only those), and
+        advantages come before limitations with the usual "; " between the
+        groups.
+        """
+        mods = [m for m in self._assigned_modifiers if not m.private]
+        mods.sort(key=lambda m: m.total_value)
+        ret = ""
+        for m in mods:
+            if m.total_value >= 0 and m.display_in_string:
+                if ret.strip():
+                    ret += ", "
+                ret += m.column2_output
+        negatives = 0
+        for m in mods:
+            if m.total_value < 0 and m.display_in_string:
+                negatives += 1
+                ret += "; " if negatives == 1 else ", "
+                ret += m.column2_output
+        return ret
+
+    @property
+    def modifier_string(self) -> str:
+        """Only the PRIVATE modifiers, plus the framework's shared ones.
+
+        Ported from ``NakedModifier.getModifierString``. The inverse of
+        `_naked_modifier_string`: what a Naked Advantage sells is its subject,
+        so the trailing modifier list holds only what is private to it.
+        """
+        mods = [m for m in self._assigned_modifiers if m.private]
+        parent = self.parent
+        if parent is not None and _show_common_limitations():
+            from kirby_cost.objects.frameworks import is_multipower
+            for mod in parent.assigned_modifiers:
+                if "VPP" in (mod.types or []):
+                    continue
+                if mod.xmlid == "CHARGES" and is_multipower(parent):
+                    continue
+                shared = (mod.total_value < 0
+                          or type(parent).__name__ == "VariablePowerPool")
+                already = GenericObject.find_object_by_id(
+                    self._assigned_modifiers, mod.xmlid)
+                generic = mod.xmlid in ("GENERIC_OBJECT", "CUSTOM_MODIFIER",
+                                        "MODIFIER")
+                if shared and (already is None or generic):
+                    mods.append(mod)
+        mods.sort(key=lambda m: m.total_value)
+
+        ret = ""
+        for m in mods:
+            if m.total_value >= 0 and m.display_in_string:
+                ret += ", " + m.column2_output
+        if self.display_active_cost and (
+                self.active_cost != self.total_cost
+                or self.real_cost != self.total_cost):
+            ret += f" ({round_up(self.active_cost)} Active Points)"
+        negatives = 0
+        for m in mods:
+            if m.total_value < 0 and m.display_in_string:
+                negatives += 1
+                ret += "; " if negatives == 1 else ", "
+                ret += m.column2_output
+        return ret
+
+    @property
+    def column2_output(self) -> str:
+        """``Reduced Endurance (0 END; +1/2) for up to 30 Active Points``.
+
+        Ported from ``NakedModifier.getColumn2Output``. This inherited Power's
+        line, which leads with the alias and the damage display, so it printed
+        "Naked Advantage:  STR, Reduced Endurance (0 END; +1/2)" — the
+        advantage demoted to a trailing modifier on a power that does not
+        exist. HD leads with the advantage itself and says what it is bought
+        FOR: the alias only appears when there is no input to name.
+        """
+        ret = self._naked_modifier_string()
+        if self.input and self.input.strip():
+            ret += (f" for up to {self._levels} Active Points of {self.input}")
+        else:
+            ret = (f"{self.alias or ''}: {ret} for up to {self._levels} "
+                   f"Active Points")
+        if self._name and self._name.strip():
+            ret = f"<i>{self._name}:</i>  {ret}"
+        ret = ret.strip()
+        adders = self.adder_string
+        if adders.strip():
+            ret += f" ({adders})"
+        ret += self.modifier_string
+        ret += self._end_reserve_note()
+        return ret

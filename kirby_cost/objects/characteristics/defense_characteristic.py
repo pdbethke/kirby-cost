@@ -387,8 +387,10 @@ class DefenseCharacteristic(Characteristic):
     # display_notes, nonresistant_total, resistance caching, roll
     # ------------------------------------------------------------------
 
-    def display_notes(self, active_hero: Optional['Hero'] = None) -> str:
+    @property
+    def display_notes(self) -> str:
         """Get display notes with defense label."""
+        active_hero = _active_hero()
         label = self._DEFENSE_LABEL
         n = self.resistant_total(True, active_hero)
         n2 = self.resistant_total(False, active_hero)

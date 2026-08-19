@@ -67,7 +67,7 @@ class Sense(Power):
         self._sense_modifiers_saver: Optional[List[str]] = None
         
         # Add to static list if valid
-        if self.xmlid and self.xmlid.strip() and self._display and self._display.strip() and self.included_in_template():
+        if self.xmlid and self.xmlid.strip() and self._display and self._display.strip() and self.included_in_template:
             # Remove existing if present
             existing = GenericObject.find_object_by_id(Sense._all_senses, self.xmlid)
             while existing:
@@ -365,6 +365,7 @@ class Sense(Power):
         return ", ".join(parts)
     
     
+    @property
     def included_in_template(self) -> bool:
         """Check if included in template (stub)."""
         return True

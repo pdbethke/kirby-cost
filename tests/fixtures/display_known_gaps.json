@@ -3,10 +3,10 @@
   "_measured": {
     "date": "2026-08-19",
     "strings_compared": 91221,
-    "exact": 87114,
-    "wrong": 4106,
+    "exact": 87559,
+    "wrong": 3661,
     "raised": 1,
-    "gap_classes": 191,
+    "gap_classes": 190,
     "note": "strings_compared excludes objects whose HD element ID is not unique within their character; see _oracle_index."
   },
   "gaps": [
@@ -108,7 +108,6 @@
     "column2_output|PartiallyPenetrative",
     "column2_output|Penetrative",
     "column2_output|PowerDefense",
-    "column2_output|ProfessionalSkill",
     "column2_output|Radar",
     "column2_output|RadioPerception",
     "column2_output|Running",

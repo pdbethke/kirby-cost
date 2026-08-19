@@ -34,8 +34,10 @@ class Intelligence(Characteristic, xmlid="INT"):
         """Get characteristic type."""
         return int(CharacteristicType.INT)
     
-    def display_notes(self, active_hero: Optional['Hero'] = None) -> str:
+    @property
+    def display_notes(self) -> str:
         """Get display notes with PER roll."""
+        active_hero = _active_hero()
         return f"PER Roll {self.per_roll(active_hero)}"
     
     def per_roll(self, active_hero: Optional['Hero'] = None) -> str:
