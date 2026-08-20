@@ -265,9 +265,10 @@ class Sense(Power):
         from kirby_cost.objects.powers.sense_group import SenseGroup
         result: List['SenseGroup'] = []
         
-        group = self.group
-        if group:
-            result.append(group)
+        # Java appends getGroup() UNCONDITIONALLY, so the list always has at
+        # least one entry even when that entry is null — which is what makes
+        # `size() > 1` mean "there is a choice" rather than "there is a group".
+        result.append(self.group)
         
         if self.allow_any_group:
             all_groups = SenseGroup.all_groups()

@@ -285,6 +285,17 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
                 if stated:
                     setattr(self, field, stated.startswith("Y"))
 
+        # A sense usually may be moved to any group, and twelve in Main6E may
+        # not — Nightvision belongs to Sight and nowhere else. HD prints the
+        # group name only when there is a CHOICE of group
+        # (`getAvailableGroups().size() > 1`), so leaving this at its default
+        # of True made every such sense print a group HD does not:
+        # "Nightvision (Sight Group)" for HD's "Nightvision".
+        if hasattr(self, "allow_any_group"):
+            stated = (attrs.get("ALLOWANYGROUP") or "").strip().upper()
+            if stated.startswith("N"):
+                self.allow_any_group = False
+
         # What the template CALLS this object, as distinct from what this
         # character calls it. Focus is the one that shows: HD compares
         # `getAlias()` against `getDisplay()` and prints the alias inside the
@@ -371,6 +382,7 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
                         chosen._alias = self.source_option_alias or ""
                     chosen._base_cost = opt.base_cost
                     chosen._selected = True
+                    chosen._display_in_string = opt.display_in_string
                     chosen.parent = self
                     self._selected_option = chosen
 

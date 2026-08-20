@@ -7,6 +7,7 @@ Base class for sense adders that modify senses.
 """
 
 from typing import List, Optional
+from kirby_cost.objects.base import option_alias
 from kirby_cost.objects.powers.power import Power
 from kirby_cost.objects.adder import Adder
 from kirby_cost.objects.base import GenericObject, option_alias
@@ -254,47 +255,38 @@ class SenseAdder(Power):
     
     @property
     def column2_output(self) -> str:
-        """Get column 2 output string."""
-        output = self._alias
-        
+        """``Tracking with Smell/Taste Group``.
+
+        Ported from ``SenseAdder.getColumn2Output``. The sense this applies to
+        is the object's SELECTED OPTION, and a sense adder's template lists no
+        options, so `_selected_option` is None and the suffix vanished: 96
+        Tracking Senses printed a bare "Tracking". The document names it
+        outright, which is what `option_alias` reads.
+
+        HD's guard is `if (!withString.equals(" for"))` against a string
+        initialised to " with " — always true, so the suffix is unconditional.
+        """
+        ret = self.alias or ""
         if self._name and self._name.strip():
-            output = f"<i>{self._name}:</i>  {output}"
-        
+            ret = f"<i>{self._name}:</i>  {ret}"
         if self.input and self.input.strip():
-            output += f":  {self.input}"
-        
-        # Build "with" string
+            ret += f":  {self.input}"
+
         with_str = " with "
-        if self._selected_option:
-            with_str += self._selected_option.alias
-            adder_str = self.adder_string
-            if adder_str and adder_str.strip():
-                with_str += ", " + adder_str
-                # Replace last comma with "and"
-                if ", " in with_str:
-                    last_comma = with_str.rfind(", ")
-                    with_str = (with_str[:last_comma] + 
-                              " and" + 
-                              with_str[last_comma+1:])
-        else:
-            adder_str = self.adder_string
-            if adder_str and adder_str.strip():
-                with_str += adder_str
-                # Replace last comma with "and"
-                if ", " in with_str:
-                    last_comma = with_str.rfind(", ")
-                    with_str = (with_str[:last_comma] + 
-                              " and" + 
-                              with_str[last_comma+1:])
-        
-        if with_str.strip() != "with":
-            output += with_str
-        
-        modifier_str = self.modifier_string
-        output += modifier_str
-        
-        return output
-    
+        option = (option_alias(self) or "").strip()
+        adders = self.adder_string or ""
+        if option:
+            with_str += option
+            if adders.strip():
+                with_str += ", " + adders
+                with_str = _last_comma_to_and(with_str)
+        elif adders.strip():
+            with_str += " " + adders
+            if ", " in with_str:
+                with_str = _last_comma_to_and(with_str)
+        ret += with_str
+        ret += self.modifier_string
+        return ret
     @property
     def selected_option(self) -> Optional[Adder]:
         """Get the selected option."""
@@ -342,3 +334,11 @@ class SenseAdder(Power):
     
     
 
+
+
+def _last_comma_to_and(text: str) -> str:
+    """"a, b, c" -> "a, b and c". HD writes lists the way prose does."""
+    i = text.rfind(",")
+    if i < 0:
+        return text
+    return text[:i] + " and" + text[i + 1:]

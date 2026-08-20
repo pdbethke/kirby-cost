@@ -6,6 +6,7 @@ Converted from com.hero.objects.powers.ExtraLimbs.java
 Power to have extra limbs.
 """
 
+from kirby_cost.objects.base import option_alias
 from kirby_cost.objects.powers.power import Power
 
 
@@ -29,33 +30,32 @@ class ExtraLimbs(Power, xmlid="EXTRALIMBS"):
     
     @property
     def column2_output(self) -> str:
-        """Get column 2 output with limb count."""
-        output = f"{self._alias} {self.damage_display}"
-        
-        if self._name and self._name.strip():
-            output = f"<i>{self._name}:</i>  {output}"
-        
-        # Remove trailing 's' if only 1 limb
-        if self._levels == 1 and output.upper().endswith("S"):
-            output = output[:-1]
-        
-        if self._levels > 0:
-            output += f" ({self._levels})"
-        
-        if self.input and self.input.strip():
-            output += f":  {self.input}"
-        
-        if self._selected_option:
-            output += f" ({self._selected_option.alias})"
-        
-        adder_str = self.adder_string
-        if adder_str and adder_str.strip():
-            output += f", {adder_str}"
-        
-        modifier_str = self.modifier_string
-        output += modifier_str
-        
-        return output
-    
-    
+        """``Extra Limb (1)`` for one, ``Extra Limbs (4)`` for more.
 
+        Ported from ``ExtraLimbs.getColumn2Output``. Two details this missed:
+        HD trims before appending the count, so "Extra Limbs  (1)" had a
+        doubled space where the empty damage display used to be; and at
+        exactly one limb it drops a trailing "S" from whatever the line
+        currently says, which makes the alias singular without needing a
+        second name for it.
+        """
+        ret = f"{self.alias or ''} {self.damage_display}"
+        if self._name and self._name.strip():
+            ret = f"<i>{self._name}:</i>  {ret}"
+        if self._levels == 1:
+            ret = ret.strip()
+            if ret.upper().endswith("S"):
+                ret = ret[:-1]
+        if self._levels > 0:
+            ret = ret.rstrip() + f" ({self._levels})"
+        if self.input and self.input.strip():
+            ret += f":  {self.input}"
+        option = (option_alias(self) or "").strip()
+        if option:
+            ret += f" ({option})"
+        adders = self.adder_string
+        if adders.strip():
+            ret += f", {adders}"
+        ret += self.modifier_string
+        ret += self._end_reserve_note()
+        return ret
