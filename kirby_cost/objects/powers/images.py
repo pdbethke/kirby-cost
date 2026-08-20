@@ -29,24 +29,29 @@ class Images(SenseAffectingPower, xmlid="IMAGES"):
     
     @property
     def column2_output(self) -> str:
-        """Get column 2 output with sense groups."""
-        # Stub: would build sense group list from selected option and adders
-        output = f"{self._alias} {self.damage_display}"
-        
-        if self._selected_option:
-            output += f" {self._selected_option.alias}"
-        
-        if self._name and self._name.strip():
-            output = f"<i>{self._name}:</i>  {output}"
-        
-        adder_str = self.adder_string
-        if adder_str and adder_str.strip():
-            output += f", {adder_str}"
-        
-        modifier_str = self.modifier_string
-        output += modifier_str
-        
-        return output
-    
-    
+        """``Sight Group Flash 4d6`` — what it affects, then what it is.
 
+        Ported from ``Images.getColumn2Output``. All three sense-affecting
+        powers open with the groups and senses they act on and only then name
+        themselves; this printed the alias first and the group last, which is
+        the same words in the wrong order.
+        """
+        ret = self._sense_prefix()
+        if self._name and self._name.strip():
+            ret = f"<i>{self._name}:</i>  {ret}"
+        ret += " " + (self.alias or "")
+        if self.input and self.input.strip():
+            ret += f":  {self.input}"
+        adders = self.adder_string
+        if adders.strip():
+            ret += f", {adders}"
+        # INCREASEDRADIUS and ALTEREDSHAPE are folded into the line above
+        # rather than listed as modifiers.
+        from kirby_cost.objects.base import GenericObject as _GO
+        for xmlid in ("INCREASEDRADIUS", "ALTEREDSHAPE"):
+            mod = _GO.find_object_by_id(self.assigned_modifiers, xmlid)
+            if mod is not None:
+                mod.display_in_string = False
+        ret += self.modifier_string
+        ret += self._end_reserve_note()
+        return ret

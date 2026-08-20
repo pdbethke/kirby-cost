@@ -20,6 +20,62 @@ class SenseAffectingPower(Power):
     Handles targeting vs non-targeting costs, sense groups, and individual senses.
     """
     
+    def _sense_prefix(self) -> str:
+        """``Sight Group``, ``Sight and Hearing Groups``, ``Sight Group and Normal Smell``.
+
+        Shared by Flash, Flash Defense and Images, which all put what they
+        AFFECT in front of what they are: HD writes "Sight Group Flash 4d6",
+        not "Flash 4d6 Sight Group". Ported from the identical opening of all
+        three getColumn2Output methods.
+
+        The word "Group" is stripped from each option's alias and re-added once
+        at the end, pluralised, so two groups read "Sight and Hearing Groups"
+        rather than "Sight Group and Hearing Group". Every adder that
+        contributes a group or a sense is marked not-to-be-printed, because
+        this line has just named it.
+        """
+        from kirby_cost.objects.base import GenericObject, option_alias
+        from kirby_cost.objects.powers.sense import Sense
+
+        def strip_group(text: str) -> str:
+            upper = (text or "").upper()
+            i = upper.find("GROUP")
+            return text[:i].strip() if i > 0 else (text or "")
+
+        groups: list = []
+        senses: list = []
+        first = (option_alias(self) or "").strip()
+        if first or self._selected_option is not None:
+            groups.append(strip_group(first))
+
+        all_senses = Sense.all_senses()
+        for ad in self.assigned_adders:
+            if ad.xmlid == "ADDITIONAL_GROUP":
+                ad.display_in_string = False
+                groups.append(strip_group((option_alias(ad) or "").strip()))
+            elif (ad.xmlid or "").endswith("GROUP"):
+                ad.display_in_string = False
+                groups.append(strip_group(ad.alias or ""))
+            elif ad.xmlid == "ADDITIONAL_SENSE":
+                ad.display_in_string = False
+                senses.append((option_alias(ad) or "").strip())
+            elif GenericObject.find_object_by_id(all_senses, ad.xmlid) is not None:
+                ad.display_in_string = False
+                senses.append(ad.alias or "")
+
+        ret = ""
+        for i, g in enumerate(groups):
+            if 0 < i < len(groups) - 1:
+                ret += ", "
+            elif i == len(groups) - 1 and i > 0:
+                ret += " and "
+            ret += g
+        ret += " Groups" if len(groups) > 1 else " Group"
+        for i, sense in enumerate(senses):
+            ret += ", " if i < len(senses) - 1 else " and "
+            ret += sense
+        return ret
+
     def __init__(self):
         """Initialize a Sense Affecting Power."""
         super().__init__()

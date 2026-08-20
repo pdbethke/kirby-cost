@@ -273,16 +273,43 @@ class Linked(Modifier, xmlid="LINKED"):
         Returns:
             Linked power object or None if not found
         """
-        # TODO: Would need HeroDesigner.getActiveHero() access
-        # For now, return None if linked_to_id is invalid
+        # Ported from ``Linked.getValue``. The two TODOs that were here said
+        # what was missing — "would need HeroDesigner.getActiveHero() access"
+        # — and the consequence was visible on the sheet: with no object to
+        # name, the display falls back to HD's own placeholder and every
+        # Linked printed "Linked (???; -1/2)" instead of naming the power it
+        # is linked TO, which is the entire content of the modifier.
         self._purify_linked_object()
-        
         if self.linked_to_id < 0:
             return None
-        
-        # TODO: Search through hero's powers and equipment
-        # This would require access to HeroDesigner.getActiveHero()
-        # For now, return None as placeholder
+
+        hero = _active_hero()
+        if hero is None:
+            return None
+
+        def find(objects):
+            for o in objects or ():
+                if getattr(o, "_id", None) == self.linked_to_id:
+                    return o
+                found = find(getattr(o, "powers", None))
+                if found is not None:
+                    return found
+            return None
+
+        for group in (getattr(hero, "powers", None),
+                      getattr(hero, "equipment", None)):
+            found = find(group)
+            if found is not None:
+                return found
+
+        # A slot's link can point at a sibling inside the same framework,
+        # which is not reachable from the hero's top-level list.
+        parent = self._parent
+        main = getattr(parent, "main_power", None) if parent is not None else None
+        if main is not None:
+            found = find(getattr(main, "powers", None))
+            if found is not None:
+                return found
         return None
     
     def option_vector(self, generic_object: GenericObject) -> List[Adder]:
@@ -369,3 +396,12 @@ def is_linked(mod) -> bool:
     is a straightforward ``isinstance`` check — no xmlid fallback needed.
     """
     return mod is not None and isinstance(mod, Linked)
+
+
+def _active_hero():
+    """The character whose powers a Linked modifier points into."""
+    try:
+        from kirby_cost.core.context import EngineContext
+        return EngineContext.active_hero()
+    except Exception:  # noqa: BLE001
+        return None

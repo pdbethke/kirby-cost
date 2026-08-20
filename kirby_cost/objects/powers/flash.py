@@ -29,26 +29,23 @@ class Flash(SenseAffectingPower, xmlid="FLASH"):
     
     @property
     def column2_output(self) -> str:
-        """Get column 2 output string."""
-        # Stub: would build sense group list from selected option and adders
-        output = f"{self._alias} {self.damage_display}"
-        
-        if self._selected_option:
-            output += f" {self._selected_option.alias}"
-        
-        # Add additional sense groups from adders (stub)
-        
-        if self._name and self._name.strip():
-            output = f"<i>{self._name}:</i>  {output}"
-        
-        adder_str = self.adder_string
-        if adder_str and adder_str.strip():
-            output += f", {adder_str}"
-        
-        modifier_str = self.modifier_string
-        output += modifier_str
-        
-        return output
-    
-    
+        """``Sight Group Flash 4d6`` — what it affects, then what it is.
 
+        Ported from ``Flash.getColumn2Output``. All three sense-affecting
+        powers open with the groups and senses they act on and only then name
+        themselves; this printed the alias first and the group last, which is
+        the same words in the wrong order.
+        """
+        ret = self._sense_prefix()
+        if self._name and self._name.strip():
+            ret = f"<i>{self._name}:</i>  {ret}"
+        ret += " " + (self.alias or "")
+        ret += " " + self.damage_display
+        if self.input and self.input.strip():
+            ret += f":  {self.input}"
+        adders = self.adder_string
+        if adders.strip():
+            ret += f", {adders}"
+        ret += self.modifier_string
+        ret += self._end_reserve_note()
+        return ret
