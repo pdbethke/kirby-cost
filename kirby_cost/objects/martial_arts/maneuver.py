@@ -340,20 +340,6 @@ class Maneuver(GenericObject, xmlid="MANEUVER"):
         except (ValueError, TypeError):
             return 0
     
-    def _replace(self, text: str, old: str, new: str) -> str:
-        """Replace string occurrences."""
-        while old in text:
-            idx = text.index(old)
-            if idx == 0:
-                text = new.strip() + " " + text[len(old):].strip()
-            else:
-                prefix = text[:idx]
-                suffix = text[idx + len(old):]
-                if new.strip():
-                    text = prefix.strip() + " " + new.strip() + " " + suffix.strip()
-                else:
-                    text = prefix.strip() + " " + suffix.strip()
-        return text.strip()
     
     def total_dc(self, primary: bool = True, limit_str: bool = False) -> float:
         """

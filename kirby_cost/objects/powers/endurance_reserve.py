@@ -40,8 +40,13 @@ class EnduranceReserve(Power, xmlid="ENDURANCERESERVE"):
 
     @property
     def damage_display(self) -> str:
-        return f"{self._levels} END"
+        """Empty. Java's ``EnduranceReserve.getDamageDisplay`` returns "".
 
+        The numbers this power is about — its defences and dimensions, or its
+        END and REC — are written by column2_output itself, so a damage
+        display that also produced them printed them twice.
+        """
+        return ""
     def rec_is_same_power(self) -> bool:
         """
         Check if recovery has the same modifiers as the reserve.
@@ -215,3 +220,47 @@ class EnduranceReserve(Power, xmlid="ENDURANCERESERVE"):
             result += float(qty_cost)
 
         return result
+
+    @property
+    def column2_output(self) -> str:
+        """``Endurance Reserve  (100 END, 12 REC)``.
+
+        Ported from ``EnduranceReserve.getColumn2Output``. A reserve is two
+        numbers, not one — how much END it holds and how fast it comes back —
+        and the REC lives on a child object, so a port that only reads the
+        power itself can only ever print half of it.
+
+        A reserve bought at zero levels is really a REC purchase, and HD
+        renders it AS the REC: alias, damage display and modifiers all come
+        from the child.
+        """
+        rec = self.rec
+        if self._levels == 0 and rec is not None:
+            ret = f"{rec.alias or ''} {rec.damage_display}"
+            if rec._name and rec._name.strip():
+                ret = f"<i>{rec._name}:</i>  {ret}"
+            ret += f" ({rec._levels} REC)"
+            if rec.input and rec.input.strip():
+                ret += f":  {rec.input}"
+            rec_adders = rec.adder_string
+            if rec_adders.strip():
+                ret += f" (REC: {rec_adders})"
+            rec_mods = rec.modifier_string.strip()
+            if rec_mods.startswith(";"):
+                rec_mods = rec_mods[1:]
+            if rec_mods.strip():
+                ret += f"; {rec_mods}"
+            return ret
+
+        ret = f"{self.alias or ''} {self.damage_display}"
+        if self._name and self._name.strip():
+            ret = f"<i>{self._name}:</i>  {ret}"
+        ret += f" ({self._levels} END, {rec._levels if rec is not None else 0} REC)"
+        if self.input and self.input.strip():
+            ret += f":  {self.input}"
+        adders = self.adder_string
+        if adders.strip():
+            ret += f", {adders}"
+        ret += self.modifier_string
+        ret += self._end_reserve_note()
+        return ret

@@ -20,7 +20,39 @@ class SenseAffectingPower(Power):
     Handles targeting vs non-targeting costs, sense groups, and individual senses.
     """
     
-    def _sense_prefix(self) -> str:
+    @property
+    def column2_output(self) -> str:
+        """``Invisibility to Sight Group``.
+
+        Ported from ``SenseAffectingPower.getColumn2Output``. A power that
+        acts on the senses says which ones, and the shape is "<alias> to
+        <groups>" — Invisibility had no column2_output of its own and
+        inherited Power's, which names the power and then hands the group to
+        the adder list, where it is not.
+
+        Flash, Flash Defense and Images override this: they put the groups
+        FIRST. Everything else in the family reads this one.
+
+        The placeholder is HD's: a sense-affecting power with no group at all
+        prints "[Unknown]" rather than nothing, because the sentence needs an
+        object.
+        """
+        ret = self.alias or ""
+        prefix = self._sense_prefix(default="[Unknown]")
+        if self._name and self._name.strip():
+            ret = f"<i>{self._name}:</i>  {ret}"
+        ret += " to " + prefix
+        ret += " " + self.damage_display
+        if self.input and self.input.strip():
+            ret += f":  {self.input}"
+        adders = self.adder_string
+        if adders.strip():
+            ret += f", {adders}"
+        ret += self.modifier_string
+        ret += self._end_reserve_note()
+        return ret
+
+    def _sense_prefix(self, default: str = "") -> str:
         """``Sight Group``, ``Sight and Hearing Groups``, ``Sight Group and Normal Smell``.
 
         Shared by Flash, Flash Defense and Images, which all put what they
@@ -47,6 +79,8 @@ class SenseAffectingPower(Power):
         first = (option_alias(self) or "").strip()
         if first or self._selected_option is not None:
             groups.append(strip_group(first))
+        elif default:
+            groups.append(strip_group(default))
 
         all_senses = Sense.all_senses()
         for ad in self.assigned_adders:
@@ -169,57 +203,6 @@ class SenseAffectingPower(Power):
 
         self._selected_option_saver = option
         return option
-    
-    @property
-    def column2_output(self) -> str:
-        """Get column 2 output string."""
-        output = self._alias
-        
-        # Build sense group and sense lists
-        groups: List[str] = []
-        senses: List[str] = []
-        
-        # Stub: would extract groups and senses from assigned adders
-        
-        if self._name and self._name.strip():
-            output = f"<i>{self._name}:</i>  {output}"
-        
-        output += " to "
-        
-        # Add groups
-        for i, group in enumerate(groups):
-            if i > 0 and i < len(groups) - 1:
-                output += ", "
-            elif i == len(groups) - 1 and i > 0:
-                output += " and "
-            output += group
-        
-        if len(groups) > 1:
-            output += " Groups"
-        elif len(groups) == 1:
-            output += " Group"
-        
-        # Add senses
-        for i, sense in enumerate(senses):
-            if i < len(senses) - 1:
-                output += ", "
-            else:
-                output += " and "
-            output += sense
-        
-        output += " " + self.damage_display
-        
-        if self.input and self.input.strip():
-            output += f":  {self.input}"
-        
-        adder_str = self.adder_string
-        if adder_str and adder_str.strip():
-            output += ", " + adder_str
-        
-        modifier_str = self.modifier_string
-        output += modifier_str
-        
-        return output
     
     def translate_sense(self, sense_name: str) -> str:
         """
