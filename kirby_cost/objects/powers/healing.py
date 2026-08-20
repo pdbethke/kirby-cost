@@ -24,22 +24,14 @@ class Healing(Power, xmlid="HEALING"):
     
     @property
     def damage_display(self) -> str:
-        """Get healing display string."""
-        # Check for REGENEXTRATIME modifier
-        has_regen_extra = False
-        for mod in self.assigned_modifiers:
-            if mod.xmlid == "REGENEXTRATIME":
-                has_regen_extra = True
-                break
-        
-        if has_regen_extra:
-            return f"{self._levels} BODY"
-        
-        # Standard healing display
-        if self.input and self.input.strip():
-            return f"{self.input} {self._levels}d6"
-        return f"{self._levels}d6"
-    
+        """Power's, unchanged — Healing.java has no getDamageDisplay of its own.
+
+        The override prefixed the INPUT, which column2_output already prints,
+        so every Simplified Healing read " Simplified Healing Simplified
+        Healing 6d6". The REGENEXTRATIME case it also handled belongs in
+        column2_output, where Java puts it.
+        """
+        return super().damage_display
     @property
     def column2_output(self) -> str:
         """Get column 2 output string."""

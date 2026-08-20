@@ -3,10 +3,10 @@
   "_measured": {
     "date": "2026-08-20",
     "strings_compared": 91221,
-    "exact": 90966,
-    "wrong": 254,
+    "exact": 90974,
+    "wrong": 246,
     "raised": 1,
-    "gap_classes": 82,
+    "gap_classes": 81,
     "note": "strings_compared excludes objects whose HD element ID is not unique within their character; see _oracle_index."
   },
   "gaps": [
@@ -40,7 +40,6 @@
     "column2_output|ForceField",
     "column2_output|ForceWall",
     "column2_output|Growth",
-    "column2_output|Healing",
     "column2_output|HighRangeRadioPerception",
     "column2_output|Images",
     "column2_output|Invisibility",

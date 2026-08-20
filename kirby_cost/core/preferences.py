@@ -20,7 +20,11 @@ class Preferences:
     
     def __init__(self):
         """Initialize preferences with defaults."""
-        self._use_abbreviations: bool = True
+        #: HD's AppPrefs.useAbbreviations() returns FALSE — full names,
+        #: not abbreviations. getAlias() consults it when no alias was
+        #: stated, so a True default silently prefers the template's
+        #: ABBREVIATION over its DISPLAY.
+        self._use_abbreviations: bool = False
         #: HD's 6E default is ON (AppPrefs.useWG() returns true), and the
         #: oracle runs with it. It suppresses the 5E "(vs. ED)" defence note
         #: and the "(uses Personal END)" tail, and selects wg abbreviations
