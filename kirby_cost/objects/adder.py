@@ -85,6 +85,13 @@ class Adder(GenericObject):
             self._required = True
         if tmpl.alias and not (self._alias or '').strip():
             self._alias = tmpl.alias
+        # The template's DISPLAY, which an HDC file never writes for an adder.
+        # It carries the [LVL] marker — `DISPLAY="x[LVL] Shots"` — and
+        # addAliasToVector suppresses the level suffix when it is present,
+        # because the alias already says the number. Without it every such
+        # adder printed its count twice: "x8 Noncombat:  x8".
+        if tmpl.display and not (self._display or "").strip():
+            self._display = tmpl.display
 
     @property
     def column2_output(self) -> str:

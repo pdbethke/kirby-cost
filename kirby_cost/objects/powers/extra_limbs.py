@@ -47,7 +47,9 @@ class ExtraLimbs(Power, xmlid="EXTRALIMBS"):
             if ret.upper().endswith("S"):
                 ret = ret[:-1]
         if self._levels > 0:
-            ret = ret.rstrip() + f" ({self._levels})"
+            # No trim: HD leaves the space where the empty damage
+            # display was, so "Extra Limbs  (2)" has two.
+            ret += f" ({self._levels})"
         if self.input and self.input.strip():
             ret += f":  {self.input}"
         option = (option_alias(self) or "").strip()

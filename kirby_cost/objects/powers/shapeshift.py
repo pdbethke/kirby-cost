@@ -24,9 +24,13 @@ class Shapeshift(SenseAffectingPower, xmlid="SHAPESHIFT"):
     
     @property
     def damage_display(self) -> str:
-        """Get shapeshift display."""
-        return f"{self._levels} points"
-    
+        """Empty — Java's ``Shapeshift.getDamageDisplay`` returns "".
+
+        A Shape Shift is described by the senses it fools and the shapes it
+        can take, both of which column2_output writes; "0 points" was a number
+        with nothing behind it.
+        """
+        return ""
     @property
     def assigned_adders(self):
         """
@@ -46,4 +50,35 @@ class Shapeshift(SenseAffectingPower, xmlid="SHAPESHIFT"):
         # never overridden; getter-only Python overrides must re-expose it.
         self._assigned_adders = value
 
+    @property
+    def column2_output(self) -> str:
+        """``Shape Shift  (Sight and Touch Groups, any humanoid shape)``.
 
+        Ported from ``Shapeshift.getColumn2Output``. Unlike its siblings the
+        groups go in BRACKETS after the alias rather than after a "to", and
+        the SHAPES adder joins them inside the same bracket — what the
+        character can turn into belongs with which senses are fooled.
+        """
+        from kirby_cost.objects.base import option_alias
+        ret = f"{self.alias or ''} {self.damage_display}"
+        if self._name and self._name.strip():
+            ret = f"<i>{self._name}:</i>  {ret}"
+        if self.input and self.input.strip():
+            ret += f":  {self.input}"
+
+        shapes = ""
+        for ad in self.assigned_adders:
+            if ad.xmlid == "SHAPES":
+                ad.display_in_string = False
+                shapes = (option_alias(ad) or "").strip()
+        prefix = self._sense_prefix(default="[Unknown]")
+        ret += " (" + prefix
+        if shapes:
+            ret += ", " + shapes
+        ret += ")"
+        adders = self.adder_string
+        if adders.strip():
+            ret += f", {adders}"
+        ret += self.modifier_string
+        ret += self._end_reserve_note()
+        return ret

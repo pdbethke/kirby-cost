@@ -28,42 +28,31 @@ class Telescopic(SenseAdder, xmlid="TELESCOPIC"):
     
     @property
     def column2_output(self) -> str:
-        """Get column 2 output string."""
-        output = f"+{self._levels} versus Range Modifier"
-        
-        if self._name and self._name.strip():
-            output = f"<i>{self._name}:</i>  {output}"
-        
-        # Build "for" string
-        for_str = " for "
-        if self._selected_option:
-            for_str += self._selected_option.alias
-            adder_str = self.adder_string
-            if adder_str and adder_str.strip():
-                for_str += ", " + adder_str
-                # Replace last comma with "and"
-                if ", " in for_str:
-                    last_comma = for_str.rfind(", ")
-                    for_str = for_str[:last_comma] + " and" + for_str[last_comma+1:]
-        else:
-            adder_str = self.adder_string
-            if adder_str and adder_str.strip():
-                for_str += adder_str
-                # Replace last comma with "and"
-                if ", " in for_str:
-                    last_comma = for_str.rfind(", ")
-                    for_str = for_str[:last_comma] + " and" + for_str[last_comma+1:]
-        
-        if for_str != " for ":
-            output += for_str
-        
-        if self.input and self.input.strip():
-            output += f":  {self.input}"
-        
-        modifier_str = self.modifier_string
-        output += modifier_str
-        
-        return output
-    
-    
+        """``+4 versus Range Modifier for Sight Group``.
 
+        Ported from ``Telescopic.getColumn2Output``. It does not name itself
+        at all — the alias never appears — and it joins its sense with "for"
+        where the other sense adders use "with".
+        """
+        from kirby_cost.objects.base import option_alias
+        ret = f"+{self._levels} versus Range Modifier"
+        if self._name and self._name.strip():
+            ret = f"<i>{self._name}:</i>  {ret}"
+
+        with_str = " for "
+        option = (option_alias(self) or "").strip()
+        adders = self.adder_string or ""
+        if option:
+            with_str += option
+            if adders.strip():
+                with_str += ", " + adders
+                i = with_str.rfind(",")
+                with_str = with_str[:i] + " and" + with_str[i + 1:]
+        elif adders.strip():
+            with_str += " " + adders
+            if ", " in with_str:
+                i = with_str.rfind(",")
+                with_str = with_str[:i] + " and" + with_str[i + 1:]
+        ret += with_str
+        ret += self.modifier_string
+        return ret
