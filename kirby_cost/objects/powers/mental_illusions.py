@@ -24,9 +24,14 @@ class MentalIllusions(Power, xmlid="MENTALILLUSIONS"):
     
     @property
     def damage_display(self) -> str:
-        """Get mental illusions display."""
-        return f"{self._levels}d6"
-    
+        """Power's, unchanged — Java has no getDamageDisplay on this class.
+
+        The override was a bare "{levels}d6", which drops the pip adders and
+        the "(standard effect: N points)" note. Ten powers carried the same
+        four lines; none of them appears in Java's list of 99
+        getDamageDisplay overrides.
+        """
+        return super().damage_display
     @property
     def column2_output(self) -> str:
         """Get column 2 output string."""

@@ -31,8 +31,14 @@ class Aid(Power, xmlid="AID"):
     
     @property
     def damage_display(self) -> str:
-        """Get aid display."""
-        return f"{self._levels}d6"
+        """Power's, unchanged — Aid.java has no getDamageDisplay of its own.
+
+        The override returned a bare "{levels}d6", which drops both the pip
+        adders and the "(standard effect: N points)" note. AID is one of the
+        eleven powers the template marks STANDARDEFFECTALLOWED="Yes", so that
+        note is exactly the part this was hiding.
+        """
+        return super().damage_display
     
     @property
     def column2_output(self) -> str:
