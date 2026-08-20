@@ -53,6 +53,9 @@ class SenseAffectingPower(Power):
         return ret
 
     def _sense_prefix(self, default: str = "") -> str:
+        return sense_prefix(self, default)
+
+    def _sense_prefix_impl(self, default: str = "") -> str:
         """``Sight Group``, ``Sight and Hearing Groups``, ``Sight Group and Normal Smell``.
 
         Shared by Flash, Flash Defense and Images, which all put what they
@@ -254,3 +257,13 @@ class SenseAffectingPower(Power):
     
     
 
+
+
+def sense_prefix(obj, default: str = "") -> str:
+    """``Sight Group``, ``Sight and Hearing Groups`` — for anything that names
+    the senses it acts on.
+
+    Shared rather than inherited: Clairsentience extends Power, not
+    SenseAffectingPower, and needs exactly the same grouping.
+    """
+    return SenseAffectingPower._sense_prefix_impl(obj, default)
