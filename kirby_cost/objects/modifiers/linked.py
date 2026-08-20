@@ -51,6 +51,10 @@ class Linked(Modifier, xmlid="LINKED"):
         #: Whether the link was set by an edit rather than read from a
         #: file. HD can only ever be in the former state — see `value`.
         self._link_set_in_session = False
+        #: Whether base_cost found the link illegal and HD would have cleared
+        #: it. Kept separate from linked_to_id so the writer still emits what
+        #: the document stated.
+        self._link_invalidated = False
         # Note: orig_base_cost is inherited from GenericObject and tracked
         # automatically via the base class's base_cost setter. We do not
         # maintain a second copy (the Java port did because Java has no
@@ -81,13 +85,22 @@ class Linked(Modifier, xmlid="LINKED"):
         if parent is None:
             return orig
 
-        # Can't link to self or another Linked modifier. Java clears the id
-        # here as well as declining the discount; this only declines it. The
-        # difference did not matter while `value` always returned None, and
-        # became load-bearing the moment it resolved: a COST lookup was
-        # rewriting LINKED_ID in the document it was about to serialise.
+        # Can't link to self or another Linked modifier. Java does TWO things
+        # here — declines the discount and clears the id — and the second is
+        # not housekeeping: with linkedToID at -1 every later getValue()
+        # returns null, so the display prints HD's own "???" placeholder
+        # rather than naming the power. A Transform linked to a sibling
+        # Transform inside a Compound Power is exactly this case, and it is
+        # why the oracle shows "Linked (???; -1/2)" for a link the file states
+        # perfectly clearly.
+        #
+        # The clearing is recorded rather than applied, because this engine
+        # WRITES the document back out and HD does not: assigning -1 here
+        # rewrote LINKED_ID on 7 objects and the export gate caught it. The
+        # lookup honours the invalidation; the writer keeps what the file said.
         if (linked_power.xmlid == parent.xmlid or
                 isinstance(linked_power, Linked)):
+            self._link_invalidated = True
             return orig
         
         # Temporarily remove Linked modifiers to calculate active costs
@@ -304,7 +317,7 @@ class Linked(Modifier, xmlid="LINKED"):
         # WRONG, because the oracle is HD. So the id is kept for the writer and
         # withheld from the lookup unless something set the link in this
         # session, which is the only state HD can be in when it resolves one.
-        if self._link_is_self_referential():
+        if self._link_invalidated or self._link_is_self_referential():
             return None
         if self.linked_to_id < 0:
             return None

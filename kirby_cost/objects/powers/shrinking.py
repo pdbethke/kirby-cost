@@ -64,10 +64,10 @@ class Shrinking(Power, xmlid="SHRINKING"):
         levels = self._levels
 
         # Mass. HD works in grams and prints kilograms.
-        # Java: `weight * 453.5924` — the hero's weight is in POUNDS, and
-        # only the metric preference makes it `* 1000`. Using the metric
-        # factor made every shrunk character 2.2x too heavy.
-        grams = hero.weight * 453.5924
+        # Java: `weight * 453.5924` — the hero's weight is in POUNDS, and only
+        # the metric preference makes it `* 1000`. `Hero.getWeight()` is an
+        # int too, for the same reason getHeight() is.
+        grams = int(round_half_up(hero.weight)) * 453.5924
         if GenericObject.find_object_by_id(self.assigned_modifiers, "NORMALMASS") is None:
             if self.mass_multiplier_levels:
                 grams *= self.mass_multiplier ** (levels / self.mass_multiplier_levels)
@@ -99,18 +99,18 @@ class Shrinking(Power, xmlid="SHRINKING"):
             kb_str = f"takes {'+' if kb > 0 else ''}{kb}m KB, "
 
         # Height, in metres. The hero's height is inches unless metric.
-        cm = hero.height * 2.54
+        # `Hero.getHeight()` returns an INT — `(int) roundHalfUp(height)` — so
+        # a 78.74-inch character is 79 inches here, not 78.74. That is the
+        # whole of the discrepancy: 78.74 x 2.54 x 0.5^6 is 3.125cm and prints
+        # "0.0312", while 79 x 2.54 x 0.5^6 is 3.1353cm and prints "0.0314",
+        # which is what the oracle says. The rounding happens BEFORE the
+        # conversion and before the shrink, so it is not a display nicety — it
+        # changes the number.
+        inches = int(round_half_up(hero.height))
+        cm = inches * 2.54
         if levels >= self.height_increase_levels and self.height_increase_levels:
-            cm = (hero.height * 2.54
+            cm = (inches * 2.54
                   * (self.height_increase ** (levels / self.height_increase_levels)))
-        # KNOWN RESIDUAL. This is a faithful transcription and it disagrees
-        # with the oracle by a fraction of a percent: 6 levels of a 200cm
-        # character gives 200 x 0.5^6 = 3.125cm, and HD prints 0.0314 m rather
-        # than 0.0312. HEIGHTINCREASE is confirmed ".5" in the template and
-        # HEIGHTINCREASELEVELS "1", so the exponent is not in doubt, and no
-        # rounding mode DecimalFormat offers turns 0.03125 into 0.0314. Every
-        # other clause of this line matches. Left as the formula says rather
-        # than fitted to the observed number.
         size = _sig(cm / 100.0) + " m tall, "
 
         ret = size + weight + per_str + dcv_str + kb_str
