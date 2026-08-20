@@ -55,7 +55,7 @@ class SenseAffectingPower(Power):
     def _sense_prefix(self, default: str = "") -> str:
         return sense_prefix(self, default)
 
-    def _sense_prefix_impl(self, default: str = "") -> str:
+    def _sense_prefix_impl(self, default: str = "", joiner: str = " and ") -> str:
         """``Sight Group``, ``Sight and Hearing Groups``, ``Sight Group and Normal Smell``.
 
         Shared by Flash, Flash Defense and Images, which all put what they
@@ -105,7 +105,10 @@ class SenseAffectingPower(Power):
             if 0 < i < len(groups) - 1:
                 ret += ", "
             elif i == len(groups) - 1 and i > 0:
-                ret += " and "
+                # Clairsentience capitalises this one word — "Hearing And
+                # Sight Groups" — and nothing else in the family does. It
+                # looks like a typo in HD and it is what the oracle prints.
+                ret += joiner
             ret += g
         ret += " Groups" if len(groups) > 1 else " Group"
         for i, sense in enumerate(senses):
@@ -259,11 +262,11 @@ class SenseAffectingPower(Power):
 
 
 
-def sense_prefix(obj, default: str = "") -> str:
+def sense_prefix(obj, default: str = "", joiner: str = " and ") -> str:
     """``Sight Group``, ``Sight and Hearing Groups`` — for anything that names
     the senses it acts on.
 
     Shared rather than inherited: Clairsentience extends Power, not
     SenseAffectingPower, and needs exactly the same grouping.
     """
-    return SenseAffectingPower._sense_prefix_impl(obj, default)
+    return SenseAffectingPower._sense_prefix_impl(obj, default, joiner)

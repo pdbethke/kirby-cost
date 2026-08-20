@@ -311,19 +311,41 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         # Main6E say so and the field defaulted to False, so
         # `useStandardEffect()` returned False for every one of them and the
         # "(standard effect: 9 points)" note never printed.
-        # PERINCREASE / PERINCREASELEVELS — how much PER a characteristic buys
-        # per point. Only INT states them, and the fields defaulted to 0, so
-        # every PER-derived roll fell back to its "no increase" branch of 11-:
-        # Danger Sense read "11-" where HD writes "13-".
-        for xml_name, field, cast in (("PERINCREASE", "per_increase", float),
-                                      ("PERINCREASELEVELS", "per_increase_levels", int)):
-            if hasattr(self, field):
-                stated = (attrs.get(xml_name) or "").strip()
-                if stated:
-                    try:
-                        setattr(self, field, cast(float(stated)))
-                    except ValueError:
-                        pass
+        # The "how much of X does a level buy" family — STRINCREASE,
+        # BODYINCREASE, KBINCREASE, DCVINCREASE, PERINCREASE, MASSMULTIPLIER,
+        # HEIGHTINCREASE and their *LEVELS partners. Every one of these fields
+        # existed on the objects that need them and every one sat at its
+        # constructor default, because nothing read them off the template.
+        #
+        # The effect is that the branch guarded by "did the character buy any
+        # of this" is false everywhere: a Danger Sense read "11-" where HD
+        # writes "13-", and a Shrinking printed "(6 levels)" instead of the
+        # height, mass and PER penalty it actually confers. The attribute name
+        # is the field name upper-cased with the underscores removed, which is
+        # HD's own convention and not a coincidence worth hiding behind a
+        # lookup table.
+        for field, cast in (
+            ("str_increase", float), ("str_increase_levels", int),
+            ("pd_increase", float), ("pd_increase_levels", int),
+            ("ed_increase", float), ("ed_increase_levels", int),
+            ("body_increase", float), ("body_increase_levels", int),
+            ("kb_increase", float), ("kb_increase_levels", int),
+            ("stun_increase", float), ("stun_increase_levels", int),
+            ("dcv_increase", float), ("dcv_increase_levels", int),
+            ("per_increase", float), ("per_increase_levels", int),
+            ("height_increase", float), ("height_increase_levels", int),
+            ("width_increase", float), ("width_increase_levels", int),
+            ("reach_increase", float), ("reach_increase_levels", int),
+            ("mass_multiplier", float), ("mass_multiplier_levels", int),
+        ):
+            if not hasattr(self, field):
+                continue
+            stated = (attrs.get(field.upper().replace("_", "")) or "").strip()
+            if stated:
+                try:
+                    setattr(self, field, cast(float(stated)))
+                except ValueError:
+                    pass
 
         if hasattr(self, "standard_effect_allowed"):
             stated = (attrs.get("STANDARDEFFECTALLOWED") or "").strip().upper()
