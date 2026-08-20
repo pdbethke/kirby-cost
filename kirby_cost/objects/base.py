@@ -291,6 +291,17 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         # (`getAvailableGroups().size() > 1`), so leaving this at its default
         # of True made every such sense print a group HD does not:
         # "Nightvision (Sight Group)" for HD's "Nightvision".
+        # ISLIMITATION, and failing that the shape of the option costs — see
+        # Modifier.is_limitation, which is a decision rather than a field.
+        if hasattr(self, "_is_limitation"):
+            stated = (attrs.get("ISLIMITATION") or "").strip().upper()
+            if stated:
+                self.is_limitation_set = True
+                self._is_limitation = stated.startswith("Y")
+            opts = getattr(tmpl, "options", None) or {}
+            self._template_option_costs = [
+                (o.base_cost, o.level_cost) for o in opts.values()]
+
         if hasattr(self, "allow_any_group"):
             stated = (attrs.get("ALLOWANYGROUP") or "").strip().upper()
             if stated.startswith("N"):
@@ -383,6 +394,7 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
                     chosen._base_cost = opt.base_cost
                     chosen._selected = True
                     chosen._display_in_string = opt.display_in_string
+                    chosen._levels = opt.levels
                     chosen.parent = self
                     self._selected_option = chosen
 

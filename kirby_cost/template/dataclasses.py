@@ -24,6 +24,11 @@ class OptionTemplate:
     #: ("Very Common -> Rare") and every one of them is DISPLAYINSTRING="No",
     #: because the sheet shows the DEFENCE, not the arithmetic behind the cost.
     display_in_string: bool = True
+    #: The option's own LEVELS, which the template writes as LEVELSTART.
+    #: Autofire reads it to say how many shots: `<OPTION XMLID="THREE"
+    #: DISPLAY="3 Shots" LEVELSTART="3">` is the only place the number 3
+    #: exists as a number rather than as text.
+    levels: int = 0
     base_cost: float = 0.0
     level_cost: float = 0.0
     level_value: float = 0.0
