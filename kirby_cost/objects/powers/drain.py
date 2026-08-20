@@ -31,32 +31,36 @@ class Drain(Power, xmlid="DRAIN"):
     
     @property
     def damage_display(self) -> str:
-        """Get drain display string."""
-        return f"{self._levels}d6"
+        """Power's, unchanged — Drain.java has no getDamageDisplay of its own.
+
+        The override here returned a bare "{levels}d6", which loses the pip
+        adders: a Drain of no levels with a PLUSONEPIP reads "1 point" in HD,
+        not "0d6".
+        """
+        return super().damage_display
     
     @property
     def column2_output(self) -> str:
-        """Get column 2 output string."""
-        output = self._alias
-        
-        if self.input and self.input.strip():
-            output += f" {self.input}"
-        output += f" {self.damage_display}"
-        
-        if self._name and self._name.strip():
-            output = f"<i>{self._name}:</i>  {output}"
-        
-        if self._selected_option:
-            output += f" ({self._selected_option.alias})"
-        
-        adder_str = self.adder_string
-        if adder_str and adder_str.strip():
-            output += f", {adder_str}"
-        
-        modifier_str = self.modifier_string
-        output += modifier_str
-        
-        return output
-    
-    
+        """``Drain STR 3d6``.
 
+        Ported from ``Drain.getColumn2Output``. What is drained is the INPUT
+        and it goes between the alias and the dice — "Drain STR 3d6", not
+        "Drain 3d6:  STR" — because the sentence names the thing being taken
+        before it says how much.
+        """
+        from kirby_cost.objects.base import option_alias
+        ret = self.alias or ""
+        if self.input and self.input.strip():
+            ret += f" {self.input}"
+        ret += f" {self.damage_display}"
+        if self._name and self._name.strip():
+            ret = f"<i>{self._name}:</i>  {ret}"
+        option = (option_alias(self) or "").strip()
+        if option:
+            ret += f" ({option})"
+        adders = self.adder_string
+        if adders.strip():
+            ret += f", {adders}"
+        ret += self.modifier_string
+        ret += self._end_reserve_note()
+        return ret

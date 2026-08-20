@@ -311,6 +311,20 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         # Main6E say so and the field defaulted to False, so
         # `useStandardEffect()` returned False for every one of them and the
         # "(standard effect: 9 points)" note never printed.
+        # PERINCREASE / PERINCREASELEVELS — how much PER a characteristic buys
+        # per point. Only INT states them, and the fields defaulted to 0, so
+        # every PER-derived roll fell back to its "no increase" branch of 11-:
+        # Danger Sense read "11-" where HD writes "13-".
+        for xml_name, field, cast in (("PERINCREASE", "per_increase", float),
+                                      ("PERINCREASELEVELS", "per_increase_levels", int)):
+            if hasattr(self, field):
+                stated = (attrs.get(xml_name) or "").strip()
+                if stated:
+                    try:
+                        setattr(self, field, cast(float(stated)))
+                    except ValueError:
+                        pass
+
         if hasattr(self, "standard_effect_allowed"):
             stated = (attrs.get("STANDARDEFFECTALLOWED") or "").strip().upper()
             if stated:
@@ -834,7 +848,12 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         ``adder_string`` below does the recursion.
         """
         parts = []
-        alias = (self.alias or "").strip()
+        # `if (showAlias)` — Java gates the alias here as well as in
+        # Adder.getColumn2Output. An adder whose name adds nothing to its
+        # option turns it off: a Fringe Benefit's RELIGIOUSRANK is
+        # SHOWALIAS="No" because "Religious Rank Priest" says the same thing
+        # as "Priest" and says it worse.
+        alias = (self.alias or "").strip() if getattr(self, "show_alias", True) else ""
         if alias:
             parts.append(alias)
         # The option's alias, from the resolved object where there is one and
