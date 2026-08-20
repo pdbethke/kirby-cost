@@ -3,10 +3,10 @@
   "_measured": {
     "date": "2026-08-19",
     "strings_compared": 91221,
-    "exact": 89361,
-    "wrong": 1859,
+    "exact": 89400,
+    "wrong": 1820,
     "raised": 1,
-    "gap_classes": 154,
+    "gap_classes": 152,
     "note": "strings_compared excludes objects whose HD element ID is not unique within their character; see _oracle_index."
   },
   "gaps": [
@@ -92,7 +92,6 @@
     "column2_output|MindScan",
     "column2_output|MissileDeflection",
     "column2_output|Multiform",
-    "column2_output|Multipower",
     "column2_output|NakedModifier",
     "column2_output|Radar",
     "column2_output|Running",
@@ -152,7 +151,6 @@
     "modifier_string|MindControl",
     "modifier_string|MindLink",
     "modifier_string|MindScan",
-    "modifier_string|Multipower",
     "modifier_string|Shapeshift",
     "modifier_string|Skill",
     "modifier_string|SkillLevels",
