@@ -29,3 +29,37 @@ class Tunneling(Power, xmlid="TUNNELING"):
         # Stub: would calculate movement and material
         return f"{self._levels}m through {self.input or 'material'}"
 
+    @property
+    def column2_output(self) -> str:
+        """``Tunneling 12m through 10 PD material, Fill In``.
+
+        Ported from ``Tunneling.getColumn2Output``. The DEFBONUS adder is
+        pulled OUT of the adder list before it is rendered, because the
+        defence it buys is already part of what the tunnelling goes through —
+        listing it again would say the same thing twice.
+        """
+        from kirby_cost.objects.base import option_alias
+        ret = f"{self.alias or ''} {self.damage_display}"
+        if self._name and self._name.strip():
+            ret = f"<i>{self._name}:</i>  {ret}"
+        if self.input and self.input.strip():
+            ret += f":  {self.input}"
+
+        original = self._assigned_adders
+        self._assigned_adders = [a for a in original if a.xmlid != "DEFBONUS"]
+        try:
+            adders = self.adder_string
+        finally:
+            self._assigned_adders = original
+
+        option = (option_alias(self) or "").strip()
+        if option:
+            ret += " (" + option
+            if adders.strip():
+                ret += "; " + adders
+            ret += ")"
+        elif adders.strip():
+            ret += f", {adders}"
+        ret += self.modifier_string
+        ret += self._end_reserve_note()
+        return ret

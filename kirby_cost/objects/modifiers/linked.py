@@ -425,3 +425,15 @@ def _active_hero():
         return EngineContext.active_hero()
     except Exception:  # noqa: BLE001
         return None
+
+    @property
+    def is_limitation(self) -> bool:
+        """Always True.
+
+        Java overrides ``isLimitation`` on this modifier rather than inferring
+        it, because the general rule gets it wrong: the value can sit at or
+        above zero and it is still a limitation. Charges is the one that shows —
+        "8 Continuing Charges lasting 1 Turn each (+0)" is worth nothing and
+        still belongs after the semicolon.
+        """
+        return True

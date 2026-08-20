@@ -167,3 +167,15 @@ class VariableLimitations(Modifier, xmlid="VARIABLELIMITATIONS"):
     def limitation(self) -> bool:
         """Check if this is a limitation."""
         return True
+
+    @property
+    def is_limitation(self) -> bool:
+        """Always True.
+
+        Java overrides ``isLimitation`` on this modifier rather than inferring
+        it, because the general rule gets it wrong: the value can sit at or
+        above zero and it is still a limitation. Charges is the one that shows —
+        "8 Continuing Charges lasting 1 Turn each (+0)" is worth nothing and
+        still belongs after the semicolon.
+        """
+        return True
