@@ -30,47 +30,69 @@ class Clinging(Power, xmlid="CLINGING"):
     
     @property
     def column2_output(self) -> str:
-        """Get column 2 output string."""
-        output = f"{self._alias} ("
-        
-        # Check for UOO modifier with UAA option
-        has_uoo_uaa = False
-        for mod in self.all_assigned_modifiers:
-            if mod.xmlid == "UOO" and mod.selected_option and mod.selected_option.xmlid == "UAA":
-                has_uoo_uaa = True
-                break
-        
-        if has_uoo_uaa:
-            output += f"{self._levels + 10} STR)"
-        elif self._levels == 0:
-            output += "normal STR)"
-        else:
-            # Stub: would get STR characteristic
-            # For now, just show levels
-            output += f"{round_half_up(float(self._levels))} STR)"
-        
-        if self._name and self._name.strip():
-            output = f"<i>{self._name}:</i>  {output}"
-        
-        if self.input and self.input.strip():
-            output += f":  {self.input}"
-        
-        if self._selected_option:
-            output += f" ({self._selected_option.alias}"
-            adder_str = self.adder_string
-            if adder_str and adder_str.strip():
-                output += f"; {adder_str}"
-            output += ")"
-        else:
-            adder_str = self.adder_string
-            if adder_str and adder_str.strip():
-                output += f" ({adder_str})"
-        
-        modifier_str = self.modifier_string
-        output += modifier_str
-        
-        return output
-    
-    
-    
+        """``Clinging (21 STR)`` — the character's STR plus what was bought.
 
+        Ported from ``Clinging.getColumn2Output``. Clinging is not a strength
+        of its own: it adds to the character's, so the number printed is
+        STR + levels. Printing the levels alone was off by exactly the
+        character's STR, which for a normal one is 10 and looked like an
+        off-by-one.
+
+        Usable On Others is the exception — the OTHER character's strength is
+        not known, so HD prints levels + 10, the assumed normal.
+        """
+        from kirby_cost.objects.base import GenericObject, option_alias
+        from kirby_cost.util.rounder import round_half_up
+        from kirby_cost.util.constants import CharacteristicType
+
+        ret = f"{self.alias or ''} ("
+        uaa = False
+        uoo = GenericObject.find_object_by_id(self.all_assigned_modifiers, "UOO")
+        if uoo is not None:
+            opt = getattr(uoo, "selected_option", None)
+            if opt is not None and (opt.xmlid or "").upper() == "UAA":
+                uaa = True
+
+        if uaa:
+            ret += f"{self._levels + 10} STR"
+        elif self._levels == 0:
+            ret += "normal STR)"
+        else:
+            hero = _active_hero()
+            strength = hero.characteristic(CharacteristicType.STR) if hero else None
+            if strength is None:
+                ret += f"{self._levels} STR)"
+            else:
+                v1 = strength.get_primary_value(hero)
+                v2 = strength.get_secondary_value(hero)
+                if v1 != v2:
+                    ret += (f"{int(round_half_up(self._levels + v1))}/"
+                            f"{int(round_half_up(self._levels + v2))} STR)")
+                else:
+                    ret += f"{int(round_half_up(self._levels + v1))} STR)"
+
+        if self._name and self._name.strip():
+            ret = f"<i>{self._name}:</i>  {ret}"
+        if self.input and self.input.strip():
+            ret += f":  {self.input}"
+        option = (option_alias(self) or "").strip()
+        adders = self.adder_string
+        if option:
+            ret += f" ({option}"
+            if adders.strip():
+                ret += f"; {adders}"
+            ret += ")"
+        elif adders.strip():
+            ret += f" ({adders})"
+        ret += self.modifier_string
+        ret += self._end_reserve_note()
+        return ret
+
+
+def _active_hero():
+    """The character whose STR the clinging adds to."""
+    try:
+        from kirby_cost.core.context import EngineContext
+        return EngineContext.active_hero()
+    except Exception:  # noqa: BLE001
+        return None

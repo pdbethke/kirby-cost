@@ -27,11 +27,65 @@ class DensityIncrease(Power, xmlid="DENSITYINCREASE"):
     
     @property
     def damage_display(self) -> str:
-        """Get density increase display string."""
-        # Stub: would calculate mass, STR, PD/ED, KB from levels
-        # For now, return simplified version
-        return f"{self._levels} levels"
-    
+        """``6,400 kg mass, +30 STR, +6 PD/ED, -12m KB``.
+
+        Ported from ``DensityIncrease.getDamageDisplay``. Density Increase is
+        not "6 levels" — the levels are what was paid and HD prints what they
+        bought: the new mass, the strength, the defences and the knockback
+        resistance.
+
+        The mass is rounded to the nearest hundred grams and then back to
+        kilograms, which is HD's double-rounding and not a simplification: a
+        character at 6,400 kg is not 6,384.
+
+        NODEFINCREASE names WHICH defence was declined, so the clause is
+        rewritten rather than dropped — "+6 PD" when ED was waived, "+6 ED"
+        when PD was, and nothing at all when both were.
+        """
+        from kirby_cost.util.rounder import round_half_up
+        from kirby_cost.objects.base import GenericObject, is_6e
+
+        hero = _active_hero()
+        if hero is None:
+            return f"{self._levels} levels"
+        levels = self._levels
+
+        grams = round_half_up(int(round_half_up(hero.weight)) * 453.5924)
+        if self.mass_multiplier_levels:
+            grams = grams * int(self.mass_multiplier ** (levels / self.mass_multiplier_levels))
+        kilos = round(round(grams / 100000.0) * 100)
+        weight = f"{int(kilos):,} kg mass"
+
+        def scaled(increase: float, per_levels: int) -> int:
+            if not per_levels:
+                return 0
+            return int(round_half_up(increase * round_half_up(levels / per_levels)))
+
+        strength = f"+{scaled(self.str_increase, self.str_increase_levels)} STR"
+
+        pded = scaled(self.pd_increase, self.pd_increase_levels)
+        defence = f"+{pded} PD/ED"
+        no_def = GenericObject.find_object_by_id(self.assigned_modifiers, "NODEFINCREASE")
+        if no_def is not None:
+            opt = (getattr(getattr(no_def, "selected_option", None), "xmlid", "") or "").upper()
+            if opt == "PD":
+                defence = f"+{scaled(self.ed_increase, self.ed_increase_levels)} ED"
+            elif opt == "ED":
+                defence = f"+{pded} PD"
+            elif opt == "PDED":
+                defence = None
+
+        kb = scaled(self.kb_increase, self.kb_increase_levels)
+        if is_6e():
+            kb_str = f"{'' if kb < 0 else '+'}{kb * 2}m KB"
+        else:
+            kb_str = f"{'' if kb < 0 else '+'}{kb}\" KB"
+
+        parts = [weight, strength]
+        if defence is not None:
+            parts.append(defence)
+        parts.append(kb_str)
+        return ", ".join(parts)
     @property
     def column2_output(self) -> str:
         """Get column 2 output string."""
@@ -94,3 +148,12 @@ class DensityIncrease(Power, xmlid="DENSITYINCREASE"):
     
     
 
+
+
+def _active_hero():
+    """The character whose mass is being increased."""
+    try:
+        from kirby_cost.core.context import EngineContext
+        return EngineContext.active_hero()
+    except Exception:  # noqa: BLE001
+        return None

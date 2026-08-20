@@ -116,3 +116,25 @@ class Duplication(Power, xmlid="DUPLICATION"):
         self.file_path = None
         self.file_association_last_check = None
 
+    @property
+    def column2_output(self) -> str:
+        """``Duplication (creates 8 214-point Duplicates)``.
+
+        Ported from ``Duplication.getColumn2Output``. What matters about a
+        Duplication is how many duplicates and how big each one is, and both
+        are stated by the document (NUMBER and POINTS) rather than derived
+        from the levels. "8 duplicates" said half of it.
+        """
+        ret = self.alias or ""
+        if self._name and self._name.strip():
+            ret = f"<i>{self._name}:</i>  {ret}"
+        ret += " ("
+        if self.multiples > 1:
+            ret += f"creates {self.multiples} {self.points}-point Duplicates)"
+        else:
+            ret += f"creates {self.points}-point form)"
+        adders = self.adder_string
+        if adders.strip():
+            ret += f", {adders}"
+        ret += self.modifier_string
+        return ret
