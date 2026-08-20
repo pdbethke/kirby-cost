@@ -208,15 +208,18 @@ class Hero:
         Returns:
             The characteristic object, or None if not found
         """
-        # Map type to XMLID for lookup
-        type_to_xmlid = {
-            1: 'STR', 2: 'DEX', 3: 'CON', 4: 'INT', 5: 'EGO', 6: 'PRE',
-            7: 'OCV', 8: 'DCV', 9: 'OMCV', 10: 'DMCV', 11: 'SPD',
-            12: 'PD', 13: 'ED', 14: 'REC', 15: 'END', 16: 'BODY', 17: 'STUN',
-            18: 'RUNNING', 19: 'SWIMMING', 20: 'LEAPING'
-        }
-        
-        xmlid = type_to_xmlid.get(char_type)
+        # These ordinals are Java's Constants, and there is exactly one right
+        # answer for them — CharacteristicType, sitting in util/constants.py,
+        # already transcribes it correctly. This method had a SECOND map,
+        # written by hand, that disagreed from index 4 upward: it read
+        # 4=INT, 5=EGO, 6=PRE where Java has 4=BODY, 5=INT, 6=EGO, 7=PRE.
+        # Every caller above CON therefore looked up the characteristic next
+        # to the one it asked for, silently — a Detect asking for INT got
+        # BODY, a skill asking for PRE got OCV. Derived from the enum now, so
+        # there is one transcription rather than two.
+        from kirby_cost.util.constants import CharacteristicType
+        xmlid = CharacteristicType(char_type).name if char_type in {
+            c.value for c in CharacteristicType} else None
         if xmlid:
             for char in self.characteristics:
                 if hasattr(char, 'xmlid') and char.xmlid == xmlid:

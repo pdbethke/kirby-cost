@@ -105,6 +105,8 @@ def _option(entry: dict[str, Any]) -> OptionTemplate:
         xmlid=entry.get("xmlid") or "",
         display=entry.get("display") or "",
         alias=entry.get("alias") or "",
+        display_in_string=not (a.get("DISPLAYINSTRING") or "").strip()
+        .upper().startswith("N"),
         base_cost=_f(a, "BASECOST"),
         level_cost=_f(a, "LVLCOST"),
         level_value=_level_value(a),

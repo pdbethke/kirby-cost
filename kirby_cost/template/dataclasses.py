@@ -19,6 +19,11 @@ class OptionTemplate:
     #: as an Adder and reads `getAlias()`, which falls back to display only
     #: when no alias was given (GenericObject.java:1238).
     alias: str = ""
+    #: Whether HD prints this option at all. AVAD's twenty options are the
+    #: reason: they name the frequency shift that PRICES the modifier
+    #: ("Very Common -> Rare") and every one of them is DISPLAYINSTRING="No",
+    #: because the sheet shows the DEFENCE, not the arithmetic behind the cost.
+    display_in_string: bool = True
     base_cost: float = 0.0
     level_cost: float = 0.0
     level_value: float = 0.0

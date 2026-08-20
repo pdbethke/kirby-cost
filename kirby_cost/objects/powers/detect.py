@@ -10,7 +10,7 @@ from kirby_cost.engine.xml_attrs import XMLAttr
 from kirby_cost.objects.powers.sense import Sense
 
 #: Java's Constants.INT — hero.characteristic() keys on this ordinal.
-_INT = 4
+_INT = 5
 
 
 class Detect(Sense, xmlid="DETECT"):
