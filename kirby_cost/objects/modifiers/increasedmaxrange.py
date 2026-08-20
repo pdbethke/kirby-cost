@@ -63,12 +63,10 @@ class IncreasedMaxRange(Modifier, xmlid="INCREASEDMAXRANGE"):
         max_range = self.max_range(self.parent)
         # Note: Would need HeroDesigner.getActiveTemplate().is6E() check
         # For now, assume 6E (meters)
-        import locale
-        try:
-            num_format = locale.format_string("%d", max_range, grouping=True)
-        except (ValueError, TypeError):
-            num_format = str(max_range)
-        string2 = string2 + num_format + "m; "
+        # Java's NumberFormat groups thousands; `locale.format_string` only
+        # does so if a locale has been set, and under the default "C" locale
+        # it silently does not — so "24,000m" printed as "24000m".
+        string2 = string2 + f"{int(max_range):,}" + "m; "
         
         # Add selected option
         if self._selected_option is not None:

@@ -122,6 +122,7 @@ def _adder(entry: dict[str, Any]) -> AdderTemplate:
         xmlid=entry.get("xmlid") or "",
         display=entry.get("display") or "",
         alias=(a.get("ALIAS") or ""),
+        has_sub_adders=bool(entry.get("adders")),
         required=bool(entry.get("required")),
         base_cost=_f(a, "BASECOST"),
         level_cost=_f(a, "LVLCOST"),

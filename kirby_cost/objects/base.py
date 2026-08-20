@@ -981,7 +981,9 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
                 collect(sub, into)
 
         for adder in self.assigned_adders:
-            is_group = bool(adder.available_adders) or getattr(adder, 'is_group', False)
+            is_group = (bool(adder.available_adders)
+                        or getattr(adder, '_template_has_sub_adders', False)
+                        or getattr(adder, 'is_group', False))
             if is_group and getattr(adder, 'is_selected', True):
                 collect(adder, group_aliases)
             else:

@@ -47,6 +47,12 @@ class AdderTemplate:
     #: unclosed bracket is deliberate, and the renderer's paren counting
     #: exists to close it at the end of the line.
     alias: str = ""
+    #: Whether this adder offers sub-adders of its own. Java asks
+    #: `getAvailableAdders().size() > 0` to decide whether an adder is a GROUP,
+    #: and group adders print BEFORE the plain ones — which is why HD writes
+    #: "Common Melee Weapons, Bows, Lances" and not the flat alphabetical
+    #: "Bows, Common Melee Weapons, Lances".
+    has_sub_adders: bool = False
     #: Whether the template REQUIRES this adder. HDC files never say so — it
     #: is a property of the template, not of the character — and the display
     #: layer branches on it: a required adder prints only its option, an

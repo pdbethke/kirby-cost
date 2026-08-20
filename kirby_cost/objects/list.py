@@ -379,3 +379,20 @@ class List(GenericObject):
         if self.error:
             return self.error
         return "You cannot add a List into another List.  New list will be placed outside of selection."
+
+    @property
+    def column2_output(self) -> str:
+        """``Bioplastic Armor, all slots OIF (-1/2)``.
+
+        Ported from ``List.getColumn2Output``. A plain LIST had no line of its
+        own and used GenericObject's, which is the alias and nothing else — so
+        a list's shared limitations, the reason for grouping the slots at all,
+        went unsaid. Multipower and VPP have their own versions; this is for
+        the plain ones.
+        """
+        ret = self.alias or ""
+        adders = self.adder_string
+        if adders.strip():
+            ret += f", {adders}"
+        ret += self.modifier_string
+        return ret
