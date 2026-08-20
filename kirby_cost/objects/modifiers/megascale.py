@@ -80,3 +80,111 @@ class Megascale(Modifier, xmlid="MEGASCALE"):
     # - getColumn2Output() - formats scale and subtracts adder costs
     # - getDialog() - returns MegascaleDialog (UI layer)
     # - getScaleValue() - derives the default scale from levels and edition
+
+    @property
+    def scale_value(self) -> str:
+        """``1m = 1 km``, ``1m = 2 lightyears``, ``1m = a LONG way``.
+
+        Ported from ``Megascale.getScaleValue`` (6E branch). MegaScale's whole
+        content is the ratio it buys, and it was not being printed at all:
+        "MegaScale (+1)" instead of "MegaScale (1m = 1 km; +1)".
+
+        The 6E offsets are deliberate — one extra doubling for the edition,
+        five more when the modifier sits on a Mind Scan, which reaches further
+        than anything physical. The overflow check compares against the
+        previous power of ten because at these magnitudes the float stops
+        being able to hold the answer, and HD says so rather than printing a
+        wrong number.
+        """
+        ret = "1m = "
+        additional = 1
+        progenitor = self.progenitor
+        if progenitor is not None and progenitor.xmlid == "MINDSCAN":
+            additional += 5
+        power = self._level_power_for_display
+        levels = self._levels
+
+        val = 1.0
+        if levels == 1:
+            val = 10.0
+        if levels > 1:
+            val = float(power) ** (levels - 1 + additional)
+        check = 0.0
+        if levels > 2:
+            check = float(power) ** (levels - 2 + additional)
+
+        def n(x: float) -> str:
+            return f"{int(x):,}".replace(",", ",")
+
+        if val <= 0 or val < check:
+            return ret + "a LONG way"
+        if val < 1_000_000:
+            return ret + f"{int(val):,} km"
+        if val < 1_000_000_000:
+            return ret + f"{int(val / 1_000_000):,} million km"
+        if val < 1_000_000_000_000:
+            return ret + f"{int(val / 1_000_000_000):,} billion km"
+        if val < 10_000_000_000_000:
+            return ret + f"{int(val / 1_000_000_000_000):,} trillion km"
+        if val < 1e31:
+            val = val / 10_000_000_000_000
+            if val < 1_000_000:
+                plural = "" if val < 1.5 else "s"
+                return ret + f"{int(val):,} lightyear{plural}"
+            if val < 1_000_000_000:
+                return ret + f"{int(val / 1_000_000):,} million lightyears"
+            if val < 1_000_000_000_000:
+                return ret + f"{int(val / 1_000_000_000):,} billion lightyears"
+            if val < 1_000_000_000_000_000:
+                return ret + f"{int(val / 1_000_000_000_000):,} trillion lightyears"
+            return ret + f"{int(val / 1_000_000_000_000_000):,} quadrillion lightyears"
+        return ret + "a LONG way"
+
+    @property
+    def scale_display(self) -> str:
+        """The stated scale, or the computed one when none was stated.
+
+        NOT named `scale`: that is the serialised field, and a property of the
+        same name shadowed it — the writer then lost SCALE on 76 modifiers.
+        HD lets a character reword the ratio ("1m = 1 km broad and wide") and
+        keeps that wording; the computed value is only the fallback.
+        """
+        computed = self.scale_value
+        stated = (getattr(self, "scale", "") or "").strip()
+        if not stated or stated == computed:
+            return computed
+        return stated
+
+    @property
+    def column2_output(self) -> str:
+        """``MegaScale (1m = 1 km; +1)``.
+
+        Ported from ``Megascale.getColumn2Output``. The scale leads the
+        bracket; without it the modifier says only that it is expensive.
+        """
+        from kirby_cost.objects.base import option_alias
+        ret = self.alias or ""
+        val = self.total_value
+        adder_str = ""
+        for ad in self.assigned_adders:
+            if adder_str:
+                adder_str += ", "
+            adder_str += f"{ad.column2_output} ({self.get_fraction(ad.base_cost)})"
+            val -= ad.base_cost
+        if self.input and self.input.strip():
+            if ret.strip():
+                ret += ":  "
+            ret += self.input
+        for mod in self.assigned_modifiers:
+            ret += ", " + (mod.alias or "")
+        ret += " ("
+        ret += self.scale_display + "; "
+        option = (option_alias(self) or "").strip()
+        if option:
+            ret += option + "; "
+        if (self.comments or "").strip():
+            ret += self.comments + "; "
+        if adder_str.strip():
+            ret += adder_str + "; "
+        ret += self.get_fraction(val) + ")"
+        return ret

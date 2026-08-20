@@ -24,9 +24,13 @@ class MissileDeflection(Power, xmlid="MISSILEDEFLECTION"):
     
     @property
     def damage_display(self) -> str:
-        """Get deflection display."""
-        return f"{self._levels} Active Points' worth"
+        """Empty — Java's ``MissileDeflection.getDamageDisplay`` returns "".
 
+        Deflection has no quantity of its own; what it deflects and how well
+        are adders and OCV levels. "0 Active Points' worth" was a measure of
+        nothing.
+        """
+        return ""
     def effective_target(self) -> str:
         """Java MissileDeflection.getTarget (MissileDeflection.java:146):
         with the REFLECTION adder the power targets DCV."""

@@ -964,7 +964,7 @@ class HDCLoader:
         hero.powers = self._load_powers_section(root)
         hero.skills = self._load_section(root, "SKILLS", None, "skill")
         hero.perks = self._load_section(root, "PERKS", None, "power")
-        hero.talents = self._load_section(root, "TALENTS", None, "power")
+        hero.talents = self._load_section(root, "TALENTS", None, "talent")
         hero.complications = self._load_section(root, "DISADVANTAGES", None, "disad")
         hero.martial_arts = self._load_section(root, "MARTIALARTS", None, "power",
                                                gate_on_template=False)
@@ -1550,6 +1550,24 @@ class HDCLoader:
     def _create_instance(self, xmlid: str, obj_type: str) -> GenericObject:
         """Create the correct class instance for an XMLID."""
         xmlid_upper = xmlid.upper()
+
+        # A talent with no class of its own is a Talent, not a nameless
+        # object. HD instantiates the generic Talent for anything the
+        # template lists under <TALENTS> and no more, which is how
+        # Ambidexterity — which has options and no special behaviour — gets
+        # printed as "Ambidexterity (no Off Hand penalty)". This loader built
+        # a _FallbackObject instead, whose display is the alias alone.
+        if obj_type == "talent":
+            cls = self._get_power_cls(xmlid_upper)
+            if cls is not None:
+                try:
+                    return cls()
+                except (TypeError, AttributeError) as exc:
+                    self._on_registered_construction_failure(xmlid_upper, cls, exc)
+            from kirby_cost.objects.talents.talent import Talent
+            obj = Talent()
+            obj.xmlid = xmlid_upper
+            return obj
 
         if obj_type == "char":
             char_map = self._get_char_map()
