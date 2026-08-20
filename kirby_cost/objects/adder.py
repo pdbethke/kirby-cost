@@ -46,6 +46,7 @@ class Adder(GenericObject):
         """Initialize an Adder."""
         super().__init__()
         self._required = False
+        self._template_has_sub_adders = False
         self._selected = False
         self._group = False
         self._display_in_string = True
@@ -92,6 +93,11 @@ class Adder(GenericObject):
         # adder printed its count twice: "x8 Noncombat:  x8".
         if tmpl.display and not (self._display or "").strip():
             self._display = tmpl.display
+        # Whether this adder heads a group. HD keeps group adders ahead of the
+        # plain ones in an adder string, and the only place that is stated is
+        # the template.
+        if tmpl.has_sub_adders:
+            self._template_has_sub_adders = True
 
     @property
     def column2_output(self) -> str:
