@@ -25,58 +25,29 @@ class FringeBenefit(Perk, xmlid="FRINGE_BENEFIT"):
     
     @property
     def column2_output(self) -> str:
+        """``Fringe Benefit:  Local Police Powers``.
+
+        Ported from ``FringeBenefit.getColumn2Output``. The option is joined
+        with ":  " rather than brackets — a fringe benefit IS its option; the
+        alias is only a heading — and the roll, where the benefit has one,
+        comes after the modifiers rather than before them.
         """
-        Get formatted output for column 2 display.
-        
-        Returns:
-            Formatted string representation
-        """
-        output = self._alias
-        
-        # Add name if present
+        from kirby_cost.objects.base import option_alias
+        ret = self.alias or ""
         if self._name and self._name.strip():
-            output = f"<i>{self._name}:</i>  {output}"
-        
-        # Add input
+            ret = f"<i>{self._name}:</i>  {ret}"
         if self.input and self.input.strip():
-            output = output + ":  " + self.input
-        
-        # Add selected option and adders
-        if self._selected_option:
-            output = output + ":  "
-            output = output + self._selected_option.alias
-            adder_str = self.adder_string
-            if adder_str.strip():
-                output = output + "; " + adder_str
-        else:
-            adder_str = self.adder_string
-            if adder_str.strip():
-                output = output + ":  " + adder_str
-        
-        # Add modifiers
-        output = output + self.modifier_string
-        
-        # Add roll if present
-        roll = self.roll
-        if roll and roll.strip():
-            output = output + " " + roll
-        
-        # Add END usage note
-        if self.end_usage > 0:
-            active_hero = EngineContext.active_hero()
-            if active_hero:
-                end_reserve = GenericObject.find_object_by_id(active_hero.powers, "ENDURANCERESERVE")
-                if end_reserve:
-                    all_mods = self.all_assigned_modifiers
-                    end_reserve_mod = GenericObject.find_object_by_id(all_mods, "ENDRESERVEOREND")
-                    prefs = EngineContext.prefs()
-                    if not end_reserve_mod and not prefs.use_wg:
-                        if self._use_end_reserve:
-                            output = output + " (uses END Reserve)"
-                        else:
-                            output = output + " (uses Personal END)"
-        
-        return output
-
-
-
+            ret += f":  {self.input}"
+        option = (option_alias(self) or "").strip()
+        adders = self.adder_string
+        if option:
+            ret += f":  {option}"
+            if adders.strip():
+                ret += f"; {adders}"
+        elif adders.strip():
+            ret += f":  {adders}"
+        ret += self.modifier_string
+        roll = (getattr(self, "roll", "") or "").strip()
+        if roll:
+            ret += f" {roll}"
+        return ret
