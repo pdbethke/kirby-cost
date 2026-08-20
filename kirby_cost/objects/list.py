@@ -8,6 +8,7 @@ Base class for power frameworks: Multipower, VPP, Elemental Control.
 
 from typing import List as ListType, Optional
 from kirby_cost.objects.base import GenericObject
+from kirby_cost.util.rounder import round_up
 from kirby_cost.objects.modifier import Modifier
 from kirby_cost.objects.adder import Adder
 
@@ -75,6 +76,64 @@ class List(GenericObject):
         """Set the list of objects."""
         self._objects = objects
     
+    @property
+    def modifier_string(self) -> str:
+        """``; all slots Extra Time (Full Phase, -1/2)`` — a framework's line.
+
+        Ported from ``List.getModifierString`` (List.java:501). A framework
+        holds two kinds of modifier and says so: the ones PRIVATE to the
+        reserve, which apply to the pool itself, and the public ones, which
+        every slot inherits — and HD labels the second kind "all slots" so a
+        reader can tell which is which. This class had no modifier_string, so
+        it used GenericObject's, which knows about neither and printed the
+        two groups as one undifferentiated list.
+
+        The active-point note sits between the advantages and the limitations,
+        as it does everywhere, and the whole thing is prefixed with ", " only
+        if anything came out at all.
+        """
+        public = sorted(self.assigned_modifiers, key=lambda m: m.total_value)
+        private = sorted(self.private_mods, key=lambda m: m.total_value)
+
+        def split(mods):
+            adv = lim = ""
+            for m in mods:
+                if m.total_value >= 0:
+                    if adv.strip():
+                        adv += ", "
+                    adv += m.column2_output
+                else:
+                    if lim.strip():
+                        lim += ", "
+                    lim += m.column2_output
+            return adv, lim
+
+        public_adv, public_lim = split(public)
+        private_adv, private_lim = split(private)
+
+        ret = ""
+        if private_adv.strip():
+            ret += private_adv
+        if public_adv.strip():
+            if ret.strip():
+                ret += "; "
+            ret += "all slots " + public_adv
+        if self.display_active_cost and (
+                self.active_cost != self.total_cost
+                or self.real_cost != self.total_cost):
+            ret += f" ({round_up(self.active_cost)} Active Points)"
+        if private_lim.strip():
+            if ret.strip():
+                ret += "; "
+            ret += private_lim
+        if public_lim.strip():
+            if ret.strip():
+                ret += "; "
+            ret += "all slots " + public_lim
+        if ret.strip():
+            ret = ", " + ret
+        return ret
+
     @property
     def private_mods(self) -> ListType[Modifier]:
         """Get private modifiers (framework-only)."""

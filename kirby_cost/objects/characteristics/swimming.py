@@ -69,7 +69,7 @@ class Swimming(Characteristic, xmlid="SWIMMING"):
     @property
     def column2_output(self) -> str:
         """Get column 2 output."""
-        modifier_str = ""  # self.get_modifier_string()  # Stub
+        modifier_str = self.modifier_string
         
         if (self._levels == 0 and
             self.add_modifiers_to_base and
@@ -103,12 +103,12 @@ class Swimming(Characteristic, xmlid="SWIMMING"):
         if self._selected_option:
             option_alias = self._selected_option.display if self._selected_option.display else self._selected_option.xmlid
             string = f"{string} ({option_alias}"
-            adder_str = ""  # self.get_adder_string()  # Stub
+            adder_str = self.adder_string
             if adder_str.strip():
                 string = f"{string}; {adder_str}"
             string = f"{string})"
         else:
-            adder_str = ""  # self.get_adder_string()  # Stub
+            adder_str = self.adder_string
             if adder_str.strip():
                 string = f"{string} ({adder_str})"
         

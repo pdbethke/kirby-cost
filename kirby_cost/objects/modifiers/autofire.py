@@ -63,6 +63,10 @@ class Autofire(Modifier, xmlid="AUTOFIRE"):
                         break
                 if num_str:
                     try:
+                        # `n = i` here — the LOOP INDEX, not the digits it had
+                        # just collected. A renamed Autofire option therefore
+                        # reported its own position in the string as a shot
+                        # count.
                         n = int(num_str)
                     except ValueError:
                         pass

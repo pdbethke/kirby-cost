@@ -52,8 +52,10 @@ class Modifier(GenericObject):
         """Initialize a Modifier."""
         super().__init__()
         self._parent_object: Optional[GenericObject] = None
-        self.is_limitation: bool = False
+        self._is_limitation: bool = False
         self.is_limitation_set: bool = False
+        #: (base_cost, level_cost) for each option the template offers.
+        self._template_option_costs: list = []
         self.available_check: bool = False
         self.is_multiplier: bool = False
         self.excludes: List[str] = []
@@ -221,6 +223,42 @@ class Modifier(GenericObject):
         self.private_mod = value
     
     @property
+    def is_limitation(self) -> bool:
+        """Whether this modifier makes the power WORSE.
+
+        Ported from ``Modifier.isLimitation`` (Modifier.java:1065). This was a
+        plain bool field defaulting to False and set from nowhere, so a
+        modifier worth exactly zero — "Doesn't Protect Hit Location 18 (+0)" —
+        sorted with the advantages and printed before the active-point note
+        instead of after it.
+
+        The decision has three stages and they are not interchangeable. A
+        template that states ISLIMITATION settles it outright. Failing that,
+        the OPTIONS decide: if they run in both directions the value does; if
+        they only ever cost, it is an advantage; and if they only ever save —
+        or if they are all free — it is a limitation, because a modifier that
+        cannot cost anything is not being bought for benefit. Only with no
+        options at all does it come down to the value.
+        """
+        if self.is_limitation_set:
+            return self._is_limitation
+        costs = self._template_option_costs
+        if costs:
+            has_positive = any(b > 0 or l > 0 for b, l in costs)
+            has_negative = any(b < 0 or l < 0 for b, l in costs)
+            if has_positive and has_negative:
+                return self.total_value < 0
+            if has_positive:
+                return False
+            return True
+        return self.total_value < 0
+
+    @is_limitation.setter
+    def is_limitation(self, value: bool) -> None:
+        self.is_limitation_set = True
+        self._is_limitation = bool(value)
+
+    @property
     def display_in_string(self) -> bool:
         """Whether this modifier should be displayed in the string."""
         return self._display_in_string
@@ -339,8 +377,15 @@ class Modifier(GenericObject):
         element = super().get_save_xml()
         element.tag = "MODIFIER"
         
-        # Modifier-specific attributes
-        if self.is_limitation:
+        # Modifier-specific attributes.
+        #
+        # Only when the DOCUMENT said so. `is_limitation` used to be a field
+        # that nothing set, so writing it back on truthiness was harmless;
+        # it is a computed decision now, and writing that decision out would
+        # turn HD's own inference into a per-character override on every
+        # modifier that happens to be a limitation. Same rule as DURATION
+        # below, and for the same reason.
+        if self.is_limitation and "IS_LIMITATION" in getattr(self, "_source_attrs", ()):
             element.set("IS_LIMITATION", "Yes")
         if self.private_mod:
             element.set("PRIVATE", "Yes")

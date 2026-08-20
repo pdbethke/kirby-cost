@@ -77,8 +77,12 @@ class Running(Characteristic, xmlid="RUNNING"):
     @property
     def column2_output(self) -> str:
         """Get column 2 output."""
-        # Get modifier string (stub - would need full implementation)
-        modifier_str = ""  # self.get_modifier_string()
+        # The modifiers, which were stubbed out here with the call commented
+        # beside them. Both places matter: a movement characteristic bought at
+        # zero levels purely to CARRY a limitation prints as
+        # "Increased Endurance Cost (x4 END; -1 1/2) applied to Running", and
+        # that whole branch is unreachable while the string is empty.
+        modifier_str = self.modifier_string
         
         if (self._levels == 0 and
             self.add_modifiers_to_base and
@@ -106,12 +110,12 @@ class Running(Characteristic, xmlid="RUNNING"):
         if self._selected_option:
             option_alias = self._selected_option.display if self._selected_option.display else self._selected_option.xmlid
             string = f"{string} ({option_alias}"
-            adder_str = ""  # self.get_adder_string()  # Stub
+            adder_str = self.adder_string
             if adder_str.strip():
                 string = f"{string}; {adder_str}"
             string = f"{string})"
         else:
-            adder_str = ""  # self.get_adder_string()  # Stub
+            adder_str = self.adder_string
             if adder_str.strip():
                 string = f"{string} ({adder_str})"
         

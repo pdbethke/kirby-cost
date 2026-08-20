@@ -107,6 +107,7 @@ def _option(entry: dict[str, Any]) -> OptionTemplate:
         alias=entry.get("alias") or "",
         display_in_string=not (a.get("DISPLAYINSTRING") or "").strip()
         .upper().startswith("N"),
+        levels=_i(a, "LEVELSTART"),
         base_cost=_f(a, "BASECOST"),
         level_cost=_f(a, "LVLCOST"),
         level_value=_level_value(a),
