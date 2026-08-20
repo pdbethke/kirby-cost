@@ -48,6 +48,9 @@ class Linked(Modifier, xmlid="LINKED"):
         self.xmlid = self.XMLID
         self.lesser_value = -0.25
         self.linked_to_id = -1
+        #: Whether the link was set by an edit rather than read from a
+        #: file. HD can only ever be in the former state — see `value`.
+        self._link_set_in_session = False
         # Note: orig_base_cost is inherited from GenericObject and tracked
         # automatically via the base class's base_cost setter. We do not
         # maintain a second copy (the Java port did because Java has no
@@ -289,6 +292,18 @@ class Linked(Modifier, xmlid="LINKED"):
         # reading a Linked's display rewrote LINKED_ID on 7 objects. The same
         # condition is applied here as a read, so the display sees what HD
         # sees and the document keeps what it said.
+        # HD never RESTORES this link. Java writes LINKED_ID
+        # (Linked.java:376) and has no read for it anywhere — `linkedToID` is
+        # a private long that stays at its Java default of 0 until something
+        # in the session sets it — so `getValue()` looks for a power with id 0,
+        # finds none, and every Linked loaded from a file prints "???".
+        #
+        # This engine DOES read the attribute, deliberately: it is the whole
+        # content of the modifier and 92 characters used to export their links
+        # pointing at nothing. That makes the document better and the display
+        # WRONG, because the oracle is HD. So the id is kept for the writer and
+        # withheld from the lookup unless something set the link in this
+        # session, which is the only state HD can be in when it resolves one.
         if self._link_is_self_referential():
             return None
         if self.linked_to_id < 0:
@@ -373,6 +388,7 @@ class Linked(Modifier, xmlid="LINKED"):
             self.linked_to_id = adder._id
         else:
             self.linked_to_id = -1
+        self._link_set_in_session = True
         
         self._selected_option = adder
         
