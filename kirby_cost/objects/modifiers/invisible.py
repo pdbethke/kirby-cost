@@ -221,16 +221,63 @@ class Invisible(Modifier, xmlid="INVISIBLE"):
     
     @property
     def column2_output(self) -> str:
+        """``Invisible Power Effects (Can't be traced; +1/4)``.
+
+        Ported from ``Invisible.getColumn2Output`` (6E branch). The option is
+        the whole content — what about the power is hidden — and the generic
+        modifier line dropped it, leaving "Invisible Power Effects (+1/4)":
+        the cost of hiding something, without saying what.
+
+        The two prefixes it strips are HD's: an option written "Obvious Power,
+        Can't be traced" is answering a question the sheet has already asked,
+        so only the answer is printed.
+
+        EFFECTSTARGET and EFFECTSOTHER are read as a PAIR and rendered as one
+        clause, because "invisible to the target" and "invisible to everyone
+        else" are the same sentence when they agree and two when they do not.
         """
-        Get column 2 output string.
-        
-        Complex formatting for 6E vs pre-6E, sense groups.
-        """
-        if self._is_6e_template():
-            return self._get_column2_output_6e()
-        else:
-            return self._get_column2_output_pre6e()
-    
+        from kirby_cost.objects.base import GenericObject, option_alias
+        ret = self.alias or ""
+        val = self.total_value
+        adder_str = self.adder_string
+
+        for mod in self.assigned_modifiers:
+            ret += ", " + (mod.alias or "")
+        ret += " ("
+
+        option = (option_alias(self) or "").strip()
+        for prefix in ("Obvious Power,", "Inobvious Power,"):
+            if option.startswith(prefix):
+                option = option[len(prefix):].strip()
+                break
+        ret += option
+
+        target = GenericObject.find_object_by_id(self.assigned_adders, "EFFECTSTARGET")
+        other = GenericObject.find_object_by_id(self.assigned_adders, "EFFECTSOTHER")
+        if target is not None and other is not None:
+            target.display_in_string = False
+            other.display_in_string = False
+            t_id = (getattr(target.selected_option, "xmlid", "") or "").upper()
+            o_id = (getattr(other.selected_option, "xmlid", "") or "").upper()
+            t_alias = (option_alias(target) or "").strip()
+            o_alias = (option_alias(other) or "").strip()
+            if t_id == "DEFAULT" and o_id != "DEFAULT":
+                ret += f", effects of Power are {o_alias} to other characters"
+            elif t_id != "DEFAULT" and o_id == "DEFAULT":
+                ret += f", effects of Power are {t_alias} to target"
+            elif t_id != "DEFAULT" and o_id != "DEFAULT":
+                if t_id == o_id:
+                    ret += (f", effects of Power are {t_alias} to both target "
+                            "and other characters")
+                else:
+                    ret += (f", effects of Power are {t_alias} to target and "
+                            f"{o_alias} to other characters")
+
+        ret += "; "
+        if adder_str.strip():
+            ret += adder_str + "; "
+        ret += self.get_fraction(val) + ")"
+        return ret
     def _get_column2_output_6e(self) -> str:
         """Get column 2 output for 6E template."""
         string = ""

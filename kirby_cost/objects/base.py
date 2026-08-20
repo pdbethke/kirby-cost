@@ -347,6 +347,16 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
                 except ValueError:
                     pass
 
+        # MULTIPLIER — whether the modifier's value is a MULTIPLIER rather
+        # than a fraction. Three modifiers set it (ORGANIZATION, ONEDEFENSE,
+        # LOCKOUT) and the field was never read, so an Organization Contact
+        # worth 2 printed "(+2)" where HD writes "(x3)": the same number said
+        # two entirely different ways.
+        if hasattr(self, "is_multiplier"):
+            stated = (attrs.get("MULTIPLIER") or "").strip().upper()
+            if stated:
+                self.is_multiplier = stated.startswith("Y")
+
         if hasattr(self, "standard_effect_allowed"):
             stated = (attrs.get("STANDARDEFFECTALLOWED") or "").strip().upper()
             if stated:
