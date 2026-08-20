@@ -1001,6 +1001,16 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         parent = self.parent
         if parent is not None and _show_common_limitations():
             for mod in parent.assigned_modifiers:
+                # Java reads `getParentList().getAssignedModifiers()`, and a
+                # List has already MOVED its private modifiers out of that
+                # list into privateMods (List.separatePrivateMods). So a slot
+                # never sees them — they belong to the pool, not to what it
+                # holds. This engine keeps both in one list and partitions at
+                # the point of use, so the skip has to be explicit here: a
+                # VPP's private "Only For Chinese Magic" was being repeated on
+                # every slot that did not already carry a Limited Power.
+                if getattr(mod, "private", False):
+                    continue
                 if "VPP" in (mod.types or []):
                     continue
                 from kirby_cost.objects.frameworks import is_multipower
