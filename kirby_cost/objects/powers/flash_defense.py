@@ -24,29 +24,37 @@ class FlashDefense(SenseAffectingPower, xmlid="FLASHDEFENSE"):
     
     @property
     def damage_display(self) -> str:
-        """Get flash defense display."""
-        return f"{self._levels} points"
+        """``(10 points)`` — and nothing at all for a single point.
+
+        Ported from ``FlashDefense.getDamageDisplay``. The brackets belong to
+        the power rather than to an adder list, the number is levels divided
+        by the level value rather than the raw levels, and one point prints as
+        no number at all: "Sight Group Flash Defense" says everything there is
+        to say.
+        """
+        from kirby_cost.util.rounder import round_down
+        num = int(round_down(self._levels / (self._level_value or 1.0)))
+        return f"({num} points)" if num > 1 else ""
     
     @property
     def column2_output(self) -> str:
-        """Get column 2 output with sense groups."""
-        # Stub: would build sense group list from selected option and adders
-        output = f"{self._alias} {self.damage_display}"
-        
-        if self._selected_option:
-            output += f" {self._selected_option.alias}"
-        
-        if self._name and self._name.strip():
-            output = f"<i>{self._name}:</i>  {output}"
-        
-        adder_str = self.adder_string
-        if adder_str and adder_str.strip():
-            output += f", {adder_str}"
-        
-        modifier_str = self.modifier_string
-        output += modifier_str
-        
-        return output
-    
-    
+        """``Sight Group Flash 4d6`` — what it affects, then what it is.
 
+        Ported from ``FlashDefense.getColumn2Output``. All three sense-affecting
+        powers open with the groups and senses they act on and only then name
+        themselves; this printed the alias first and the group last, which is
+        the same words in the wrong order.
+        """
+        ret = self._sense_prefix()
+        if self._name and self._name.strip():
+            ret = f"<i>{self._name}:</i>  {ret}"
+        ret += " " + (self.alias or "")
+        ret += " " + self.damage_display
+        if self.input and self.input.strip():
+            ret += f":  {self.input}"
+        adders = self.adder_string
+        if adders.strip():
+            ret += f", {adders}"
+        ret += self.modifier_string
+        ret += self._end_reserve_note()
+        return ret

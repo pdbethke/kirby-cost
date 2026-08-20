@@ -840,13 +840,19 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
             parts.append(option_alias)
         if self.input and self.input.strip():
             parts.append(self.input.strip())
+        ret = " ".join(parts)
+        # Java joins the level suffix with ":  ", not a space
+        # (Adder.addAliasToVector) — "Armor Piercing:  +2", not
+        # "Armor Piercing +2". A multiplier-style adder shows the product
+        # rather than the count.
         if self._levels > 0 and "[LVL]" not in (self._display or ""):
             if self.level_power != 1:
                 total = self.level_multiplier * (self.level_power ** self._levels)
-                parts.append(f"x{int(total)}")
+                lvl = f"x{int(total)}"
             else:
-                parts.append(f"+{self._levels * self.level_multiplier}")
-        return " ".join(parts)
+                lvl = f"+{self._levels * self.level_multiplier}"
+            ret += f":  {lvl}"
+        return ret
 
     def get_text_output(self) -> str:
         """What the sheet shows for this object.
