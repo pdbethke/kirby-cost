@@ -77,13 +77,16 @@ class Swimming(Characteristic, xmlid="SWIMMING"):
             string = modifier_str
             if string.strip().startswith(","):
                 string = string.strip()[1:].strip()
-            alias = self._display if self._display else self._name if self._name else self.xmlid
-            string = f"{string} applied to {alias}"
+            string = f"{string} applied to {self.alias or ''}"
             if self._name and self._name.strip():
                 string = f"<i>{self._name}:</i>  {string}"
             return string
         
-        alias = self._display if self._display else self._name if self._name else self.xmlid
+        # Java is `getAlias() + " " + getDamageDisplay()`. Preferring the
+        # DISPLAY silently overrode a character who renamed the movement: one
+        # NAGA calls its Running "(14m total)", and HD prints that, because
+        # what the player typed is what the sheet says.
+        alias = self.alias or ""
         string = f"{alias} {self.damage_display}"
         
         # Extract total from damage display if present
