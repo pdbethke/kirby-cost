@@ -24,48 +24,49 @@ class MindLink(Power, xmlid="MINDLINK"):
     
     @property
     def damage_display(self) -> str:
-        """Get mind link display."""
-        return f"{self._levels} minds"
-    
+        """Empty — Java's ``MindLink.getDamageDisplay`` returns "".
+
+        How many minds is an ADDER ("Number of Minds (x8)"), not a damage
+        figure, so "0 minds" was a number the power never had.
+        """
+        return ""
     @property
     def column2_output(self) -> str:
-        """Get column 2 output string."""
-        output = f"{self._alias} {self.damage_display}"
-        
-        if self._name and self._name.strip():
-            output = f"<i>{self._name}:</i>  {output}"
-        
-        # Build mind class list
-        mind_classes = []
-        if self.input and self.input.strip():
-            mind_classes.append(self.input.strip())
-        
-        for adder in self.assigned_adders:
-            if adder.xmlid == "MULTIPLECLASSES":
-                adder.display_in_string = False
-                mind_classes.append(adder.alias)
-        
-        if mind_classes:
-            output += ", "
-            for i, mc in enumerate(mind_classes):
-                if i > 0 and i < len(mind_classes) - 1:
-                    output += ", "
-                elif i > 0:
-                    output += " and "
-                output += mc
-            output += " classes of minds" if len(mind_classes) > 1 else " class of minds"
-        
-        if self._selected_option:
-            output += f", {self._selected_option.alias}"
-        
-        adder_str = self.adder_string
-        if adder_str and adder_str.strip():
-            output += f", {adder_str}"
-        
-        modifier_str = self.modifier_string
-        output += modifier_str
-        
-        return output
-    
-    
+        """``Mind Link , Any Willing Target, Number of Minds (x8)``.
 
+        Ported from ``MindLink.getColumn2Output``. The input and the
+        MULTIPLECLASSES adders are collected into one phrase — "human and
+        alien classes of minds" — rather than listed separately, and
+        pluralised on the count.
+        """
+        from kirby_cost.objects.base import option_alias
+        ret = f"{self.alias or ''} {self.damage_display}"
+        if self._name and self._name.strip():
+            ret = f"<i>{self._name}:</i>  {ret}"
+
+        classes = []
+        if self.input and self.input.strip():
+            classes.append(self.input.strip())
+        for ad in self.assigned_adders:
+            if ad.xmlid == "MULTIPLECLASSES":
+                ad.display_in_string = False
+                classes.append(ad.alias or "")
+        if classes:
+            ret += ", "
+            for i, c in enumerate(classes):
+                if 0 < i < len(classes) - 1:
+                    ret += ", "
+                elif i > 0:
+                    ret += " and "
+                ret += c
+            ret += " classes of minds" if len(classes) > 1 else " class of minds"
+
+        option = (option_alias(self) or "").strip()
+        if option:
+            ret += ", " + option
+        adders = self.adder_string
+        if adders.strip():
+            ret += f", {adders}"
+        ret += self.modifier_string
+        ret += self._end_reserve_note()
+        return ret

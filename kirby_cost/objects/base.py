@@ -158,6 +158,11 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         self._level_cost: float = 0.0
         self._level_value: float = 0.0
         self._levels: int = 0
+        #: Java's field initialiser is 1; this port uses 0 and
+        #: apply_adder_template keys on that (`if self.level_power == 0`), so
+        #: changing it moves two oracle fixtures. The display reads it through
+        #: `_level_power_for_display` instead, which restores Java's meaning
+        #: without touching what the cost path relies on.
         self.level_power: int = 0
         self.level_multiplier: int = 1
         self._minimum_cost: float = 0.0
@@ -846,13 +851,27 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         # "Armor Piercing +2". A multiplier-style adder shows the product
         # rather than the count.
         if self._levels > 0 and "[LVL]" not in (self._display or ""):
-            if self.level_power != 1:
-                total = self.level_multiplier * (self.level_power ** self._levels)
+            power = self._level_power_for_display
+            if power != 1:
+                total = self.level_multiplier * (power ** self._levels)
                 lvl = f"x{int(total)}"
             else:
                 lvl = f"+{self._levels * self.level_multiplier}"
             ret += f":  {lvl}"
         return ret
+
+    @property
+    def _level_power_for_display(self) -> int:
+        """Java's ``levelPower``, whose field initialiser is 1.
+
+        This port initialises it to 0 and `apply_adder_template` keys on that
+        to decide whether the template's value has been applied yet. The two
+        meanings collide in the display: at 0 the "exponential adder" test
+        (`levelPower != 1`) is true for EVERY adder, and the multiplier branch
+        then computes multiplier x 0**levels, so "Telescopic:  +6" printed as
+        "Telescopic:  x0". Reading 0 as Java's 1 here separates them.
+        """
+        return self.level_power or 1
 
     def get_text_output(self) -> str:
         """What the sheet shows for this object.

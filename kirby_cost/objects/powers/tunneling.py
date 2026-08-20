@@ -25,10 +25,18 @@ class Tunneling(Power, xmlid="TUNNELING"):
     
     @property
     def damage_display(self) -> str:
-        """Get tunneling display string."""
-        # Stub: would calculate movement and material
-        return f"{self._levels}m through {self.input or 'material'}"
+        """``12m through 10 PD material``.
 
+        Ported from ``Tunneling.getDamageDisplay`` (6E branch). The defence
+        starts at 1 — everything can be tunnelled through something — and
+        DEFBONUS adds to it. Omitting the defence left "12m through material",
+        which does not say what the tunnelling is good for.
+        """
+        defence = 1
+        for ad in self.assigned_adders:
+            if ad.xmlid == "DEFBONUS":
+                defence += ad.levels
+        return f"{self._levels}m through {defence} PD material"
     @property
     def column2_output(self) -> str:
         """``Tunneling 12m through 10 PD material, Fill In``.

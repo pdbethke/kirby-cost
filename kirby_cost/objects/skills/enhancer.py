@@ -69,6 +69,23 @@ class Enhancer(EnhancerSerialization, Skill):
         self.int_based: bool = False
 
 
+    @property
+    def column2_output(self) -> str:
+        """``Scholar`` — the alias, its adders, its modifiers, and no roll.
+
+        In Java ``Enhancer extends List``, not Skill, so it uses List's line.
+        Here it extends Skill (which the cost path relies on), and Skill's
+        line appends " " + the roll — an enhancer has no roll, so every one of
+        them printed a trailing space.
+        """
+        ret = self.alias or ""
+        adders = self.adder_string
+        if adders.strip():
+            ret += f", {adders}"
+        ret += self.modifier_string
+        return ret
+
+
 class Scholar(Enhancer, xmlid="SCHOLAR"):
     """Scholar — discounts Knowledge Skills."""
 

@@ -49,57 +49,25 @@ class LightningReflexesAll(Talent, xmlid="LIGHTNING_REFLEXES_ALL"):
     
     @property
     def column2_output(self) -> str:
+        """``Lightning Reflexes (+10 DEX to act first with Spirit Travel)``.
+
+        Ported from ``LightningReflexesAll.getColumn2Output`` (6E branch). The
+        bracket is a sentence, not a list: it says how much DEX and what for.
+        Printing the option alone — "Lightning Reflexes (Spirit Travel)" — drops
+        the number the talent is bought for.
         """
-        Get formatted output for column 2 display.
-        
-        Returns:
-            Formatted string representation
-        """
-        # Check if 6E template
-        from kirby_cost.core.template import Template
-        template = EngineContext.active_template()
-        if template and template.is_6e():
-            output = self._alias
-            
-            # Add name if present
-            if self._name and self._name.strip():
-                output = f"<i>{self._name}:</i>  {output}"
-            
-            # Add selected option
-            if self._selected_option:
-                output = output + " (+"
-                output = output + str(self._levels) + " DEX to act first with "
-                output = output + self._selected_option.alias
-                adder_str = self.adder_string
-                if adder_str.strip():
-                    output = output + "; " + adder_str
-                output = output + ")"
-            else:
-                adder_str = self.adder_string
-                if adder_str.strip():
-                    output = output + " (" + adder_str + ")"
-            
-            # Add modifiers
-            output = output + self.modifier_string
-            
-            # Add END usage note
-            if self.end_usage > 0:
-                active_hero = EngineContext.active_hero()
-                if active_hero:
-                    end_reserve = GenericObject.find_object_by_id(active_hero.powers, "ENDURANCERESERVE")
-                    if end_reserve:
-                        all_mods = self.assigned_modifiers
-                        end_reserve_mod = GenericObject.find_object_by_id(all_mods, "ENDRESERVEOREND")
-                        prefs = EngineContext.prefs()
-                        if not end_reserve_mod and not prefs.use_wg:
-                            if self._use_end_reserve:
-                                output = output + " (uses END Reserve)"
-                            else:
-                                output = output + " (uses Personal END)"
-            
-            return output
-        
-        return super().column2_output
-
-
-
+        from kirby_cost.objects.base import option_alias
+        ret = self.alias or ""
+        if self._name and self._name.strip():
+            ret = f"<i>{self._name}:</i>  {ret}"
+        option = (option_alias(self) or "").strip()
+        adders = self.adder_string
+        if option:
+            ret += f" (+{self._levels} DEX to act first with {option}"
+            if adders.strip():
+                ret += f"; {adders}"
+            ret += ")"
+        elif adders.strip():
+            ret += f" ({adders})"
+        ret += self.modifier_string
+        return ret
