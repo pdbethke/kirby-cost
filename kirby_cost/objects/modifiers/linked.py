@@ -78,10 +78,13 @@ class Linked(Modifier, xmlid="LINKED"):
         if parent is None:
             return orig
 
-        # Can't link to self or another Linked modifier
+        # Can't link to self or another Linked modifier. Java clears the id
+        # here as well as declining the discount; this only declines it. The
+        # difference did not matter while `value` always returned None, and
+        # became load-bearing the moment it resolved: a COST lookup was
+        # rewriting LINKED_ID in the document it was about to serialise.
         if (linked_power.xmlid == parent.xmlid or
                 isinstance(linked_power, Linked)):
-            self.linked_to_id = -1
             return orig
         
         # Temporarily remove Linked modifiers to calculate active costs
@@ -279,7 +282,15 @@ class Linked(Modifier, xmlid="LINKED"):
         # name, the display falls back to HD's own placeholder and every
         # Linked printed "Linked (???; -1/2)" instead of naming the power it
         # is linked TO, which is the entire content of the modifier.
-        self._purify_linked_object()
+        # Java calls purifyLinkedObject() here, which ASSIGNS -1 when the link
+        # points at the framework the slot lives in. HD can afford to mutate
+        # because its editor re-derives the value; this engine writes the
+        # document back out, and the export-fidelity gate caught it at once —
+        # reading a Linked's display rewrote LINKED_ID on 7 objects. The same
+        # condition is applied here as a read, so the display sees what HD
+        # sees and the document keeps what it said.
+        if self._link_is_self_referential():
+            return None
         if self.linked_to_id < 0:
             return None
 
@@ -366,16 +377,25 @@ class Linked(Modifier, xmlid="LINKED"):
             else:
                 self.base_cost = self.lesser_value
     
-    def _purify_linked_object(self) -> None:
-        """Validate and clean up linked object reference."""
+    def _link_is_self_referential(self) -> bool:
+        """Whether the link points at the framework this slot lives in.
+
+        Java's ``purifyLinkedObject`` clears the id when it does; this asks
+        the same question without answering it in the document. A slot linked
+        to its own parent is linked to nothing.
+        """
         progenitor = self.progenitor
-        if progenitor:
-            parent_list = progenitor.parent
-            main_power = progenitor.main_power
-            
-            if ((parent_list and parent_list._id == self.linked_to_id) or
-                (main_power and main_power._id == self.linked_to_id)):
-                self.linked_to_id = -1
+        if not progenitor:
+            return False
+        parent_list = progenitor.parent
+        main_power = progenitor.main_power
+        return bool((parent_list and parent_list._id == self.linked_to_id)
+                    or (main_power and main_power._id == self.linked_to_id))
+
+    def _purify_linked_object(self) -> None:
+        """Java's mutating form, kept for callers that genuinely edit."""
+        if self._link_is_self_referential():
+            self.linked_to_id = -1
     
     @property
     def limitation(self) -> bool:

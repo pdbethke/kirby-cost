@@ -92,8 +92,16 @@ class List(GenericObject):
         as it does everywhere, and the whole thing is prefixed with ", " only
         if anything came out at all.
         """
-        public = sorted(self.assigned_modifiers, key=lambda m: m.total_value)
-        private = sorted(self.private_mods, key=lambda m: m.total_value)
+        # Java splits these into two LISTS at load time
+        # (`List.separatePrivateMods`) and its cost methods then sum both. Our
+        # cost methods read `assigned_modifiers` alone, so moving them breaks
+        # 68 oracle fixtures — the partition happens here instead, where only
+        # the display can see it. Same question, asked at the point of use.
+        every = list(self.assigned_modifiers) + list(self.private_mods)
+        public = sorted((m for m in every if not m.private),
+                        key=lambda m: m.total_value)
+        private = sorted((m for m in every if m.private),
+                         key=lambda m: m.total_value)
 
         def split(mods):
             adv = lim = ""
