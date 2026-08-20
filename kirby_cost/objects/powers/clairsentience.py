@@ -106,7 +106,7 @@ class Clairsentience(Power, xmlid="CLAIRSENTIENCE"):
                 ret = f"{word}{',' if prefixed else ''} {ret}"
                 prefixed = True
 
-        prefix = sense_prefix(self, "[Unknown]")
+        prefix = sense_prefix(self, "[Unknown]", joiner=" And ")
         if self._name and self._name.strip():
             ret = f"<i>{self._name}:</i>  {ret}"
         ret += " (" + prefix + ")"
