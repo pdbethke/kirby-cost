@@ -3,10 +3,10 @@
   "_measured": {
     "date": "2026-08-20",
     "strings_compared": 91221,
-    "exact": 90365,
-    "wrong": 855,
+    "exact": 90612,
+    "wrong": 608,
     "raised": 1,
-    "gap_classes": 121,
+    "gap_classes": 111,
     "note": "strings_compared excludes objects whose HD element ID is not unique within their character; see _oracle_index."
   },
   "gaps": [
@@ -56,7 +56,6 @@
     "column2_output|Healing",
     "column2_output|HighRangeRadioPerception",
     "column2_output|Images",
-    "column2_output|InfraredPerception",
     "column2_output|Invisibility",
     "column2_output|KillingAttackHTH",
     "column2_output|KillingAttackRanged",
@@ -69,8 +68,6 @@
     "column2_output|MindControl",
     "column2_output|MindLink",
     "column2_output|MindScan",
-    "column2_output|MissileDeflection",
-    "column2_output|Multiform",
     "column2_output|NakedModifier",
     "column2_output|Running",
     "column2_output|Shrinking",
@@ -84,8 +81,6 @@
     "column2_output|Transform",
     "column2_output|TransportFamiliarity",
     "column2_output|Tunneling",
-    "column2_output|UltravioletPerception",
-    "column2_output|VariablePowerPool",
     "column2_output|WeaponElement",
     "column2_output|WeaponFamiliarity",
     "column2_output|_FallbackObject",
@@ -99,7 +94,6 @@
     "modifier_string|DamageReduction",
     "modifier_string|Darkness",
     "modifier_string|Desolidification",
-    "modifier_string|Detect",
     "modifier_string|Drain",
     "modifier_string|Duplication",
     "modifier_string|EgoAttack",
@@ -110,9 +104,7 @@
     "modifier_string|Flight",
     "modifier_string|ForceField",
     "modifier_string|ForceWall",
-    "modifier_string|HighRangeRadioPerception",
     "modifier_string|Images",
-    "modifier_string|InfraredPerception",
     "modifier_string|Invisibility",
     "modifier_string|KillingAttackHTH",
     "modifier_string|KillingAttackRanged",
@@ -128,8 +120,6 @@
     "modifier_string|Telekinesis",
     "modifier_string|Teleportation",
     "modifier_string|Transform",
-    "modifier_string|Tunneling",
-    "modifier_string|UltravioletPerception",
-    "modifier_string|VariablePowerPool"
+    "modifier_string|Tunneling"
   ]
 }

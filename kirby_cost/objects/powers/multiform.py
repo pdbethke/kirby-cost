@@ -27,9 +27,13 @@ class Multiform(Power, xmlid="MULTIFORM"):
     
     @property
     def damage_display(self) -> str:
-        """Get multiform display."""
-        return f"{self._levels} form{'s' if self._levels != 1 else ''}"
-    
+        """``300 Character Points in the most expensive form``.
+
+        Ported from ``Multiform.getDamageDisplay``. The levels are points, and
+        specifically the points of the LARGEST form — "300 forms" said
+        something the power does not mean.
+        """
+        return f"{self._levels} Character Points in the most expensive form"
     @property
     def column2_output(self) -> str:
         """Get column 2 output string."""

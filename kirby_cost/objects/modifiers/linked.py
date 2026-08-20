@@ -299,12 +299,21 @@ class Linked(Modifier, xmlid="LINKED"):
             return None
 
         def find(objects):
+            """Java descends into CompoundPower and NOTHING ELSE.
+
+            Recursing through every `.powers` finds objects HD does not — a
+            slot inside a framework, or the power the modifier is attached to
+            — and then names them where HD prints its own "???" placeholder.
+            The narrower search is the faithful one.
+            """
+            from kirby_cost.objects.powers.compound_power import CompoundPower
             for o in objects or ():
                 if getattr(o, "_id", None) == self.linked_to_id:
                     return o
-                found = find(getattr(o, "powers", None))
-                if found is not None:
-                    return found
+                if isinstance(o, CompoundPower):
+                    for sub in (getattr(o, "powers", None) or ()):
+                        if getattr(sub, "_id", None) == self.linked_to_id:
+                            return sub
             return None
 
         for group in (getattr(hero, "powers", None),

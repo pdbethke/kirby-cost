@@ -100,7 +100,14 @@ class List(GenericObject):
         every = list(self.assigned_modifiers) + list(self.private_mods)
         public = sorted((m for m in every if not m.private),
                         key=lambda m: m.total_value)
-        private = sorted((m for m in every if m.private),
+        # REVERSED. Java's separatePrivateMods walks the assigned list from the
+        # back and appends what it removes, so privateMods ends up in reverse
+        # document order — and the sort that follows is stable, so for two
+        # modifiers of equal value that reversal is what decides which prints
+        # first. A VPP with Zero-Phase and No Skill Roll, both +1, reads
+        # "No Skill Roll Required (+1), Powers Can Be Changed..." for exactly
+        # this reason.
+        private = sorted((m for m in reversed(every) if m.private),
                          key=lambda m: m.total_value)
 
         def split(mods):
