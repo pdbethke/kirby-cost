@@ -933,6 +933,27 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         """
         return self.level_power or 1
 
+    def add_alias_to_vector(self, vec: list) -> None:
+        """Java ``Adder.addAliasToVector`` — append this object's contribution
+        and then recurse into its children.
+
+        The recursion is the point. A group adder is usually NOT selected —
+        it is a heading, not a purchase — so it contributes nothing itself and
+        the leaves under it contribute everything. A Weapon Element that
+        printed "Common Melee Weapons" was naming the heading and dropping the
+        weapons: HD writes "Blades, Staffs".
+
+        ``alias_for_vector`` is the same text as a property, for callers that
+        want one object's own contribution; this is the list-building form,
+        which is what the classes that sort their adders need.
+        """
+        if getattr(self, "is_selected", True) and getattr(self, "display_in_string", True):
+            text = self.alias_for_vector
+            if text.strip():
+                vec.append(text.strip())
+        for sub in self.assigned_adders:
+            sub.add_alias_to_vector(vec)
+
     def get_text_output(self) -> str:
         """What the sheet shows for this object.
 
