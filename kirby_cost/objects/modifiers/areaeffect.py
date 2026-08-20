@@ -33,76 +33,8 @@ class AreaEffect(Modifier, xmlid="AOE"):
     @property
     def level_info(self) -> str:
         """Get level info string (area description)."""
-        return self.area(None)
+        return self.area()
     
-    def area(self, generic_object: Optional[GenericObject]) -> str:
-        """
-        Get area description string.
-        
-        Args:
-            generic_object: Optional parent object for calculations
-            
-        Returns:
-            Area description string
-        """
-        # Note: Would need HeroDesigner.getActiveTemplate().is6E() check
-        # For now, implement 6E version
-        from kirby_cost.util.rounder import round_half_up
-        import locale
-        
-        string = ""
-        adder = self._selected_option
-        if adder is None:
-            return string
-        
-        # Format number with locale
-        try:
-            num_format = locale.format_string("%d", self._levels, grouping=True)
-        except (ValueError, TypeError):
-            num_format = str(self._levels)
-        
-        if adder.xmlid == "RADIUS":
-            string = string + num_format + "m Radius"
-        elif adder.xmlid == "CONE":
-            string = string + num_format + "m Cone"
-        elif adder.xmlid == "LINE":
-            string = string + num_format + "m"
-            
-            # Check for DOUBLEHEIGHT
-            double_height = GenericObject.find_object_by_id(
-                self.assigned_adders, "DOUBLEHEIGHT")
-            if double_height is not None:
-                double_height.display_in_string = False
-                self.multiplier = double_height.levels
-                string = string + " Long, " + str(int(self.multiplier)) + "m Tall"
-            
-            # Check for DOUBLEWIDTH
-            double_width = GenericObject.find_object_by_id(
-                self.assigned_adders, "DOUBLEWIDTH")
-            if double_width is not None:
-                double_width.display_in_string = False
-                self.multiplier = double_width.levels
-                if double_height is not None:
-                    string = string + ", " + str(int(self.multiplier)) + "m Wide"
-                else:
-                    string = string + " Long, 2m Tall, " + str(int(self.multiplier)) + "m Wide"
-            elif double_height is not None:
-                string = string + ", 2m Wide"
-            
-            string = string + " Line"
-        elif adder.xmlid == "ANY":
-            string = string + num_format + " 2m Areas"
-        elif adder.xmlid == "SURFACE":
-            string = string + num_format + "m Surface"
-        
-        # Check for EXPLOSION adder
-        explosion_adder = GenericObject.find_object_by_id(
-            self.assigned_adders, "EXPLOSION")
-        if explosion_adder is not None:
-            explosion_adder.display_in_string = False
-            string = string + " Explosion"
-        
-        return string
     
     @property
     def total_value(self) -> float:

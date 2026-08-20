@@ -99,7 +99,62 @@ class ForceWall(Power, xmlid="FORCEWALL"):
 
     @property
     def damage_display(self) -> str:
-        """Get force wall display."""
-        # Stub: would format DEF, BODY, dimensions
-        return f"{self.pd_levels} PD/{self.ed_levels} ED, {self.body_levels} BODY"
+        """Empty. Java's ``ForceWall.getDamageDisplay`` returns "".
 
+        The numbers this power is about — its defences and dimensions, or its
+        END and REC — are written by column2_output itself, so a damage
+        display that also produced them printed them twice.
+        """
+        return ""
+    @property
+    def column2_output(self) -> str:
+        """``Barrier 10 PD/6 ED, 8 BODY (up to 12m long, 4m tall, and 1m thick)``.
+
+        Ported from ``ForceWall.getColumn2Output`` (6E branch). A barrier is
+        defined by its defences AND its dimensions, and the dimensions were
+        missing entirely — the part of the sentence that says how much wall
+        there is.
+        """
+        ret = f"{self.alias or ''} {self.damage_display}"
+        if self._name and self._name.strip():
+            ret = f"<i>{self._name}:</i>  {ret}"
+        ret = ret.strip() + " "
+
+        added = False
+        for levels, label in ((self.pd_levels, "PD"), (self.ed_levels, "ED"),
+                              (self.md_levels, "Mental Defense"),
+                              (getattr(self, "powd_levels", 0), "Power Defense")):
+            if levels and levels > 0:
+                if added:
+                    ret += "/"
+                ret += f"{levels} {label}"
+                added = True
+        ret = ret.strip()
+
+        # A barrier's dimensions are LEVELS above a one-metre minimum, and
+        # half a metre thick before any width is bought — the "+1" and the
+        # "+.5" are the wall you get for free.
+        length = self.length_levels + 1
+        height = self.height_levels + 1
+        width = self.width_levels + 0.5
+        ret += f", {self.body} BODY"
+        ret += (f" (up to {length}m long, {height}m tall, "
+                f"and {_fraction(width)}m thick)")
+        if self.input and self.input.strip():
+            ret += f":  {self.input}"
+        adders = self.adder_string
+        if adders.strip():
+            ret += f", {adders}"
+        ret += self.modifier_string
+        ret += self._end_reserve_note()
+        return ret
+
+
+def _fraction(value: float) -> str:
+    """``1``, ``1/2``, ``1 1/2`` — a barrier's thickness as HD writes it."""
+    whole = int(value)
+    rest = value - whole
+    frac = {0.25: "1/4", 0.5: "1/2", 0.75: "3/4"}.get(round(rest, 2), "")
+    if not frac:
+        return str(whole)
+    return f"{whole} {frac}" if whole else frac
