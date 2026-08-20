@@ -184,7 +184,10 @@ class Power(CharAffectingObject):
         # Add standard effect if applicable
         if self.uses_standard_effect():
             points = self._levels * 3 + pip_count
-            point_str = "point" if points == 1 else "points"
+            # Java pluralises on the LEVELS, not on the point total
+            # (`getLevels() > 0 ? "s" : ""`), so a power with no levels reads
+            # "1 point" and everything else takes the "s" regardless of count.
+            point_str = "points" if self._levels > 0 else "point"
             damage_str += f" (standard effect: {points} {point_str})"
         
         return damage_str

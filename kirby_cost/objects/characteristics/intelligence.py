@@ -162,15 +162,19 @@ class Intelligence(Characteristic, xmlid="INT"):
         
         n2 = int(9 + round_half_up(self.get_secondary_value(active_hero) / 5.0))
         n3 = 0  # All senses bonus
-        n4 = 0  # Other senses bonus
+        # Java accumulates a `secBonus` here for Enhanced Perceptions bought
+        # for a SINGLE sense group — and every one of those lines is COMMENTED
+        # OUT (Intelligence.java:  `// secBonus += ep.getLevels();`), four
+        # times over. This port made the commented code live, so the secondary
+        # PER roll came out above the primary and every Detect printed two
+        # rolls ("13-/17-") where HD prints one. Kept at zero, as HD keeps it.
+        n4 = 0
         
         # Check powers for Enhanced Perception
         for power in active_hero.powers:
             if isinstance(power, EnhancedPerception):
                 if _is_all_senses(power):
                     n3 += power.levels
-                elif power.selected_option is not None:
-                    n4 += power.levels
                 continue
             
             if isinstance(power, CompoundPower):
@@ -178,16 +182,12 @@ class Intelligence(Characteristic, xmlid="INT"):
                     if EnhancedPerception and isinstance(sub_power, EnhancedPerception):
                         if _is_all_senses(sub_power):
                             n3 += sub_power.levels
-                        elif sub_power.selected_option is not None:
-                            n4 += sub_power.levels
         
         # Check equipment for Enhanced Perception
         for equip in active_hero.equipment:
             if isinstance(equip, EnhancedPerception):
                 if _is_all_senses(equip):
                     n3 += equip.levels
-                elif equip.selected_option is not None:
-                    n4 += equip.levels
                 continue
             
             if isinstance(equip, CompoundPower):
@@ -195,8 +195,6 @@ class Intelligence(Characteristic, xmlid="INT"):
                     if EnhancedPerception and isinstance(sub_power, EnhancedPerception):
                         if _is_all_senses(sub_power):
                             n3 += sub_power.levels
-                        elif sub_power.selected_option is not None:
-                            n4 += sub_power.levels
         
         return n2 + n3 + n4
 

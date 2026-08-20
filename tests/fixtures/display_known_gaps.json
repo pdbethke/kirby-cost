@@ -3,10 +3,10 @@
   "_measured": {
     "date": "2026-08-20",
     "strings_compared": 91221,
-    "exact": 90713,
-    "wrong": 507,
+    "exact": 90744,
+    "wrong": 476,
     "raised": 1,
-    "gap_classes": 101,
+    "gap_classes": 100,
     "note": "strings_compared excludes objects whose HD element ID is not unique within their character; see _oracle_index."
   },
   "gaps": [
@@ -54,7 +54,6 @@
     "column2_output|KillingAttackHTH",
     "column2_output|KillingAttackRanged",
     "column2_output|LifeSupport",
-    "column2_output|Maneuver",
     "column2_output|MentalDefense",
     "column2_output|MentalIllusions",
     "column2_output|MindControl",

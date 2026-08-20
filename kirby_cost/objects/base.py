@@ -307,6 +307,15 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
             self._template_option_costs = [
                 (o.base_cost, o.level_cost) for o in opts.values()]
 
+        # Whether the power is ALLOWED to use Standard Effect. 18 powers in
+        # Main6E say so and the field defaulted to False, so
+        # `useStandardEffect()` returned False for every one of them and the
+        # "(standard effect: 9 points)" note never printed.
+        if hasattr(self, "standard_effect_allowed"):
+            stated = (attrs.get("STANDARDEFFECTALLOWED") or "").strip().upper()
+            if stated:
+                self.standard_effect_allowed = stated.startswith("Y")
+
         if hasattr(self, "allow_any_group"):
             stated = (attrs.get("ALLOWANYGROUP") or "").strip().upper()
             if stated.startswith("N"):
@@ -1473,3 +1482,24 @@ def option_alias(adder) -> str:
     if option is not None and (option.alias or "").strip():
         return option.alias
     return getattr(adder, "source_option_alias", "") or ""
+
+
+def is_6e() -> bool:
+    """Whether the character being displayed is costed against a 6E template.
+
+    Java asks ``HeroDesigner.getActiveTemplate().is6E()``. This engine never
+    calls ``EngineContext.set_active_template``, so ``active_template()`` is
+    None everywhere and every such check silently took its 5E branch — a
+    martial maneuver's killing damage came out "HKA 0 1/2d6" where HD writes
+    "HKA 2d6", because the 5E branch halves the pre-STR damage classes.
+
+    Read off the hero instead, the same way ``Template.is6E()`` does: the id
+    contains "6E", or it is unknown and the Main6E bootstrap applies.
+    """
+    try:
+        from kirby_cost.core.context import EngineContext
+        hero = EngineContext.active_hero()
+    except Exception:  # noqa: BLE001
+        return True
+    tid = getattr(hero, "original_template_id", None) or "Main6E"
+    return "6E" in tid

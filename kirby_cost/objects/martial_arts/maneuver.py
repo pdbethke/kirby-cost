@@ -474,8 +474,8 @@ class Maneuver(GenericObject, xmlid="MANEUVER"):
         primary_dc = self.total_dc(True, True)
         secondary_dc = self.total_dc(False, True)
         
-        template = EngineContext.active_template()
-        is_6e = template and template.is_6e()
+        from kirby_cost.objects.base import is_6e as _is_6e_now
+        is_6e = _is_6e_now()
         
         multiplier = 1.0 if is_6e else 2.0
         
@@ -526,8 +526,8 @@ class Maneuver(GenericObject, xmlid="MANEUVER"):
     def weapon_killing_dc(self) -> str:
         """Get weapon killing damage class string."""
         dc = self.total_dc_no_str
-        template = EngineContext.active_template()
-        is_6e = template and template.is_6e()
+        from kirby_cost.objects.base import is_6e as _is_6e_now
+        is_6e = _is_6e_now()
         multiplier = 1.0 if is_6e else 2.0
         
         dc = int(round_down(dc / multiplier))
