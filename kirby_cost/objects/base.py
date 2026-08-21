@@ -495,6 +495,38 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         if not option_set_lm and self.level_multiplier == 1 and tmpl.level_multiplier != 1:
             self.level_multiplier = tmpl.level_multiplier
 
+        # HD falls back to the template's FIRST option when the document
+        # names none: `if (selectedOption == null && options.size() > 0)
+        # selectedOption = options.get(0)` (GenericObject.java:2724). Bokor
+        # has an Entangle whose "Takes No Damage From Attacks" states a
+        # BASECOST and no OPTION at all, and HD still prints "Takes No Damage
+        # From Attacks Limited Group" -- the first option in the template.
+        #
+        # Only the OBJECT is built, never its costs. Java's fallback lives in
+        # a lazy getter that returns an option and applies nothing; the costs
+        # for an unstated option already came from the document's BASECOST.
+        # Running the block above with a guessed option_id would apply the
+        # first option's level_cost, level_value and multiplier as well, which
+        # is a cost change made for a display reason.
+        #
+        # It has to be an object rather than an alias because the display
+        # branches test for one, and a subclass may deliberately return None:
+        # AlternateCombatValue nulls an option that does not match the kind of
+        # power it sits on, and must keep printing nothing.
+        if (self._selected_option is None and not option_id
+                and getattr(tmpl, "options", None)):
+            first = next(iter(tmpl.options.values()), None)
+            if first is not None:
+                from kirby_cost.objects.adder import Adder as _Adder
+                default_opt = _Adder()
+                default_opt.xmlid = first.xmlid
+                default_opt._display = first.display
+                default_opt._alias = first.alias or first.display
+                default_opt._selected = True
+                default_opt._display_in_string = first.display_in_string
+                default_opt.parent = self
+                self._selected_option = default_opt
+
         # Min/max — template is authoritative
         if tmpl.min_set:
             self._minimum_cost = tmpl.minimum_cost

@@ -116,6 +116,31 @@ def roundtrip_hdc() -> Optional[Path]:
     return _from_env("KIRBY_COST_ROUNDTRIP_HDC")
 
 
+def authored_root() -> Optional[Path]:
+    """A directory holding the authored characters, or None.
+
+    The three characters the maintainer has cleared for use as corpus, by
+    name: ``Ravel.hdc``, ``Bokor.hdc``, ``PowerLad.hdc``. They are not
+    redistributed — only the oracle's JSON dumps of them are, and those carry
+    costs and display strings and no campaign material.
+
+    A directory rather than three variables, and no default, for the reason
+    ``roundtrip_hdc`` records: a path into a maintainer's home is not
+    shippable, and a variable that names one reads as configured while
+    behaving as absent on every other machine.
+    """
+    return _from_env("KIRBY_COST_AUTHORED")
+
+
+def authored_hdc(name: str) -> Optional[Path]:
+    """``<authored root>/<name>.hdc``, if the root is set and the file exists."""
+    root = authored_root()
+    if root is None:
+        return None
+    candidate = root / f"{name}.hdc"
+    return candidate if candidate.exists() else None
+
+
 #: Every input the suite can be pointed at: variable -> what it should name.
 #: `conftest.py` reads this twice — to report what a run is configured with,
 #: and to decide whether a skip is acceptable or a defect.
@@ -125,6 +150,7 @@ INPUTS = {
     "KIRBY_COST_HERO_DOCS": "a HERO Designer document store",
     "KIRBY_COST_HD6CLI": "the headless HERO Designer comparison CLI",
     "KIRBY_COST_ROUNDTRIP_HDC": "a structurally complex .hdc to roundtrip",
+    "KIRBY_COST_AUTHORED": "a directory of the three authored .hdc characters",
 }
 
 _FIXTURES = Path(__file__).resolve().parent / "fixtures"
