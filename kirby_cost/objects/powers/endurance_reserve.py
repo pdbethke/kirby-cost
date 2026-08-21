@@ -54,8 +54,13 @@ class EnduranceReserve(Power, xmlid="ENDURANCERESERVE"):
         If both components have identical modifier sets, they share cost calculations.
         Ported from EnduranceReserve.java recIsSamePower().
         """
+        # No REC at all means there is nothing to tell apart, so they are the
+        # same power -- Java returns TRUE here (EnduranceReserve.java:310).
+        # Returning False instead labelled the two halves of a reserve that
+        # has no separate REC: "(320 END, 150 REC) Reserve:  (180 Active
+        # Points) ...; REC: ...".
         if self.rec is None:
-            return False
+            return True
 
         my_mods = self.assigned_modifiers
         rec_mods = self.rec.assigned_modifiers
@@ -63,15 +68,14 @@ class EnduranceReserve(Power, xmlid="ENDURANCERESERVE"):
         if len(my_mods) != len(rec_mods):
             return False
 
-        # Compare each modifier's column2 output (Java uses this for equality)
-        for i in range(len(my_mods)):
-            my_col2 = ""
-            rec_col2 = ""
-            if hasattr(my_mods[i], 'column2_output'):
-                my_col2 = my_mods[i].column2_output
-            if hasattr(rec_mods[i], 'column2_output'):
-                rec_col2 = rec_mods[i].column2_output
-            if my_col2 != rec_col2:
+        # Each of mine must match ANY of the REC's, not the one at the same
+        # index: Java's inner loop scans the whole list and `continue OUTER`s
+        # on the first hit, so two identical sets in a different order are
+        # still the same power.
+        for mine in my_mods:
+            if not any(getattr(theirs, "column2_output", "")
+                       == getattr(mine, "column2_output", "")
+                       for theirs in rec_mods):
                 return False
 
         return True
