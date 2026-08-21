@@ -110,6 +110,17 @@ class CompoundPower(Power, xmlid="COMPOUNDPOWER"):
             borrowed = list(original)
             if _show_common_limitations():
                 for mod in parent_mods:
+                    # Java reads getParentList().getAssignedModifiers(), and a
+                    # List has already MOVED its private modifiers out of that
+                    # list (List.separatePrivateMods) -- so they are not there
+                    # to borrow. This engine keeps both in one list and skips
+                    # at the point of use, as modifier_string and both cost
+                    # borrow loops already do. Without it, Doctor Yin Wu's
+                    # pool-private "Only For Chinese Magic" was applied to the
+                    # sub-powers of every Compound Power in the pool, and it
+                    # divided their printed Real Cost: 13 for HD's 17.
+                    if getattr(mod, "private", False):
+                        continue
                     from kirby_cost.objects.frameworks import is_multipower
                     if mod.xmlid == "CHARGES" and is_multipower(self._parent):
                         continue
