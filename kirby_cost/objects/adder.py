@@ -120,8 +120,11 @@ class Adder(GenericObject):
             if self.show_alias:
                 ret += self.alias or ""
             ret = ret.strip()
-            option = (option_alias(self) or "").strip()
-            if option:
+            # Untrimmed, as in Adder.java:438 -- see alias_for_vector. A
+            # document may write OPTION_ALIAS with a leading space and HD
+            # keeps it: "Immunity:  Harridan venom".
+            option = option_alias(self) or ""
+            if option.strip():
                 if ret.strip():
                     ret += " "
                 ret += option

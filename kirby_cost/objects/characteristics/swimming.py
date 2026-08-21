@@ -91,8 +91,13 @@ class Swimming(Characteristic, xmlid="SWIMMING"):
         
         # Extract total from damage display if present
         string2 = ""
-        if "(" in string:
-            idx = string.index("(")
+        # Java's guard is indexOf("(") > 0, not >= 0 (Swimming.java:99). A
+        # paren at position ZERO means the whole alias is parenthesised --
+        # one NAGA renames its Swimming "(8m total)" -- and Java leaves that
+        # alone. Treating it as found moved the string onto a leading space:
+        # "<i>Amphibious Form:</i>   (8m total)", with three.
+        idx = string.find("(")
+        if idx > 0:
             string2 = " " + string[idx:]
             string = string[:idx].strip()
         string = f"{string}{string2}"

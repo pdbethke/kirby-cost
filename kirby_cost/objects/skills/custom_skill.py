@@ -37,6 +37,22 @@ class CustomSkill(Skill, xmlid="CUSTOMSKILL"):
         """Get the explicit numeric roll value from the HDC ``ROLL`` attribute."""
         return self._custom_roll
 
+    @property
+    def roll(self) -> str:
+        """``CustomSkill.getRoll`` (CustomSkill.java:48).
+
+        The stated roll, and nothing else. Skill.roll compares the primary
+        roll against the secondary and prints both when they differ --
+        "15- (14-)" -- but a custom skill's roll is a number the player typed,
+        so there is no secondary to disagree with it. Inheriting Skill's
+        version printed a computed 14- beside Necrull's stated 15-.
+
+        An unstated roll (0) prints nothing at all.
+        """
+        if not self._custom_roll:
+            return ""
+        return f"{self.roll_value}-"
+
     def get_save_xml(self) -> 'Element':
         """Get save XML."""
         element = super().get_save_xml()
