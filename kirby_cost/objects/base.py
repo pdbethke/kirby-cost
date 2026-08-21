@@ -290,6 +290,16 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
                 if stated:
                     setattr(self, field, stated.startswith("Y"))
 
+        # What the input MEANS, which only the template says. Damage Over Time
+        # declares INPUTLABEL="can be negated by", and printing the input
+        # without it leaves the sheet reading "damage occurs every 1 Day,
+        # target's defenses only apply once" -- the opposite of the rule.
+        # HDTParser has always read this; TemplateData carried no field for
+        # it, so it stopped at the parser.
+        stated_label = (attrs.get("INPUTLABEL") or "").strip()
+        if stated_label and not (getattr(self, "input_label", "") or "").strip():
+            self.input_label = stated_label
+
         # A sense usually may be moved to any group, and twelve in Main6E may
         # not — Nightvision belongs to Sight and nowhere else. HD prints the
         # group name only when there is a CHOICE of group

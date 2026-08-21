@@ -105,8 +105,9 @@ class DamageOverTime(Modifier, xmlid="DAMAGEOVERTIME"):
         # Add input (if in parens)
         if (self.show_input_in_parens and 
             self.input and self.input.strip()):
-            input_label = self.input_label if hasattr(self, 'input_label') else "Input"
-            string2 = string2 + input_label + " " + self.input + "; "
+            # Java is getInputLabel() with no fallback (DamageOverTime
+            # .java:132); "Input" was never a string HD prints.
+            string2 = string2 + self.input_label + " " + self.input + "; "
         
         # Add comments
         if self.comments.strip():
