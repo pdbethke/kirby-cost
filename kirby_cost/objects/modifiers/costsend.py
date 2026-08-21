@@ -40,7 +40,8 @@ class CostsEND(Modifier, xmlid="COSTSEND"):
         option = self._selected_option
         option_id = (getattr(option, "xmlid", "") or "").upper() or \
             (getattr(self, "option_id", "") or "").upper()
-        alias = (option_alias(self) or "").strip()
+        raw_alias = option_alias(self) or ""
+        alias = raw_alias.strip()
         if option_id == "HALFEND" and alias:
             ret = alias
         val = self.total_value
@@ -52,7 +53,11 @@ class CostsEND(Modifier, xmlid="COSTSEND"):
         for mod in self.assigned_modifiers:
             ret += ", " + (mod.alias or "")
         if option is not None and getattr(option, "display_in_string", True) and alias:
-            ret += " (" + alias
+            # Untrimmed, as at CostsEND.java:65 -- unlike the generic Modifier,
+            # which trims here. The template writes ALIAS="Costs 1/2 END " with
+            # a trailing space, so the "; " that follows lands one space out
+            # and HD prints "(Costs 1/2 END ; -1/4)".
+            ret += " (" + raw_alias
 
         paren = ret.count("(") - ret.count(")")
         ret += " (" if paren <= 0 else "; "
