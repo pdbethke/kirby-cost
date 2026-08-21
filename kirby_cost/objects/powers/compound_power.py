@@ -118,6 +118,14 @@ class CompoundPower(Power, xmlid="COMPOUNDPOWER"):
                     already = GenericObject.find_object_by_id(original, mod.xmlid)
                     if mod.total_value < 0 and (already is None or generic):
                         borrowed.append(mod)
+            # Assigning the list REPARENTS what is in it, and the borrowed
+            # modifiers belong to the framework, not to this slot. Java
+            # restores the child's own list afterwards; that puts the child's
+            # modifiers back but leaves the BORROWED ones pointing at the
+            # child — and `Modifier.isPrivate()` asks its progenitor what it
+            # is, so a pool's private limitation silently became a public one
+            # and leaked onto every power rendered after it.
+            borrowed_parents = [(m, m.parent) for m in borrowed]
             obj._assigned_modifiers = borrowed
             try:
                 if ret.strip():
@@ -127,6 +135,8 @@ class CompoundPower(Power, xmlid="COMPOUNDPOWER"):
                     ret += f" (Real Cost: {round_half_down(obj.real_cost_pre_list)})"
             finally:
                 obj._assigned_modifiers = original
+                for mod, owner in borrowed_parents:
+                    mod.parent = owner
 
         if self.display_active_cost:
             ret = (f"(Total: {round_half_up(self.active_cost)} Active Cost, "
