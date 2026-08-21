@@ -54,6 +54,9 @@ class Transform(Power, xmlid="TRANSFORM"):
             if self.input and self.input.strip() and healed_by:
                 output += ", "
             output += healed_by
+            # Java trims before closing the bracket, so an empty healed-by or a
+            # trailing space in the input does not leave "object )".
+            output = output.rstrip()
             output += ")"
         
         if self._selected_option:
