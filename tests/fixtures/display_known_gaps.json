@@ -1,9 +1,7 @@
 {
-  "_comment": "Display gaps: where this engine prints something other than what HERO Designer prints. Shrink-only, keyed by field|class because these are class defects. An entry is a KNOWN GAP, never an acceptable difference. Remove entries in the commit that fixes them; test_display_ledger_is_not_stale fails until you do.",
-  "_measured": "91,217/91,221 strings exact (99.9956%), 3 gap classes, 4 strings, 0 raised \u2014 2026-08-21",
+  "_comment": "Shrink-only. Every display string HD prints, compared against the 655-fixture oracle dump. The one remaining entry is not a divergence in the sheet: HD hides a Detect's EXTRA adders inside getColumn2Output, and the CLI dumps adder_string BEFORE column2_output (CostCalculatorCLI.java:719), so the two recorded values straddle that mutation. HD rebuilds a sense's adders from the template and never reads the file's DISPLAYINSTRING; ours come from the file, which HD wrote AFTER rendering. column2_output \u2014 the line that appears on the sheet \u2014 matches.",
+  "_measured": "91,219/91,221 strings exact (99.9978%), 1 gap class, 2 strings, 0 raised \u2014 2026-08-21",
   "gaps": [
-    "adder_string|Detect",
-    "column2_output|EnduranceReserve",
-    "column2_output|_FallbackObject"
+    "adder_string|Detect"
   ]
 }
