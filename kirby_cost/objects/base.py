@@ -919,15 +919,17 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         returns this object's own text composes better in Python, and
         ``adder_string`` below does the recursion.
         """
-        parts = []
+        # Java concatenates rather than joining a list, and it trims ONLY the
+        # alias (Adder.java:563-579). The option alias and the input go on
+        # verbatim, so a document that wrote OPTION_ALIAS=" Harridan venom"
+        # keeps its leading space and HD prints "Immunity:  Harridan venom"
+        # with two. Stripping every part collapsed that to one.
         # `if (showAlias)` — Java gates the alias here as well as in
         # Adder.getColumn2Output. An adder whose name adds nothing to its
         # option turns it off: a Fringe Benefit's RELIGIOUSRANK is
         # SHOWALIAS="No" because "Religious Rank Priest" says the same thing
         # as "Priest" and says it worse.
-        alias = (self.alias or "").strip() if getattr(self, "show_alias", True) else ""
-        if alias:
-            parts.append(alias)
+        ret = (self.alias or "").strip() if getattr(self, "show_alias", True) else ""
         # The option's alias, from the resolved object where there is one and
         # from the document otherwise. This loader does not resolve option
         # objects for adders, so `_selected_option` is None on all of them and
@@ -938,14 +940,17 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         option = self._selected_option
         option_alias = ""
         if option is not None:
-            option_alias = (option.alias or "").strip()
-        if not option_alias:
-            option_alias = (getattr(self, "source_option_alias", "") or "").strip()
-        if option_alias:
-            parts.append(option_alias)
+            option_alias = option.alias or ""
+        if not option_alias.strip():
+            option_alias = getattr(self, "source_option_alias", "") or ""
+        if option_alias.strip():
+            if ret.strip():
+                ret += " "
+            ret += option_alias
         if self.input and self.input.strip():
-            parts.append(self.input.strip())
-        ret = " ".join(parts)
+            if ret.strip():
+                ret += " "
+            ret += self.input
         # Java joins the level suffix with ":  ", not a space
         # (Adder.addAliasToVector) — "Armor Piercing:  +2", not
         # "Armor Piercing +2". A multiplier-style adder shows the product
