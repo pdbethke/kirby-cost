@@ -198,8 +198,22 @@ class Sense(Power):
                  if a.xmlid not in group_adders and
                     a.xmlid not in built_in]
 
-        # Stub: would handle special cases like INCREASEDARC240/360,
-        # DIMENSIONAL variants, CONCEALED, ANALYZESENSE
+        # Two sense adders do not take their DISPLAY from the template: the
+        # sense names itself inside the string, so Sense builds it (Sense.java
+        # :365 and :455). The "[LVL]" is load-bearing, not decoration —
+        # Adder.addAliasToVector appends ":  +N" only when the display lacks
+        # it, and the computed alias already states the level, so without
+        # this the level is printed twice:
+        #   "Concealed (-8 with Detect PER Rolls):  +8"
+        # DISPLAY is not serialised, so setting it here cannot reach the
+        # writer. The removal branches Java pairs with these (drop CONCEALED
+        # when the sense is neither active nor TRANSMIT) are NOT ported here:
+        # they change which adders are costed, and this is a display fix.
+        for adder in result:
+            if adder.xmlid == "CONCEALED":
+                adder._display = f"Concealed (-[LVL] with {self.alias} PER Rolls)"
+            elif adder.xmlid == "ENHANCEDPERCEPTION":
+                adder._display = "+[LVL] to PER Roll"
 
         self._assigned_adders_saver = result
         return result
