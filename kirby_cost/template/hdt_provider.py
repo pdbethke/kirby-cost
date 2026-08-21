@@ -346,6 +346,11 @@ class HDTTemplateProvider:
         #: Reputation was rendered against HOWWIDE/HOWWELL instead of
         #: RECOGNIZED/EXTREME. Everything else resolves by xmlid alone.
         self._by_section: dict[tuple[str, str], TemplateData] = {}
+        #: (owner xmlid, modifier xmlid) -> the LOCAL definition written inside
+        #: that owner. <MULTIFORM> defines its own COSTSEND with two options of
+        #: its own, and a Multiform's Costs Endurance means that one; every
+        #: other power means the section-level definition.
+        self._nested_mods: dict[tuple[str, str], TemplateData] = {}
         self._adder_types: dict[str, list[str]] = {}
         self._maneuvers: dict[str, TemplateData] = {}
         # Providers for sibling templates, shared across the family — see
@@ -440,6 +445,7 @@ class HDTTemplateProvider:
 
     def _load(self, path: Path) -> None:
         parsed = _parse_cached(path)
+        nested_later: list = []
         groups = _sense_groups(parsed)
         self._index_maneuvers(parsed.get("martial_arts") or [])
         # Senses and sense groups are indexed last. HD keeps them in registries
@@ -468,8 +474,20 @@ class HDTTemplateProvider:
                         data = replace(data, options=synthetic)
                     self._index[xmlid] = data
                     self._by_section.setdefault((section, xmlid), data)
-                    self._index_nested(entry, is_power=is_power)
+                    nested_later.append((entry, is_power))
                     self._index_adder_types(_all_adders(entry))
+        # Nested definitions are indexed LAST, so a top-level one always wins.
+        #
+        # A template can define the same xmlid twice: <MODIFIER XMLID="COSTSEND">
+        # appears once at section level with its real options
+        # (ACTIVATE / EVERYPHASE / HALFEND) and once INSIDE <MULTIFORM> with two
+        # options of its own. Indexing is first-wins, and the nested one was
+        # reached first — so every Costs Endurance in the corpus resolved
+        # against Multiform's two options, found neither, and printed no option
+        # at all. A definition written inside another element is that element's
+        # local variant; the section-level one is what a character references.
+        for entry, is_power in nested_later:
+            self._index_nested(entry, is_power=is_power)
 
     def _index_nested(self, entry: dict[str, Any], *, is_power: bool) -> None:
         """Index definitions written inside another element.
@@ -481,10 +499,16 @@ class HDTTemplateProvider:
         findable — otherwise the lookup misses and falls through to whatever an
         earlier-edition template happens to say, at that edition's rates.
         """
+        owner = _identity(entry)
         for mod in entry.get("modifiers") or []:
             xmlid = mod.get("xmlid")
-            if xmlid and xmlid not in self._index:
-                self._index[xmlid] = _template_data(mod, is_power=False)
+            if not xmlid:
+                continue
+            data = _template_data(mod, is_power=False)
+            if owner:
+                self._nested_mods.setdefault((owner, xmlid), data)
+            if xmlid not in self._index:
+                self._index[xmlid] = data
         for child in entry.get("child_elements") or []:
             tag = child.get("tag")
             attrs = child.get("attributes") or {}
@@ -655,6 +679,17 @@ class HDTTemplateProvider:
     def get_maneuver_map(self) -> dict[str, TemplateData]:
         """display -> TemplateData for every maneuver the template defines."""
         return self._maneuvers
+
+    def get_nested_modifier(self, owner_xmlid: str,
+                            mod_xmlid: str) -> Optional[TemplateData]:
+        """A modifier definition written INSIDE the object that owns it.
+
+        Multiform defines its own Costs Endurance with options the global one
+        does not have. Falling back to the global definition costs and prints
+        the wrong thing; taking the nested one for everybody costs and prints
+        the wrong thing for everybody else. It has to be asked per owner.
+        """
+        return self._nested_mods.get((owner_xmlid, mod_xmlid))
 
     def get_template_data(self, xmlid: str,
                           section: str | None = None) -> Optional[TemplateData]:
