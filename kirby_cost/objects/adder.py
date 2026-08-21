@@ -241,8 +241,14 @@ class Adder(GenericObject):
         return False
 
     def include_in_base(self) -> bool:
-        """Check if this adder should be included in base cost calculation."""
-        return False
+        """``Adder.includeInBase`` (Adder.java:95).
+
+        Not a stub: the template's INCLUDEINBASE flag, OR required. A 6E
+        power's range is its total cost times ten with every adder that is
+        NOT in the base subtracted first, so answering False for everything
+        made every adder count toward range.
+        """
+        return bool(self.included_in_base or self.is_required)
     
     @property
     def custom(self) -> bool:

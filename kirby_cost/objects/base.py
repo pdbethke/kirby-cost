@@ -787,7 +787,13 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
             total = self.total_cost
             if is_6e():
                 for ad in self.assigned_adders:
-                    if not getattr(ad, "include_in_base", False) and not getattr(ad, "is_custom", False):
+                    # Both halves were dead. `include_in_base` is a METHOD,
+                    # so the getattr handed back a bound method and `not` on
+                    # it was always False; and the attribute is `custom`, not
+                    # `is_custom`, so that getattr always defaulted. Nothing
+                    # was ever subtracted, and a Clairsentience with three
+                    # adders reported 500m of range where HD reports 200m.
+                    if not ad.include_in_base() and not ad.custom:
                         total -= ad.total_cost
                 return int(round_half_up(total * 10))
             return int(round_half_up(self.active_cost * 5))
