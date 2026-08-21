@@ -64,7 +64,9 @@ class Summon(Power, xmlid="SUMMON"):
                 else:
                     number = ad.level_multiplier * (power ** ad.levels)
         if number > 1:
-            ret += f" {int(number)}"
+            # NumberFormat.getIntegerInstance() groups thousands (Summon
+            # .java:91): HD prints "1,024", not "1024".
+            ret += f" {int(number):,}"
         ret += f" {self._levels}-point"
         if self._name and self._name.strip():
             ret = f"<i>{self._name}:</i>  {ret}"
