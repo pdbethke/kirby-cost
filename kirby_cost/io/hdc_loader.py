@@ -891,6 +891,15 @@ class HDCLoader:
         # package (see load_language_chart).
         from kirby_cost.objects.skills.language import Language, load_language_chart
         Language.chart = load_language_chart(self._provider_in_use)
+        # Likewise the names of the senses. Java builds Sense objects from the
+        # template's <SENSE> elements into a static registry; a sense-affecting
+        # power asks that registry whether one of its adders names a sense, and
+        # prints the ones that do after the groups ("... Sight Group and Danger
+        # Sense"). This engine constructs no Sense from the template, so the
+        # registry was empty and the clause was always dropped.
+        from kirby_cost.objects.powers.sense import Sense
+        names = getattr(self._provider_in_use, "sense_xmlids", None)
+        Sense.set_template_sense_xmlids(names() if names is not None else ())
         # Sense GROUPS are defined by the template. A character file with no
         # TEMPLATE has none, so Java cannot resolve e.g. SMELLGROUP as a group
         # and charges the single-sense rate. Recorded here for

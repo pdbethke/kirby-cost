@@ -351,6 +351,7 @@ class HDTTemplateProvider:
         #: its own, and a Multiform's Costs Endurance means that one; every
         #: other power means the section-level definition.
         self._nested_mods: dict[tuple[str, str], TemplateData] = {}
+        self._sense_xmlids: set[str] = set()
         self._adder_types: dict[str, list[str]] = {}
         self._maneuvers: dict[str, TemplateData] = {}
         # Providers for sibling templates, shared across the family — see
@@ -443,6 +444,18 @@ class HDTTemplateProvider:
             return []
         return [primary.with_name(primary.stem.replace("6E", "") + primary.suffix)]
 
+    def sense_xmlids(self) -> frozenset[str]:
+        """Every ``<SENSE>`` the template names.
+
+        Java keeps constructed Sense objects in a static registry
+        (``Sense.getAllSenses()``) built when the template loads, and
+        SenseAffectingPower asks it one question: is this adder the name of a
+        sense? That is a membership test, so this answers it from the template
+        directly rather than constructing Sense objects — building them would
+        put entries into the purchasable registries and move costs.
+        """
+        return frozenset(self._sense_xmlids)
+
     def _load(self, path: Path) -> None:
         parsed = _parse_cached(path)
         nested_later: list = []
@@ -461,6 +474,8 @@ class HDTTemplateProvider:
                     xmlid = _identity(entry)
                     if not xmlid:
                         continue
+                    if entry.get("xmlid") == "SENSE":
+                        self._sense_xmlids.add(xmlid)
                     if xmlid in self._index:
                         # Already claimed by an earlier section, but this
                         # section's own definition is still the right one for
