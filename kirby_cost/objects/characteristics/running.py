@@ -120,7 +120,11 @@ class Running(Characteristic, xmlid="RUNNING"):
         else:
             adder_str = self.adder_string
             if adder_str.strip():
-                string = f"{string} ({adder_str})"
+                # A comma, not parentheses. Running.java:129 differs from
+                # Characteristic, Leaping and Swimming, which all wrap the
+                # adder string -- checked, not assumed. So Running alone reads
+                # "Running 24m, x8 Noncombat".
+                string = f"{string}, {adder_str}"
         
         if modifier_str.strip():
             string = f"{string}{modifier_str}"
