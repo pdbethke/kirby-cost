@@ -7,6 +7,7 @@ Movement power for swinging on lines.
 """
 
 from kirby_cost.objects.powers.power import Power
+from kirby_cost.objects.base import is_6e
 from kirby_cost.util.rounder import round_down
 
 
@@ -27,9 +28,12 @@ class Swinging(Power, xmlid="SWINGING"):
     @property
     def damage_display(self) -> str:
         """Get movement display string."""
-        movement = int(round_down(float(self._levels) / self._level_value)) if self._level_value != 0.0 else self._levels
-        is_6e = True  # Stub: would check if 6E
-        return f"{movement}m" if is_6e else f'{movement}"'
+        # Java is roundDown(getLevels()) -- the levels ARE the metres, and
+        # nothing divides by levelValue (Swinging.java:39). Swinging costs 1
+        # per 2m, so dividing halved every distance: 20m of Swinging bought
+        # for 10 points printed as "10m".
+        movement = int(round_down(float(self.levels)))
+        return f"{movement}m" if is_6e() else f'{movement}"'
     
     @property
     def summable(self) -> bool:
