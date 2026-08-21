@@ -82,6 +82,10 @@ class TemplateData:
     max_cost: float = 0.0
     max_set: bool = False
     duration: str = ""
+    #: "Yes", "Self", "LOS", "No" — a WORD, not a distance. getRangeValue
+    #: derives the metres from the cost; this says whether the power is ranged
+    #: at all, and it is stated only by the template.
+    range: str = ""
     target: str = ""
     uses_end: bool = False
     is_power: bool = False

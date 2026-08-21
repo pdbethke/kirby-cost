@@ -286,6 +286,7 @@ def _template_data(entry: dict[str, Any], *, is_power: bool) -> TemplateData:
         max_cost=_f(a, "MAXCOST"),
         max_set="MAXCOST" in a,
         duration=entry.get("duration") or "",
+        range=(_attrs(entry).get("RANGE") or ""),
         target=entry.get("target") or "",
         uses_end=bool(entry.get("uses_end")),
         is_power=is_power,
