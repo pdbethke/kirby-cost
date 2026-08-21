@@ -9,19 +9,27 @@ pool-bearing character by the whole contents of its pool. MENTON-CV1 carries 13
 psionic powers in a 250-point pool: 1313 points of slots, and its ledger delta
 was exactly 1313.
 
-**The subtlety that decides where the fix goes.** A slot's own `real_cost` is
-NOT zero in the oracle's per-object dump — MENTON's Ego Attack is recorded at
-150, and the engine already agrees. Only the character total excludes it:
+**What the oracle's 150 actually is.** This file used to argue that
+`real_cost_for_child` must NOT return zero, because the oracle's per-object
+dump records 150 for a slot. That reading was wrong: the dumper emits
+`getRealCostPreList()` for that field (CostCalculatorCLI.java:394), not
+`getRealCost()`. Pre-list is 150 whether or not the parent zeroes it, so the
+dump never contradicted `return 0` — and `return 0` is what Java does.
+
+The distinction is visible on the sheet. HD prints "(150 Active Points)" on
+Takofanes' pooled Entangle, which getModifierString only does when
+`getRealCost() != getTotalCost()`; with a non-zero slot cost all three
+numbers agree and the note disappears.
+
+So the slot's real cost is 0 and its PRE-LIST cost is 150. The character
+total works out either way:
 
     unparented powers 841 + other sections 683 = 1524 = oracle total_points
 
-and the 13 parented slots (1313) appear nowhere in it. So zeroing
-`real_cost_for_child` would be wrong twice over — `real_cost` on a child
-delegates to it (`engine/cost.py:175`), so every slot's reported cost would
-collapse to 0 and 13 per-object comparisons would break to fix one total.
-
-The totals loop is what must skip them, and only for a VPP: a Multipower's
-slots do cost, through `Multipower.real_cost_for_child`.
+and the 13 parented slots (1313 pre-list) appear nowhere in it. The totals
+loop skips them explicitly as well, which is now belt-and-braces rather than
+the mechanism. This is VPP-only: a Multipower's slots do cost, through
+`Multipower.real_cost_for_child`.
 """
 from tests.corpus import corpus_root
 from pathlib import Path
@@ -56,9 +64,15 @@ def test_the_pool_slots_are_excluded_from_the_character_total(menton):
 
 
 def test_a_slot_still_reports_its_own_cost(menton):
-    """The oracle dumps 150 for Mental Assualt — only the TOTAL omits it."""
+    """The oracle dumps 150 for Mental Assualt — as its PRE-LIST cost."""
     slot = next(p for p in menton.powers if p.name == "Mental Assualt")
-    assert slot.real_cost == 150.0
+    assert slot.real_cost_pre_list == 150.0
+
+
+def test_a_slot_costs_the_character_nothing(menton):
+    """VariablePowerPool.getRealCostForChild is literally `return 0`."""
+    slot = next(p for p in menton.powers if p.name == "Mental Assualt")
+    assert slot.real_cost == 0.0
 
 
 def test_the_pool_itself_still_costs(menton):
@@ -71,7 +85,8 @@ def test_the_slots_are_worth_something_to_exclude(menton):
     pool = _pool(menton)
     slots = [p for p in menton.powers if getattr(p, "parent", None) is pool]
     assert len(slots) == 13
-    assert sum(s.real_cost for s in slots) == 1313.0
+    assert sum(s.real_cost_pre_list for s in slots) == 1313.0
+    assert sum(s.real_cost for s in slots) == 0.0
 
 
 @pytest.mark.skipif(not GRAVITAR.exists(), reason="machine-bound HDC corpus absent")
