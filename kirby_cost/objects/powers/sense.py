@@ -389,13 +389,27 @@ class Sense(Power):
         
         adders.sort(key=sort_key)
         
-        # Build string
-        parts = []
+        # Java calls addAliasToVector, which is gated on
+        # `isSelected() && displayInString` and recurses into sub-adders
+        # (Adder.java:561). Reading alias_for_vector straight skipped both
+        # checks, so an adder Detect had already hidden came back: Detect
+        # folds its EXTRA adders into the power's own name -- "Detect Living
+        # Souls and Physical Objects" -- and turns displayInString off so the
+        # list below does not say it twice.
+        parts: list = []
+
+        def collect(adder) -> None:
+            if (getattr(adder, "is_selected", True)
+                    and getattr(adder, "display_in_string", True)):
+                alias = adder.alias_for_vector
+                if alias and alias.strip():
+                    parts.append(alias.strip())
+            for sub in adder.assigned_adders:
+                collect(sub)
+
         for adder in adders:
-            alias = adder.alias_for_vector
-            if alias and alias.strip():
-                parts.append(alias.strip())
-        
+            collect(adder)
+
         return ", ".join(parts)
     
     
