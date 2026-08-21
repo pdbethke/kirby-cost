@@ -143,6 +143,15 @@ class CostMixin:
 
         if parent:
             for modifier in parent.assigned_modifiers:
+                # A List has already MOVED its private modifiers out of
+                # getAssignedModifiers() into privateMods
+                # (List.separatePrivateMods), so a slot never sees them —
+                # they belong to the pool, not to what it holds. This engine
+                # keeps both in one list, so the skip is explicit. Without it
+                # a Multipower's private RESTRAINABLE was divided into every
+                # slot's real cost, and a character came out 4 points light.
+                if getattr(modifier, "private", False):
+                    continue
                 if modifier.types and "VPP" in modifier.types:
                     continue
                 if modifier.xmlid == "CHARGES" and is_multipower(parent):
@@ -227,6 +236,15 @@ class CostMixin:
         # tags that mark mods as VPP-only, filtered regardless of parent type.
         if parent and not is_vpp(parent):
             for modifier in parent.assigned_modifiers:
+                # A List has already MOVED its private modifiers out of
+                # getAssignedModifiers() into privateMods
+                # (List.separatePrivateMods), so a slot never sees them —
+                # they belong to the pool, not to what it holds. This engine
+                # keeps both in one list, so the skip is explicit. Without it
+                # a Multipower's private RESTRAINABLE was divided into every
+                # slot's real cost, and a character came out 4 points light.
+                if getattr(modifier, "private", False):
+                    continue
                 if modifier.types and "VPP" in modifier.types:
                     continue
                 if modifier.xmlid == "CHARGES" and is_multipower(self._parent):

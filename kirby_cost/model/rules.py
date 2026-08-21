@@ -102,8 +102,16 @@ class Rules:
 
     @property
     def literacy_free(self) -> bool:
-        """Check if all literacy is free (6E: True)."""
-        return True
+        """Whether literacy costs nothing for ANY language.
+
+        FALSE. HD's 6E defaults are `literacyFree = false` alongside
+        `nativeLiteracyFree = true` (Rules.java:1985) — a character reads their
+        own language for nothing and pays for every other one. This returned
+        True with a docstring asserting "6E: True", so every non-native
+        language with a Literacy adder came out a point cheap, and a character
+        with one such language was a point light overall.
+        """
+        return False
 
     @property
     def language_similarities_used(self) -> bool:
