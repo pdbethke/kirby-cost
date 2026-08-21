@@ -1,14 +1,11 @@
 {
   "_comment": "Display gaps: where this engine prints something other than what HERO Designer prints. Shrink-only, keyed by field|class because these are class defects. An entry is a KNOWN GAP, never an acceptable difference. Remove entries in the commit that fixes them; test_display_ledger_is_not_stale fails until you do.",
-  "_measured": "91,206/91,221 strings exact (99.98%), 8 gap classes, 15 strings, 0 raised \u2014 2026-08-21",
+  "_measured": "91,212/91,221 strings exact (99.99%), 5 gap classes, 9 strings, 0 raised \u2014 2026-08-21",
   "gaps": [
     "column2_output|Clairsentience",
-    "column2_output|CompoundPower",
     "column2_output|Detect",
     "column2_output|EnduranceReserve",
     "column2_output|Invisibility",
-    "column2_output|Transform",
-    "column2_output|_FallbackObject",
-    "modifier_string|Transform"
+    "column2_output|_FallbackObject"
   ]
 }

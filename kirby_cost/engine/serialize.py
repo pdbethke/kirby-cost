@@ -228,7 +228,17 @@ class SerializationMixin:
         def _from_source(attr: str) -> bool:
             return stated is None or not stated or attr in stated
 
-        element.set("BASECOST", str(self.base_cost))
+        # What the DOCUMENT said, when it said anything. base_cost is a
+        # computed property on some classes: Linked answers -0.5 for a link it
+        # has invalidated, whatever the file states, and HD would indeed
+        # re-save it that way (GenericObject.java:1913 writes getBaseCost()).
+        # This writer's contract is round-trip fidelity, not re-deriving HD's
+        # repairs -- the same reason LINKED_ID keeps the document's value
+        # while the display honours the invalidation.
+        if getattr(self, "_base_cost_from_xml", False):
+            element.set("BASECOST", str(self._base_cost))
+        else:
+            element.set("BASECOST", str(self.base_cost))
         element.set("LEVELS", str(self._levels))
         if _from_source("LVLCOST"):
             element.set("LVLCOST", str(self._level_cost))
