@@ -714,7 +714,12 @@ class Characteristic(CharAffectingObject):
         """
         levels = self.levels
         alias = self._alias or ""
-        name = (self._name or "").strip()
+        # Java tests `getName().trim().length() > 0` and then prints
+        # `getName()` UNTRIMMED, so a character who typed "Reinforced
+        # String " keeps the space: HD writes "<i>Reinforced String :</i>".
+        # Stripping it here quietly corrected the player.
+        raw_name = self._name or ""
+        name = raw_name if raw_name.strip() else ""
 
         # A characteristic bought at no levels purely to carry modifiers reads
         # the other way round: the modifiers are the subject and the

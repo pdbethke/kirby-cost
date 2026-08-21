@@ -1531,6 +1531,17 @@ class HDCLoader:
                 if sub is not None:
                     if hasattr(sub, '_is_power'):
                         sub._is_power = True
+                    # The Compound Power a sub-power belongs to. Java's
+                    # `mainPower`, which this port declared and read in five
+                    # places and assigned in none — so it was None everywhere.
+                    #
+                    # It is not decoration: getRealCostPreList and
+                    # getActiveCost both do
+                    #   `if (getMainPower() != null) parent = getMainPower().getParentList();`
+                    # which is how a sub-power inside a Compound Power inside a
+                    # Multipower reaches the FRAMEWORK's limitations. Without
+                    # it those slots were costed with no limitations at all.
+                    sub.main_power = obj
                     obj.powers.append(sub)
 
         # Handle EnduranceReserve recovery component
