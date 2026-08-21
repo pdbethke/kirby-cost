@@ -111,7 +111,12 @@ class SenseAffectingPower(Power):
             ret += g
         ret += " Groups" if len(groups) > 1 else " Group"
         for i, sense in enumerate(senses):
-            ret += ", " if i < len(senses) - 1 else " and "
+            # The same joiner as the groups above. Clairsentience capitalises
+            # both (Clairsentience.java:472 and :485) and nothing else in the
+            # family does; passing it for the group list only left "Sight
+            # Group and Detect Magic" against HD's "Sight Group And Detect
+            # Magic".
+            ret += ", " if i < len(senses) - 1 else joiner
             ret += sense
         return ret
 
