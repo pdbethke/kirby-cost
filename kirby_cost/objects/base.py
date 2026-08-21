@@ -530,6 +530,12 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
             self._duration = tmpl.duration
         if tmpl.target and self.target in ("", "N/A") and "TARGET" not in stated:
             self.target = tmpl.target
+        # RANGE is the word that decides whether a power reaches at all, and
+        # only the template states it — an HDC file never does. Without it
+        # every power read as un-ranged and range_value returned 0.
+        if getattr(tmpl, "range", "") and not (self.range or "").strip() \
+                and "RANGE" not in stated:
+            self.range = tmpl.range
 
     def _stated_and_declared(self) -> frozenset:
         """XML attribute names the source stated that this class also reads."""
@@ -749,20 +755,48 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
 
     @property
     def range_value(self) -> int:
+        """How far the power reaches, in metres. -1 is Line Of Sight.
+
+        Ported from ``GenericObject.getRangeValue``. RANGE is a WORD in the
+        template — "Yes", "Self", "LOS", "No" — not a number, and this parsed
+        it with `int(float(self.range))`, which throws for every one of them
+        and returned 0. A ranged power therefore had no range at all, which is
+        why a Clairsentience printed "x2 Range (0m)".
+
+        A ranged power's reach is derived from its COST: ten metres per point
+        of total cost in 6E (five per Active Point in 5E), before the adders
+        that are not included in the base. Several modifiers cut it short —
+        No Range and Damage Shield to nothing, Line Of Sight and Based On ECV
+        to unlimited.
         """
-        Get the range value.
-        Returns -1 for Line of Sight, 0 for no range, or positive for range in meters.
-        """
-        if self.range == "LOS" or self.range == "LINE_OF_SIGHT":
-            return -1
-        elif self.range == "" or self.range == "N/A":
-            return 0
-        else:
-            try:
-                return int(float(self.range))
-            except (ValueError, TypeError):
+        from kirby_cost.util.rounder import round_half_up
+        word = (self.range or "No").strip().upper()
+        mods = self.all_assigned_modifiers
+
+        def has(xmlid):
+            return GenericObject.find_object_by_id(mods, xmlid) is not None
+
+        ranged = word == "YES" or has("BASEDONCON")
+        if ranged and (not has("MOBILE") or is_6e()):
+            if has("NORANGE") or has("DAMAGESHIELD"):
                 return 0
-    
+            if has("BOECV") and not has("NORMALRANGE"):
+                return -1
+            if has("LOS"):
+                return -1
+            total = self.total_cost
+            if is_6e():
+                for ad in self.assigned_adders:
+                    if not getattr(ad, "include_in_base", False) and not getattr(ad, "is_custom", False):
+                        total -= ad.total_cost
+                return int(round_half_up(total * 10))
+            return int(round_half_up(self.active_cost * 5))
+        if word == "LOS" and not has("BASEDONCON") and (not has("MOBILE") or is_6e()):
+            if has("DAMAGESHIELD"):
+                return 0
+            return -1
+        return 0
+
     @property
     def end_usage(self) -> int:
         """Get the END usage (cost per use)."""
