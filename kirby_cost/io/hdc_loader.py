@@ -899,7 +899,18 @@ class HDCLoader:
         # registry was empty and the clause was always dropped.
         from kirby_cost.objects.powers.sense import Sense
         names = getattr(self._provider_in_use, "sense_xmlids", None)
-        Sense.set_template_sense_xmlids(names() if names is not None else ())
+        # The eight <SENSE> elements are only half of it. Java registers every
+        # Sense it CONSTRUCTS from the template (Sense.java:222), and the
+        # Sense-derived POWERS -- Detect, Radar, Nightvision -- are ordinary
+        # entries in the powers section, so a template instance of each
+        # registers too. This engine builds no template instances; the class
+        # registry names exactly the same set, because a Sense subclass exists
+        # precisely where the template defines one.
+        from kirby_cost.objects.base import GenericObject
+        derived = {xmlid for xmlid, cls in GenericObject._registry.items()
+                   if isinstance(cls, type) and issubclass(cls, Sense)}
+        Sense.set_template_sense_xmlids(
+            set(names() if names is not None else ()) | derived)
         # Sense GROUPS are defined by the template. A character file with no
         # TEMPLATE has none, so Java cannot resolve e.g. SMELLGROUP as a group
         # and charges the single-sense rate. Recorded here for
