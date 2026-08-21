@@ -227,10 +227,15 @@ class VariablePowerPool(List):
         """
         Calculate real cost for a power in this VPP.
         
-        VPP slots use their normal real cost (no framework reduction).
-        However, Active Cost cannot exceed Pool Size.
+        Zero. The pool already buys the capacity, so a slot costs the
+        character nothing (VariablePowerPool.java:231, literally `return 0`).
+
+        This returned the slot's own cost until 2026-08-21, on the reading
+        that the oracle dumps 150 for a pooled slot. It does -- as
+        getRealCostPreList (CostCalculatorCLI.java:394), which is 150 whether
+        or not the parent zeroes it. See tests/test_vpp_slots_are_free.py.
         """
-        return child.real_cost_pre_list
+        return 0.0
     
     def object_allowed(self, obj: GenericObject, show_warnings: bool = True) -> bool:
         """
