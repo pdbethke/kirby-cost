@@ -55,6 +55,12 @@ class Linked(Modifier, xmlid="LINKED"):
         #: it. Kept separate from linked_to_id so the writer still emits what
         #: the document stated.
         self._link_invalidated = False
+        #: The template's BASECOST, kept apart from orig_base_cost. Java's
+        #: `origBase` is captured in init() against the TEMPLATE element, and
+        #: only the self-referential branch is known to need it -- setting
+        #: orig_base_cost from the template instead moved 82 fixtures, so the
+        #: two are NOT the same quantity in this port.
+        self._template_base_cost = 0.0
         # Note: orig_base_cost is inherited from GenericObject and tracked
         # automatically via the base class's base_cost setter. We do not
         # maintain a second copy (the Java port did because Java has no
@@ -62,6 +68,25 @@ class Linked(Modifier, xmlid="LINKED"):
 
         if element is not None:
             self._init(element)
+
+    def apply_template(self, tmpl, option_id: str = None) -> None:
+        """Capture ``origBase`` from the TEMPLATE, as Java does.
+
+        Java sets ``origBase = baseCost`` in ``Linked.init`` (Linked.java:469),
+        which runs against the TEMPLATE element -- BASECOST="-.5". The
+        character file's own BASECOST arrives later, in restoreFromSave, and
+        overwrites ``baseCost`` only; ``origBase`` keeps the template's value.
+
+        This port folds both ingests into `_init` (one ingest per class, see
+        engine/xml_attrs.py), so orig_base_cost was seeded from the document.
+        A file that states BASECOST="-0.25" then had origBase -0.25, and the
+        three branches that return it -- including the self-referential one
+        that prints "???" -- gave -1/4 where HD gives -1/2.
+        """
+        super().apply_template(tmpl, option_id)
+        stated = getattr(tmpl, "base_cost", None)
+        if stated:
+            self._template_base_cost = float(stated)
 
     @property
     def base_cost(self) -> float:
@@ -77,6 +102,15 @@ class Linked(Modifier, xmlid="LINKED"):
             parent's, otherwise the original base cost.
         """
         orig = self.orig_base_cost
+        # Once the self-referential rule has fired, `value` returns None for
+        # good, and every later call would fall into the branch below and
+        # answer with the DOCUMENT's base cost instead of the template's. In
+        # Java the two are the same number, so its single `return origBase`
+        # covers both; here they differ, so the invalidated case has to say so
+        # first. total_value re-enters this property, which is how the -1/2
+        # settled by the branch below came back out as -1/4.
+        if self._link_invalidated:
+            return self._template_base_cost or orig
         linked_power = self.value
         if linked_power is None:
             return orig
@@ -101,7 +135,11 @@ class Linked(Modifier, xmlid="LINKED"):
         if (linked_power.xmlid == parent.xmlid or
                 isinstance(linked_power, Linked)):
             self._link_invalidated = True
-            return orig
+            # Java returns origBase here (Linked.java:71), captured from the
+            # template -- BASECOST="-.5" -- not from the character file. A
+            # Transform linked to a sibling Transform states BASECOST="-0.25"
+            # and HD still prints "Linked (???; -1/2)".
+            return self._template_base_cost or orig
         
         # Temporarily remove Linked modifiers to calculate active costs
         parent_list = parent.parent
