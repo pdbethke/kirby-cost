@@ -399,8 +399,16 @@ class Sense(Power):
         parts: list = []
 
         def collect(adder) -> None:
+            # The TEMPLATE's answer, not the file's. HD rebuilds these adders
+            # from the template (Sense.getAssignedAdders clones) and caches
+            # them, so the file's DISPLAYINSTRING never reaches them -- which
+            # matters because HD WRITES that attribute after rendering, and
+            # Detect hides its EXTRA adders during rendering. Reading the
+            # file's value hid the adder one render too early: the oracle
+            # dumps adder_string BEFORE column2_output and shows "Physical
+            # Objects" in the first and not the second.
             if (getattr(adder, "is_selected", True)
-                    and getattr(adder, "display_in_string", True)):
+                    and getattr(adder, "_template_display_in_string", True)):
                 alias = adder.alias_for_vector
                 if alias and alias.strip():
                     parts.append(alias.strip())

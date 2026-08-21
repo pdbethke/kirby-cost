@@ -101,6 +101,9 @@ class Detect(Sense, xmlid="DETECT"):
                 if adder.xmlid == "EXTRA":
                     extra_adders.append(adder.alias)
                     adder.display_in_string = False
+                    # Sense.adder_string reads the template-sourced flag, so
+                    # the hiding has to reach that one too.
+                    adder._template_display_in_string = False
             
             if extra_adders:
                 option_display += ", " + ", ".join(extra_adders)
