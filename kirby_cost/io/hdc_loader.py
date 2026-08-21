@@ -612,9 +612,21 @@ class HDCLoader:
                 if t not in obj._types:
                     obj._types.append(t)
 
-    def _apply_template_to_modifier(self, mod: Modifier, xmlid: str, option_id: str = None) -> None:
-        """Apply template defaults to a modifier."""
-        tmpl = self._get_template_data(xmlid)
+    def _apply_template_to_modifier(self, mod: Modifier, xmlid: str,
+                                     option_id: str = None,
+                                     owner: Optional[GenericObject] = None) -> None:
+        """Apply template defaults to a modifier.
+
+        *owner* is the object the modifier sits on. A template may define the
+        same modifier twice — once at section level and once inside a power
+        that varies it — and which one applies depends on who is asking.
+        """
+        tmpl = None
+        provider = self._provider_in_use
+        if owner is not None and hasattr(provider, "get_nested_modifier"):
+            tmpl = provider.get_nested_modifier((owner.xmlid or "").upper(), xmlid)
+        if tmpl is None:
+            tmpl = self._get_template_data(xmlid)
         if tmpl is None:
             return
         mod.apply_template(tmpl, option_id)
@@ -1680,7 +1692,8 @@ class HDCLoader:
         option_id = elem.get("OPTIONID", "")
         if option_id:
             mod.option_id = option_id
-        self._apply_template_to_modifier(mod, xmlid, option_id if option_id else None)
+        self._apply_template_to_modifier(mod, xmlid, option_id if option_id else None,
+                                         owner=parent)
 
         # Apply power-specific modifier defaults (e.g. INCREASEDSTUNMULTIPLIER
         # is defined inside HKA/RKA in Main6E.hdt, not in the global modifiers section)
