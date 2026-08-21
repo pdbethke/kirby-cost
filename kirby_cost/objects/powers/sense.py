@@ -75,6 +75,25 @@ class Sense(Power):
                 existing = GenericObject.find_object_by_id(Sense._all_senses, self.xmlid)
             Sense._all_senses.append(self)
     
+    #: The xmlids the template defines as <SENSE>, which is what Java's
+    #: static Sense registry holds. _all_senses only ever receives senses
+    #: this engine actually constructs, and it constructs none from the
+    #: template, so it is empty for every character.
+    _template_sense_xmlids: frozenset = frozenset()
+
+    @classmethod
+    def set_template_sense_xmlids(cls, xmlids) -> None:
+        cls._template_sense_xmlids = frozenset(xmlids or ())
+
+    @classmethod
+    def is_sense_xmlid(cls, xmlid: str) -> bool:
+        """Java's ``findObjectByID(Sense.getAllSenses(), xmlid) != null``."""
+        if not xmlid:
+            return False
+        if GenericObject.find_object_by_id(cls._all_senses, xmlid) is not None:
+            return True
+        return xmlid in cls._template_sense_xmlids
+
     @classmethod
     def clear(cls) -> None:
         """Clear all senses."""

@@ -85,7 +85,6 @@ class SenseAffectingPower(Power):
         elif default:
             groups.append(strip_group(default))
 
-        all_senses = Sense.all_senses()
         for ad in self.assigned_adders:
             if ad.xmlid == "ADDITIONAL_GROUP":
                 ad.display_in_string = False
@@ -96,7 +95,7 @@ class SenseAffectingPower(Power):
             elif ad.xmlid == "ADDITIONAL_SENSE":
                 ad.display_in_string = False
                 senses.append((option_alias(ad) or "").strip())
-            elif GenericObject.find_object_by_id(all_senses, ad.xmlid) is not None:
+            elif Sense.is_sense_xmlid(ad.xmlid):
                 ad.display_in_string = False
                 senses.append(ad.alias or "")
 
