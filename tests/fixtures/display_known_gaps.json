@@ -1,7 +1,5 @@
 {
-  "_comment": "Shrink-only. Every display string HD prints, compared against the 655-fixture oracle dump. The one remaining entry is not a divergence in the sheet: HD hides a Detect's EXTRA adders inside getColumn2Output, and the CLI dumps adder_string BEFORE column2_output (CostCalculatorCLI.java:719), so the two recorded values straddle that mutation. HD rebuilds a sense's adders from the template and never reads the file's DISPLAYINSTRING; ours come from the file, which HD wrote AFTER rendering. column2_output \u2014 the line that appears on the sheet \u2014 matches.",
-  "_measured": "91,219/91,221 strings exact (99.9978%), 1 gap class, 2 strings, 0 raised \u2014 2026-08-21",
-  "gaps": [
-    "adder_string|Detect"
-  ]
+  "_comment": "Shrink-only, and now EMPTY. Every display string the oracle dumps for all 655 characters is reproduced exactly. An entry here is a regression, not a discovery \u2014 the same standing this repo's oracle_known_residuals.json has.",
+  "_measured": "91,221/91,221 strings exact (100.0000%), 0 gap classes, 0 strings, 0 raised \u2014 2026-08-21",
+  "gaps": []
 }

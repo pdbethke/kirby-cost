@@ -50,6 +50,13 @@ class Adder(GenericObject):
         self._selected = False
         self._group = False
         self._display_in_string = True
+        #: What the TEMPLATE says about showing this adder in a string, which
+        #: is a different question from what the character FILE says. HD
+        #: rebuilds a sense's adders from the template and never reads the
+        #: file's DISPLAYINSTRING for them, so a sense needs the template's
+        #: answer; everything else keeps using the file's. Defaults to shown,
+        #: as Adder.init does before reading the attribute (Adder.java:214).
+        self._template_display_in_string = True
         self._is_private = False
         self._parent_object: Optional[GenericObject] = None
     
@@ -62,6 +69,8 @@ class Adder(GenericObject):
 
         XML-supplied values (``_base_cost_from_xml``) are preserved.
         """
+        self._template_display_in_string = bool(
+            getattr(tmpl, "display_in_string", True))
         if not self._base_cost_from_xml and self._base_cost == 0.0 and tmpl.base_cost != 0:
             self._base_cost = tmpl.base_cost
         if self._level_cost == 0.0 and tmpl.level_cost != 0:

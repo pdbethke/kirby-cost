@@ -48,7 +48,12 @@ from kirby_cost.io.hdc_loader import HDCLoader
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "oracle"
 LEDGER_PATH = Path(__file__).parent / "fixtures" / "display_known_gaps.json"
 
-FIELDS = ("column2_output", "modifier_string", "adder_string")
+#: In the order the ORACLE emits them (CostCalculatorCLI.java:718-720), which
+#: is not incidental: HD's display methods mutate as they render. Detect hides
+#: its EXTRA adders inside getColumn2Output, so a dump taken before that call
+#: shows them and one taken after does not. Reading these in any other order
+#: compares our engine against two snapshots HD never had at the same time.
+FIELDS = ("modifier_string", "adder_string", "column2_output")
 SECTIONS = ("characteristics", "powers", "skills", "perks", "talents",
             "complications", "martial_arts", "equipment")
 
