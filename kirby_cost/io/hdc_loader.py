@@ -995,7 +995,7 @@ class HDCLoader:
         hero.characteristics = self._load_section(root, "CHARACTERISTICS", None, "char")
         hero.powers = self._load_powers_section(root)
         hero.skills = self._load_section(root, "SKILLS", None, "skill")
-        hero.perks = self._load_section(root, "PERKS", None, "power")
+        hero.perks = self._load_section(root, "PERKS", None, "perk")
         hero.talents = self._load_section(root, "TALENTS", None, "talent")
         hero.complications = self._load_section(root, "DISADVANTAGES", None, "disad")
         hero.martial_arts = self._load_section(root, "MARTIALARTS", None, "power",
@@ -1609,6 +1609,22 @@ class HDCLoader:
                     self._on_registered_construction_failure(xmlid_upper, cls, exc)
             from kirby_cost.objects.talents.talent import Talent
             obj = Talent()
+            obj.xmlid = xmlid_upper
+            return obj
+
+        # A perk with no class of its own is a Perk, for the same reason a
+        # talent is a Talent. Perk.getColumn2Output brackets the adder string
+        # (Perk.java:72) and _FallbackObject prints the alias alone, so
+        # Adrian Vandaleur's DEEP_COVER lost its "(Custom Adder)".
+        if obj_type == "perk":
+            cls = self._get_power_cls(xmlid_upper)
+            if cls is not None:
+                try:
+                    return cls()
+                except (TypeError, AttributeError) as exc:
+                    self._on_registered_construction_failure(xmlid_upper, cls, exc)
+            from kirby_cost.objects.perks.perk import Perk
+            obj = Perk()
             obj.xmlid = xmlid_upper
             return obj
 
