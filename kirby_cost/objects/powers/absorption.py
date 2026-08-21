@@ -61,3 +61,30 @@ class Absorption(Power, xmlid="ABSORPTION"):
             
             return damage_str
 
+    @property
+    def column2_output(self) -> str:
+        """``Absorption 50 BODY  (Energy, STUN)``.
+
+        Ported from ``Absorption.getColumn2Output``. What is absorbed and what
+        it is absorbed INTO go in one bracket, option first — "(Energy, STUN)"
+        — and the double space before it is HD's, not a typo: the bracket is
+        appended with "  (" whether or not the damage display ended in one.
+        """
+        from kirby_cost.objects.base import option_alias
+        ret = f"{self.alias or ''} {self.damage_display}"
+        if self._name and self._name.strip():
+            ret = f"<i>{self._name}:</i>  {ret}"
+        option = (option_alias(self) or "").strip()
+        if self.input and self.input.strip():
+            ret += "  ("
+            if option:
+                ret += option + ", "
+            ret += self.input + ")"
+        elif option:
+            ret += f"  ({option})"
+        adders = self.adder_string
+        if adders.strip():
+            ret += f", {adders}"
+        ret += self.modifier_string
+        ret += self._end_reserve_note()
+        return ret

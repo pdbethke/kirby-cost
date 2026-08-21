@@ -27,85 +27,53 @@ class CostsEND(Modifier, xmlid="COSTSEND"):
     
     @property
     def column2_output(self) -> str:
+        """``Costs Endurance (Costs Half Endurance; -1/4)``.
+
+        Ported from ``CostsEND.getColumn2Output``. The option says HOW MUCH
+        endurance, and the generic line dropped it — leaving "Costs Endurance
+        (-1/4)", which is the price without the term. HALFEND is the one
+        option that REPLACES the alias rather than following it, because
+        "Costs Half Endurance" already contains the word.
         """
-        Get column 2 output string.
-        
-        Custom formatting for CostsEND modifier.
-        """
-        string = ""
-        string2 = ""
-        string2 = string2 + self._alias
-        
-        # Handle HALFEND option
-        if (self._selected_option is not None and 
-            self._selected_option.xmlid == "HALFEND"):
-            string2 = self._selected_option.alias
-        
-        d = self.total_value
-        
-        # Add input
+        from kirby_cost.objects.base import option_alias
+        ret = self.alias or ""
+        option = self._selected_option
+        option_id = (getattr(option, "xmlid", "") or "").upper() or \
+            (getattr(self, "option_id", "") or "").upper()
+        alias = (option_alias(self) or "").strip()
+        if option_id == "HALFEND" and alias:
+            ret = alias
+        val = self.total_value
         if self.input and self.input.strip():
-            if string2.strip():
-                string2 = string2 + " "
-            string2 = string2 + self.input
-        
-        string2 = string2.strip()
-        
-        # Add assigned modifiers
-        for modifier in self.assigned_modifiers:
-            string2 = string2 + ", " + modifier.alias
-        
-        # Handle selected option display
-        if (self._selected_option is not None and 
-            self._selected_option.display_in_string and 
-            self._selected_option.alias.strip()):
-            string2 = string2 + " (" + self._selected_option.alias
-        
-        # Count parentheses for proper closing
-        n = 0
-        n2 = 0
-        while string2.find("(", n) >= 0:
-            n2 += 1
-            n = string2.find("(", n) + 1
-        
-        n = 0
-        while string2.find(")", n) >= 0:
-            n2 -= 1
-            n = string2.find(")", n) + 1
-        
-        string2 = string2 + " (" if n2 <= 0 else string2 + "; "
-        
-        # Add adders
-        for adder in self.assigned_adders:
-            if not adder.is_selected or not adder.column2_output.strip():
+            if ret.strip():
+                ret += " "
+            ret += self.input
+        ret = ret.strip()
+        for mod in self.assigned_modifiers:
+            ret += ", " + (mod.alias or "")
+        if option is not None and getattr(option, "display_in_string", True) and alias:
+            ret += " (" + alias
+
+        paren = ret.count("(") - ret.count(")")
+        ret += " (" if paren <= 0 else "; "
+        for ad in self.assigned_adders:
+            if not getattr(ad, "is_selected", True):
                 continue
-            string2 = string2 + adder.column2_output.strip() + "; "
-        
-        # Add comments
-        if self.comments.strip():
-            string2 = string2 + self.comments + "; "
-        
-        # Apply min/max limits
-        if d > self._max_cost and self.max_set:
-            d = self._max_cost
-        if d < self._minimum_cost and self.min_set:
-            d = self._minimum_cost
-        
-        string2 = string2 + self.get_fraction(d) + ")"
-        n2 -= 1
-        
-        # Close remaining parentheses
-        while n2 > 0:
-            string2 = string2 + ")"
-            n2 -= 1
-        
-        if string.strip():
-            if string2.strip():
-                string2 = string2 + ", "
-            string2 = string2 + string
-        
-        return string2
-    
+            text = (ad.column2_output or "").strip()
+            if text:
+                ret += text + "; "
+        if (self.comments or "").strip():
+            ret += self.comments + "; "
+        if val > self._max_cost and self.max_set:
+            val = self._max_cost
+        if val < self._minimum_cost and self.min_set:
+            val = self._minimum_cost
+        ret += self.get_fraction(val) + ")"
+        paren -= 1
+        while paren > 0:
+            ret += ")"
+            paren -= 1
+        return ret
     @property
     def options(self) -> list:
         """
@@ -165,7 +133,7 @@ class CostsEND(Modifier, xmlid="COSTSEND"):
         duration = progenitor.duration
         
         # For INSTANT powers without continuing effect
-        if duration == "INSTANT" and not progenitor.continuing_effect():
+        if duration == "INSTANT" and not progenitor.continuing_effect:
             # For 6E, handle ACTIVATE option
             # Note: Would need HeroDesigner.getActiveTemplate().is6E() check
             if (self._selected_option is not None and 

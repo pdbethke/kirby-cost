@@ -154,27 +154,40 @@ class ForceField(Power, xmlid="FORCEFIELD"):
             output += f"{self.powd_levels} Power Defense"
             first = False
         
-        # Check for Flash Defense adder
-        for adder in self.assigned_adders:
-            if adder.xmlid == "FLASHDEFENSE":
-                if not first:
-                    output += "/"
-                output += f"{adder.levels} Flash Defense"
-                break
-        
+        # Flash Defense names the SENSE it protects, and that belongs inside
+        # the defence list rather than trailing after it: HD writes
+        # "8 Flash Defense:  Sight Group", not "8 Flash Defense) (Flash
+        # Defense Sight Group:  +8)". Java also removes the adder from the
+        # list before building the adder string, so it is stated once.
+        from kirby_cost.objects.base import option_alias as _opt
+        flash = [a for a in self._assigned_adders if a.xmlid == "FLASHDEFENSE"]
+        for adder in flash:
+            if not first:
+                output += "/"
+            output += f"{adder.levels} {adder.alias or ''}"
+            sense = (_opt(adder) or "").strip()
+            if sense:
+                output += f":  {sense}"
+            first = False
+
         output += ")"
-        
+
         if self.input and self.input.strip():
             output += f":  {self.input}"
-        
+
+        original = self._assigned_adders
+        self._assigned_adders = [a for a in original if a.xmlid != "FLASHDEFENSE"]
+        try:
+            adder_str = self.adder_string
+        finally:
+            self._assigned_adders = original
+
         if self._selected_option:
             output += f" ({self._selected_option.alias}"
-            adder_str = self.adder_string
             if adder_str and adder_str.strip():
                 output += f"; {adder_str}"
             output += ")"
         else:
-            adder_str = self.adder_string
             if adder_str and adder_str.strip():
                 output += f" ({adder_str})"
         
