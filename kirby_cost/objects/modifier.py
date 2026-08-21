@@ -617,7 +617,13 @@ class Modifier(GenericObject):
         """
         ret = "" if self.show_option_only else (self.alias or "")
         val = self.total_value
-        option = self._selected_option
+        # Java is getSelectedOption(), and subclasses override it. Alternate
+        # Combat Value drops an option that does not match the kind of power
+        # it is on (AlternateCombatValue.java:73): Arthon's Entangle is not
+        # MENTAL, so its MENTALOCV option is not HD's to print and the line
+        # reads "Alternate Combat Value (+1/4)". Reading the private field
+        # went behind every such override.
+        option = self.selected_option
 
         if (not self.show_option_in_parens and option is not None
                 and getattr(option, "display_in_string", True)
