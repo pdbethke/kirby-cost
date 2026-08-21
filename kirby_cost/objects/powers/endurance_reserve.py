@@ -258,9 +258,48 @@ class EnduranceReserve(Power, xmlid="ENDURANCERESERVE"):
         ret += f" ({self._levels} END, {rec._levels if rec is not None else 0} REC)"
         if self.input and self.input.strip():
             ret += f":  {self.input}"
+        # An Endurance Reserve is TWO purchases printed as one line -- the
+        # reserve and its REC -- so each side's adders and modifiers are
+        # labelled. Ported from EnduranceReserve.java:141-194; this tail used
+        # to be a bare ", {adders}" + modifier_string, which dropped the
+        # labels entirely:
+        #   HD: ... (300 END, 60 REC) Reserve:  (115 Active Points); OIF (-1/2)
+        #   py: ... (300 END, 60 REC) (115 Active Points); OIF (-1/2)
+        from kirby_cost.objects.base import option_alias
         adders = self.adder_string
-        if adders.strip():
-            ret += f", {adders}"
-        ret += self.modifier_string
+        rec_adders = rec.adder_string if rec is not None else ""
+        if self._selected_option is not None:
+            ret += f" ({option_alias(self)}"
+            if adders.strip() or rec_adders.strip():
+                ret += f"; {adders}"
+                if adders.strip():
+                    ret += ", "
+                if rec_adders.strip():
+                    ret += f"REC: {rec_adders}"
+            ret += ")"
+        elif adders.strip() or rec_adders.strip():
+            ret += f" ({adders}"
+            if adders.strip():
+                ret += ", "
+            if rec_adders.strip():
+                ret += f"REC: {rec_adders}"
+            ret += ")"
+
+        # When the REC is its own purchase, each side's modifiers say which
+        # side they are on. When it is the same power, they are already one
+        # list and labelling would double-count.
+        the_same = self.rec_is_same_power()
+        modifier_string = self.modifier_string
+        if not the_same and modifier_string.strip():
+            ret += " Reserve: "
+            if modifier_string.strip().startswith(";"):
+                modifier_string = modifier_string.strip()[1:]
+        ret += modifier_string
+        if not the_same and rec is not None:
+            rec_mods = rec.modifier_string
+            if rec_mods.strip().startswith(";"):
+                rec_mods = rec_mods.strip()[1:]
+            if rec_mods.strip():
+                ret += f"; REC: {rec_mods}"
         ret += self._end_reserve_note()
         return ret
