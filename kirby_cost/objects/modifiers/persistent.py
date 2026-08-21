@@ -55,7 +55,7 @@ class Persistent(Modifier, xmlid="PERSISTENT"):
                     return f"{self._display} cannot be applied to Powers which cost END only to Activate."
             else:
                 return f"{self._display} cannot be applied to Powers which cost END."
-        if template and template.is_6e() and generic_object.duration == "INSTANT" and not generic_object.continuing_effect():
+        if template and template.is_6e() and generic_object.duration == "INSTANT" and not generic_object.continuing_effect:
             return f"{self._display} cannot be applied to Instant Powers -- apply Constant first."
         if generic_object.duration in ("PERSISTENT", "INHERENT") or generic_object.duration == "PERSISTENT":
             if generic_object.duration == "PERSISTENT" or generic_object.duration == "PERSISTENT":

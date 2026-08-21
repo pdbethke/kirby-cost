@@ -54,3 +54,50 @@ class Transdimensional(Modifier, xmlid="TRANSDIMENSIONAL"):
     
     # TODO: Implement custom getColumn2Output() method from Java source
     # Formats with parentheses handling and adder display
+
+    @property
+    def column2_output(self) -> str:
+        """``Transdimensional (Single Dimension; Waking World targets; +1/2)``.
+
+        Ported from ``Transdimensional.getColumn2Output``. WHICH dimensions
+        goes inside the bracket with everything else, not after the alias:
+        the generic line put it outside and produced "Transdimensional Single
+        Dimension (Waking World targets; +1/2)", which reads as a different
+        modifier entirely.
+        """
+        from kirby_cost.objects.base import option_alias
+        ret = "" if self.show_option_only else (self.alias or "")
+        val = self.total_value
+        if self.input and self.input.strip():
+            if ret.strip():
+                ret += " "
+            ret += self.input
+        ret = ret.strip()
+        for mod in self.assigned_modifiers:
+            ret += ", " + (mod.alias or "")
+
+        paren = ret.count("(") - ret.count(")")
+        ret += " (" if paren <= 0 else "; "
+
+        option = self._selected_option
+        alias = (option_alias(self) or "").strip()
+        if option is not None and getattr(option, "display_in_string", True) and alias:
+            ret += alias + "; "
+        for ad in self.assigned_adders:
+            if not getattr(ad, "is_selected", True):
+                continue
+            text = (ad.column2_output or "").strip()
+            if text:
+                ret += text + "; "
+        if (self.comments or "").strip():
+            ret += self.comments + "; "
+        if val > self._max_cost and self.max_set:
+            val = self._max_cost
+        if val < self._minimum_cost and self.min_set:
+            val = self._minimum_cost
+        ret += self.get_fraction(val) + ")"
+        paren -= 1
+        while paren > 0:
+            ret += ")"
+            paren -= 1
+        return ret
