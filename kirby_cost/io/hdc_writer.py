@@ -197,6 +197,39 @@ def hero_to_element(hero: Any) -> etree._Element:
     return root
 
 
+def _space_before_self_close(body: str) -> str:
+    """``<NOTES/>`` -> ``<NOTES />``, the way HD writes it.
+
+    Tag- and quote-aware rather than a regex. Both halves are needed. An
+    attribute value may legitimately contain "/>" -- NOTES and COMMENTS are
+    free text a player typed -- so quotes have to be honoured; and quotes only
+    delimit anything INSIDE a tag, so the scanner has to know where it is.
+    Tracking quotes alone breaks on the first piece of quoted dialogue in a
+    BACKGROUND: one character's quote ran the rest of his document as though
+    it were one long attribute value, and 155 of his 156 empty tags came out
+    unspaced.
+    """
+    out = []
+    in_tag = False
+    quote = ""
+    for i, ch in enumerate(body):
+        if quote:
+            if ch == quote:
+                quote = ""
+        elif in_tag:
+            if ch in "\"'":
+                quote = ch
+            elif ch == ">":
+                in_tag = False
+            elif (ch == "/" and body[i + 1:i + 2] == ">"
+                    and not body[i - 1:i].isspace()):
+                out.append(" ")
+        elif ch == "<":
+            in_tag = True
+        out.append(ch)
+    return "".join(out)
+
+
 def hero_to_bytes(hero: Any, encoding: str | None = None) -> bytes:
     """The whole document, encoded as HD encodes it.
 
@@ -212,8 +245,17 @@ def hero_to_bytes(hero: Any, encoding: str | None = None) -> bytes:
     """
     enc = (encoding or getattr(hero, "source_encoding", "")
            or _DEFAULT_ENCODING).lower()
-    body = etree.tostring(hero_to_element(hero), pretty_print=True,
-                          encoding="unicode")
+    root = hero_to_element(hero)
+    # lxml self-closes an element whose text is None and writes <X></X> when
+    # the text is "". HD never writes the pair form -- 156 self-closing tags
+    # and no empty pairs in a typical character -- so an empty string here is
+    # 1,600 bytes of spurious diff on one file. Nothing distinguishes the two
+    # in the document: an empty NOTES means the same thing either way.
+    for element in root.iter():
+        if len(element) == 0 and not (element.text or "").strip():
+            element.text = None
+    body = etree.tostring(root, pretty_print=True, encoding="unicode")
+    body = _space_before_self_close(body)
     body = body.replace("\r\n", "\n").replace("\n", "\r\n")
     label = "UTF-16" if enc.startswith("utf-16") else "UTF-8"
     return (f'<?xml version="1.0" encoding="{label}"?>\r\n'
