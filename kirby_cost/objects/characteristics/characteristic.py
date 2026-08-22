@@ -55,7 +55,10 @@ class Characteristic(CharAffectingObject):
 
         # Base value calculations
         self.base_level: float = 0.0
-        self.base_value: float = 0.0
+        #: Storage behind the `base_value` property. Private because reading
+        #: it before `_calc_base_value` has run answers 0.0, which is wrong
+        #: and silent — see the property below.
+        self._base_value: float = 0.0
         self.double_base: float = 0.0
         self.orig_base_level: float = 0.0
 
@@ -155,6 +158,28 @@ class Characteristic(CharAffectingObject):
         """Get the true base level (original base level)."""
         return self.orig_base_level
     
+    @property
+    def base_value(self) -> float:
+        """The base value, calculated on demand.
+
+        A property rather than a plain attribute because the storage behind it
+        starts at 0.0 and is only filled by `_calc_base_value`. Read as an
+        attribute on a freshly loaded character it answered 0.0 — not an
+        error, just a wrong number — and a consumer that trusted it derived
+        the base from other values to compensate, creating a second source of
+        truth for something kirby-cost already knew.
+
+        Nothing inside this engine reads it: `get_base_value` goes to the
+        private field directly, so the cost of calculating here falls only on
+        outside callers, who would otherwise have got the wrong answer.
+        """
+        self._calc_base_value()
+        return self._base_value
+
+    @base_value.setter
+    def base_value(self, value: float) -> None:
+        self._base_value = value
+
     def get_base_value(self, active_hero: Optional['Hero'] = None) -> float:
         """
         Get the base value (cached).
@@ -166,7 +191,7 @@ class Characteristic(CharAffectingObject):
             Base value
         """
         self._calc_base_value(active_hero)
-        return self.base_value
+        return self._base_value
     
     def _calc_base_value(self, active_hero: Optional['Hero'] = None) -> None:
         """
@@ -264,7 +289,7 @@ class Characteristic(CharAffectingObject):
                     self.double_base += d5
                     d += round_half_up(d5)
         
-        self.base_value = min(self.base_level + d, float(self.max_val))
+        self._base_value = min(self.base_level + d, float(self.max_val))
     
     def characteristic_value(self, active_hero: Optional['Hero'] = None) -> float:
         """

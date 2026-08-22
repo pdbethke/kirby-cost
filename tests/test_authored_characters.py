@@ -150,3 +150,24 @@ def test_the_character_totals_match(name, hdc, fixture):
     oracle, hero = _load(name, hdc, fixture)
     assert hero.total_points == oracle["total_points"]
     assert hero.available_points == oracle["available_points"]
+
+
+@pytest.mark.parametrize("name,hdc,fixture", list(_cases()))
+def test_base_value_is_right_before_anything_else_is_touched(name, hdc, fixture):
+    """`base_value` must not depend on what was read first.
+
+    It used to be a plain attribute initialised to 0.0 and filled only by
+    `_calc_base_value`, so reading it on a freshly loaded character answered
+    0.0 — not an error, just a wrong number. A consumer downstream trusted it,
+    got zero, and derived the base from other values to compensate, inventing
+    a second source of truth for something this engine already knew.
+
+    This reads it FIRST, before any other accessor runs, which is the only
+    ordering that could catch a lazily-filled field.
+    """
+    _, hero = _load(name, hdc, fixture)
+    for char in hero.characteristics:
+        first_read = char.base_value
+        assert first_read == char.get_base_value(), (
+            f"{name} {char.xmlid}: base_value read first gave {first_read}, "
+            f"get_base_value() gives {char.get_base_value()}")
