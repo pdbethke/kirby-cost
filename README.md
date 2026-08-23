@@ -155,7 +155,7 @@ described above so you can judge what that covers.
 ## Where this is going
 
 This is one of three engines behind [Kirby](https://kirbyvtt.org), a virtual
-tabletop for the HERO System:
+tabletop for the HERO System in active development:
 
 - **[kirby-cost](https://github.com/pdbethke/kirby-cost)** — reads a HERO 6E
   build and costs it, validated against Hero Designer
