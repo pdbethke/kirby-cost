@@ -450,8 +450,62 @@ class LoadedHero:
 
     @property
     def available_points(self) -> float:
-        """base + disads used + experience - spent."""
+        """base + disads used + experience - spent.
+
+        This is Hero Designer's own figure — 5th-Edition-style arithmetic in
+        which Complications ADD to the point pool. It is kept, unchanged, as
+        the oracle-verified answer: it reproduces HD exactly across all 655
+        oracle fixture characters. It is NOT the printed 6E rule (see
+        ``complications_shortfall`` / ``spendable_points`` / ``points_unspent``
+        below for that). Two different, individually-correct answers to "how
+        many points are left" live side by side here on purpose — this one is
+        "what HD prints," the other three are "what the 6E rulebook says."
+        """
         return self.base_points + self.disads_used + self.experience - self.total_points
+
+    @property
+    def complications_shortfall(self) -> float:
+        """Points lost for under-taking the campaign's Matching Complications.
+
+        HERO System 6th Edition, Volume 1, p.30: "You can take fewer points'
+        worth of Complications if you want, but every 1 Character Point by
+        which you don't meet the Matching Complications amount reduces your
+        character's Total Points by 1. (You can select more Complications
+        than are required if you want them for your character, but they
+        don't provide you with extra Character Points to spend.)"
+
+        ``disad_points`` is the campaign's Matching Complications target
+        (HDC ``DISAD_POINTS``); ``disads_used`` is what the character
+        actually took. Falling short costs 1:1; exceeding the target costs
+        (and grants) nothing, hence the ``max(0, ...)`` floor.
+        """
+        return max(0.0, self.disad_points - self.disads_used)
+
+    @property
+    def spendable_points(self) -> float:
+        """The 6E point pool: Total Points minus any Complications shortfall.
+
+        HERO System 6th Edition, Volume 1, p.269 describes a "Standard
+        Superheroic character (400 Total Points, including 75 points' worth
+        of Matching Complications)" — in 6E, ``base_points`` (HDC
+        ``BASE_POINTS``) already IS the campaign's Total Points figure,
+        inclusive of the matching complications. Complications do not add to
+        it (contrast ``available_points`` above, which is HD's older 5E-style
+        reading where they do); they can only subtract, via
+        ``complications_shortfall``, when the character comes up short.
+        """
+        return self.base_points - self.complications_shortfall + self.experience
+
+    @property
+    def points_unspent(self) -> float:
+        """Points left in the 6E pool: ``spendable_points`` minus what was spent.
+
+        Companion to ``spendable_points`` (see 6E1 p.30, p.269 there for the
+        rule). Deliberately NOT clamped at zero: a negative value means the
+        character is built over its 6E pool — a real, visible condition (see
+        the Bokor oracle fixture, which comes in one point over).
+        """
+        return self.spendable_points - self.total_points
 
 
 def _hold_slot(framework: GenericObject, slot: GenericObject) -> None:
