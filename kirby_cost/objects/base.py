@@ -465,6 +465,13 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
                     chosen._selected = True
                     chosen._display_in_string = opt.display_in_string
                     chosen._levels = opt.levels
+                    # LEVEL VALUE too. Java reads it straight off the option
+                    # -- `mod.getSelectedOption().getLevelValue()` is how
+                    # Increased Endurance multiplies END (GenericObject.java:
+                    # 1824-1830) -- and leaving it at the constructor's 0.0
+                    # made a "2X" option multiply by nothing. Power Lad's STR
+                    # slot reported 1 END where Hero Designer prints 8.
+                    chosen._level_value = opt.level_value
                     chosen.parent = self
                     self._selected_option = chosen
 
@@ -690,8 +697,25 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
 
     @property
     def display(self) -> str:
-        """Get the display string."""
-        return self._display
+        """``GenericObject.getDisplay`` (GenericObject.java:1631-1656).
+
+        Substitutes a `[LVL]` placeholder with the level count, which a
+        template uses to name a power after what was bought: Unluck is
+        declared `DISPLAY="Unluck: [LVL]d6"` and prints as "Unluck: 1d6".
+        Returning the raw field left the placeholder in the output.
+
+        `level_power` raises rather than multiplies where a template says so,
+        matching Java, and the count is thousand-separated as NumberFormat
+        does.
+        """
+        display = self._display or ""
+        marker = display.upper().find("[LVL]")
+        if marker < 0:
+            return display
+        levels = self.levels
+        if getattr(self, "_level_power", 1) != 1:
+            levels = int(self._level_power ** self.levels)
+        return f"{display[:marker]}{levels:,}{display[marker + 5:]}"
 
     @display.setter
     def display(self, value: str) -> None:
