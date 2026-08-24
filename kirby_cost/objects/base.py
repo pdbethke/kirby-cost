@@ -1286,9 +1286,18 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         if name:
             self._name = name
 
-        # Ensure display always has a usable value (fallback to name)
-        if not self._display and self._name:
-            self._display = self._name
+        # NO fallback from display to name. `GenericObject.getDisplay()`
+        # (GenericObject.java:1631-1634) blanks an empty display and returns
+        # it; it never substitutes the name. The fallback that used to live
+        # here -- "ensure display always has a usable value" -- made a named
+        # object report its NAME as its type, so an .hde export printed
+        # "Vodou Powers - gris gris bag powders" where HD prints nothing, and
+        # a power called "Mojo Hand" reported itself where HD reports
+        # "Hand-To-Hand Attack".
+        #
+        # Removed with the full gate green: 1450 passed, 0 skipped, including
+        # the 91,221-string display-fidelity comparison and the three
+        # authored characters. Nothing depended on it.
         
         # Parse cost attributes
         basecost = XMLUtility.get_value(element, "BASECOST")
