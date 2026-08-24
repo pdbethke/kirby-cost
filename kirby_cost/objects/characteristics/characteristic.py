@@ -632,14 +632,11 @@ class Characteristic(CharAffectingObject):
         
         if active_hero is not None and active_hero.rules is not None:
             n = active_hero.rules.ap_per_end
-            # STR uses different AP per END
-            if self.xmlid == "STR":
-                n = active_hero.rules.str_ap_per_end
-        
+
         # Check if this uses END
         if not self.uses_end:
             return 0
-        
+
         return n
     
     def orig_ap_per_end(self, active_hero: Optional['Hero'] = None) -> int:
