@@ -194,15 +194,27 @@ class Power(CharAffectingObject):
     
     @property
     def ap_per_end(self) -> int:
+        """Active Points per END. ``GenericObject.getAPPerEnd``, :1340-1356.
+
+        Was a stub returning a hardcoded 10 ("This should come from
+        rules.get_ap_per_end()"), which ignored the one branch that matters
+        most: **a power that does not use END costs none**. Damage Reduction
+        and Resistant Protection are both USESEND="No" in Main6E and were
+        being charged END anyway -- Ravel's Resistant Protection reported 4
+        where Hero Designer reports 0.
+
+        The STR special-case is Java's and lives in this same base method
+        (GenericObject.java:1344-1346); it is inert here because a Power is
+        never xmlid STR, but it is kept so the two ports read alike.
         """
-        Get Active Points per END cost.
-        
-        Default is 10 for 6E (1 END per 10 Active Points).
-        This would normally come from rules - stub for now.
-        """
-        # This should come from rules.get_ap_per_end()
-        # Default to 10 for 6E
-        return 10
+        from kirby_cost.core.context import EngineContext
+        n = 10
+        hero = EngineContext.active_hero()
+        if hero is not None and hero.rules is not None:
+            n = hero.rules.ap_per_end
+            if self.xmlid == "STR":
+                n = hero.rules.str_ap_per_end
+        return n if self.uses_end else 0
     
     @property
     def column3_output(self) -> str:
