@@ -714,6 +714,27 @@ class HDCLoader:
         # Apply adder template (cost fields + types)
         adder.apply_adder_template(adder_tmpl)
 
+        # Restore the chosen option's DISPLAY from the template.
+        #
+        # `_build_adder` has no template in scope, so it sets the option's
+        # display to the document's OPTION_ALIAS. Those are different strings
+        # on purpose: Main6E declares
+        #   <OPTION XMLID="VERYCOMMON" DISPLAY="Very Common"
+        #           ALIAS="(Very Common">
+        # -- the alias opens a bracket the surrounding text closes, the
+        # display is the bare label. HD restores the option from the template
+        # by OPTIONID and then writes OPTION_ALIAS onto it, so both halves
+        # survive; this is that second half.
+        #
+        # The ALIAS is deliberately left alone: the document outranks the
+        # template there, and cost and column-2 text both read it.
+        chosen = adder.selected_option
+        if chosen is not None and adder_tmpl.options:
+            option_tmpl = adder_tmpl.options.get(
+                (getattr(chosen, "xmlid", "") or "").upper())
+            if option_tmpl is not None and option_tmpl.display:
+                chosen._display = option_tmpl.display
+
 
         # Apply minimum cost from MINCOST skills
         if not adder.min_set and parent_xmlid in _ADDER_MINCOST_SKILLS:

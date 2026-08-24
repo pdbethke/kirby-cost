@@ -130,6 +130,11 @@ def _adder(entry: dict[str, Any]) -> AdderTemplate:
         level_power=_i(a, "LVLPOWER"),
         level_multiplier=_i(a, "LVLMULTIPLIER"),
         types=tuple(entry.get("types") or ()),
+        options={
+            (op.get("xmlid") or "").upper(): _option(op)
+            for op in (entry.get("options") or [])
+            if op.get("xmlid")
+        },
     )
 
 
