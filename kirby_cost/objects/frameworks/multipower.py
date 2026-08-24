@@ -105,15 +105,19 @@ class Multipower(List):
         return True
     
     def column1_suffix(self, obj: GenericObject) -> str:
-        """Get suffix for column 1 (u/v for ultra/variable, or f/v for 6E)."""
+        """Slot marker: 6E writes f/v, 5E writes u/m.
+
+        The edition check was left unfinished ("Stub - would check if 6E"),
+        pinned to False, so every 6E character printed 5E slot markers: a
+        fixed slot came out "1u" where Hero Designer writes "1f". `is_6e()` is
+        the check the rest of the engine uses -- the same one Body.roll was
+        missing.
+        """
         self._update_child_positions()
-        # Stub - would check if 6E
-        is_6e = False  # Would check from rules/template
-        
-        if is_6e:
+        from kirby_cost.objects.base import is_6e
+        if is_6e():
             return "f" if obj.ultra else "v"
-        else:
-            return "u" if obj.ultra else "m"
+        return "u" if obj.ultra else "m"
     
     @property
     def column2_output(self) -> str:
