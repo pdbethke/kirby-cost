@@ -55,6 +55,11 @@ class Rules:
         self.link_across_framework: int = Rules.WARN
         self.special_type_in_framework: int = Rules.WARN
         
+        # Damage differentiation. Rules.java:1992 (useDefault) and
+        # Rules.java:1237-1242 (parse) both settle on False unless the RULES
+        # element says "Y" -- HD's own default is off.
+        self.use_increased_damage_differentiation_flag: bool = False
+
         # Other settings
         self._multiplier_allowed: bool = True
         self.standard_effect_allowed: bool = True
@@ -125,6 +130,28 @@ class Rules:
     def use_languages_as_int_skill(self) -> bool:
         """Check if languages use INT-based skill rolls (6E: False)."""
         return False
+
+    def use_increased_damage_differentiation(self) -> bool:
+        """Whether leftover STR resolves to half-dice and pips.
+
+        ``Rules.useIncreasedDamageDifferentiation()`` (Rules.java:2018).
+
+        With it OFF, a STR that is not a multiple of 5 simply loses the
+        remainder. With it ON, a remainder of 3 becomes a half-die and 4
+        becomes the next die less one -- see
+        ``Strength.hth_damage_string``, whose ON branch this makes reachable
+        for the first time.
+
+        Java parses it from the character's RULES element and defaults to
+        False when the element is absent or does not begin with "Y"
+        (Rules.java:1237-1242); ``useDefault()`` sets the same (Rules.java:1992).
+
+        THIS METHOD DID NOT EXIST until 2026-08-24, and
+        ``Strength.hth_damage_string`` -- its only caller -- raised
+        AttributeError every time it was reached. Nothing reached it, because
+        nothing ever instantiated Strength.
+        """
+        return self.use_increased_damage_differentiation_flag
 
     @property
     def rules_xml(self):

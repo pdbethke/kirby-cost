@@ -819,10 +819,18 @@ class HDCLoader:
             # in a class nothing had ever instantiated.
             #
             # So this list grows one xmlid at a time, and only with the oracle
-            # suite green. These three are here because their DISPLAY differs:
-            # HD writes "Running -12m (0m total)" where the base class gives
-            # "-12 Running".
-            for xmlid in ("RUNNING", "SWIMMING", "LEAPING"):
+            # suite green. The first three are here because their DISPLAY
+            # differs: HD writes "Running -12m (0m total)" where the base
+            # class gives "-12 Running".
+            #
+            # STR, PD, ED, BODY and SPD were added 2026-08-24 for the .hde
+            # export backend, which needs the display surface the base class
+            # cannot provide: STR's lift/END/damage strings, PD and ED's
+            # resistant and non-resistant totals, BODY's absence of a roll in
+            # 6E, and SPD's "Phases:  3, 6, 9, 12" note. Each was added with
+            # the oracle suite green, as this comment requires.
+            for xmlid in ("RUNNING", "SWIMMING", "LEAPING",
+                          "STR", "PD", "ED", "BODY", "SPD"):
                 cls = Characteristic._registry.get(xmlid)
                 if isinstance(cls, type) and issubclass(cls, Characteristic):
                     self._char_map[xmlid] = cls
@@ -1029,6 +1037,13 @@ class HDCLoader:
             lang_sim = rules_elem.get("LANGUAGESIMILARITIESUSED", "")
             if lang_sim.strip().upper().startswith("Y"):
                 hero.rules._language_similarities_used = True
+            # Rules.java:1237-1242. Absent, or not beginning with "Y", is
+            # False -- which is also the default when there is no RULES
+            # element at all (Rules.java:1992). Governs whether a STR that is
+            # not a multiple of 5 keeps its remainder as a half-die.
+            differentiation = rules_elem.get("USEINCREASEDDAMAGEDIFFERENTIATION", "")
+            hero.rules.use_increased_damage_differentiation_flag = (
+                differentiation.strip().upper().startswith("Y"))
 
         # Load each section.
         #

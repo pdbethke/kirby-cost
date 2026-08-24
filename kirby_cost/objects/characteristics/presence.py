@@ -10,6 +10,7 @@ from kirby_cost.objects.characteristics.characteristic import Characteristic
 from kirby_cost.objects.char_affecting import CharAffectingObject
 from kirby_cost.util.constants import CharacteristicType
 from kirby_cost.util.rounder import round_half_up, round_down
+from kirby_cost.objects.characteristics.characteristic import _active_hero
 
 if TYPE_CHECKING:
     from kirby_cost.model.hero import Hero

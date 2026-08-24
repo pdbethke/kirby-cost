@@ -12,6 +12,7 @@ from kirby_cost.objects.char_affecting import CharAffectingObject
 from kirby_cost.objects.base import GenericObject
 from kirby_cost.util.constants import CharacteristicType
 from kirby_cost.util.rounder import round_half_up, round_half_down, round_down
+from kirby_cost.objects.characteristics.characteristic import _active_hero
 
 if TYPE_CHECKING:
     from kirby_cost.model.hero import Hero
@@ -153,7 +154,9 @@ class Strength(Characteristic, xmlid="STR"):
         d4 = d2 / self._level_value * self._level_cost
         
         # Get AP per END
-        n = self.set_ap_per_end(active_hero)
+        # `ap_per_end`, not `set_ap_per_end` -- the latter has never
+        # existed on any class (Characteristic.ap_per_end, :623).
+        n = self.ap_per_end(active_hero)
         d5 = 0.0
         d6 = 1.0
         
@@ -212,7 +215,7 @@ class Strength(Characteristic, xmlid="STR"):
                         d3 += float(char_obj.end_usage(active_hero))
                 continue
             
-            if isinstance(power, CompoundPower):
+            if isinstance(power, _compound_power_cls()):
                 for sub_power in power.powers:
                     if sub_power.xmlid == self.xmlid:
                         if isinstance(sub_power, Characteristic):
@@ -252,7 +255,7 @@ class Strength(Characteristic, xmlid="STR"):
                         d3 += float(char_obj.end_usage(active_hero))
                 continue
             
-            if isinstance(equip, CompoundPower):
+            if isinstance(equip, _compound_power_cls()):
                 for sub_power in equip.powers:
                     if sub_power.xmlid == self.xmlid:
                         if isinstance(sub_power, Characteristic):
@@ -303,7 +306,7 @@ class Strength(Characteristic, xmlid="STR"):
                         d3 += float(char_obj.end_usage(active_hero))
                 continue
             
-            if isinstance(power, CompoundPower):
+            if isinstance(power, _compound_power_cls()):
                 for sub_power in power.powers:
                     if sub_power.xmlid == self.xmlid:
                         if isinstance(sub_power, Characteristic):
@@ -343,7 +346,7 @@ class Strength(Characteristic, xmlid="STR"):
                         d3 += float(char_obj.end_usage(active_hero))
                 continue
             
-            if isinstance(equip, CompoundPower):
+            if isinstance(equip, _compound_power_cls()):
                 for sub_power in equip.powers:
                     if sub_power.xmlid == self.xmlid:
                         if isinstance(sub_power, Characteristic):
@@ -389,6 +392,21 @@ class Strength(Characteristic, xmlid="STR"):
     @property
     def use_end_reserve(self) -> bool:
         """Check if this uses END Reserve."""
-        return self._use_end_reserve if hasattr(self, 'use_end_reserve') else False
+        # hasattr(self, 'use_end_reserve') asked about THIS PROPERTY, which
+        # re-entered it -- infinite recursion. The backing field is what the
+        # guard meant. Never fired before 2026-08-24 because nothing
+        # instantiated Strength.
+        return self._use_end_reserve if hasattr(self, '_use_end_reserve') else False
     
 
+
+def _compound_power_cls():
+    """CompoundPower, imported at call time.
+
+    A module-level import would be circular. The class was only ever imported
+    under TYPE_CHECKING, so every `isinstance(power, _compound_power_cls())` below
+    raised NameError at runtime -- unnoticed, because nothing instantiated
+    Strength until 2026-08-24.
+    """
+    from kirby_cost.objects.powers.compound_power import CompoundPower
+    return CompoundPower
