@@ -566,6 +566,18 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         # subclass reads, and suppressing the template for an attribute that
         # was never loaded would leave the field at its constructor default.
         stated = self._stated_and_declared()
+
+        # TYPES come from the TEMPLATE. An object's own element rarely states
+        # them -- Main6E declares `<DETECT ...><TYPE>SPECIAL</TYPE>
+        # <TYPE>SENSORY</TYPE>` and the .hdc says nothing -- so reading only
+        # the document left every loaded object with an EMPTY type list.
+        # HTMLWriter.filterByType (:212-227) branches on exactly this, which
+        # is why an .hde export never printed `sensory_power: true`.
+        # Appended, not assigned: a document that does state a type keeps it.
+        for declared in tmpl.types or ():
+            if declared and declared not in self._types:
+                self._types.append(declared)
+
         if tmpl.uses_end and "END" not in stated:
             self.uses_end = True
         if tmpl.duration and not self._duration and "DURATION" not in stated:
@@ -844,6 +856,22 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
                 return 0
             return -1
         return 0
+
+    @property
+    def document_xmlid(self) -> str:
+        """The XMLID the DOCUMENT stated, which is not always `xmlid`.
+
+        HD's `getXMLID()` returns whatever the file said. This engine
+        overrides `xmlid` on the framework classes -- a Multipower reports
+        "MULTIPOWER" -- because dispatch and serialisation key on it, but the
+        file itself says `<MULTIPOWER XMLID="GENERIC_OBJECT">` and an exporter
+        reproducing HD must print GENERIC_OBJECT.
+
+        The value is already kept for round-trip (`_source_xmlid`, written
+        back by serialize.py:219); this only gives it a name consumers may
+        use.
+        """
+        return getattr(self, "_source_xmlid", "") or self.xmlid or ""
 
     @property
     def column3_output(self) -> str:
