@@ -24,15 +24,28 @@ class Flight(Power, xmlid="FLIGHT"):
         self.affects_primary = True  # Affects primary characteristics
         self._duration = "CONSTANT"
     
+    @property
     def uses_end(self) -> bool:
+        """``Flight.usesEND`` (Flight.java:41-47): NOT in 6E when Gliding.
+
+        Two bugs in one. It was a stub -- "would check if 6E and has GLIDING
+        modifier" -- and it was written as a METHOD whose body returned
+        `self.uses_end`, which the base class assigns as an instance
+        ATTRIBUTE. So it was shadowed and never ran; had it run it would have
+        recursed. Exactly the shape of the resistant_defenses bug.
+
+        A property with a setter, because the base assigns to this name both
+        in __init__ and in apply_template; a read-only one breaks loading.
         """
-        Check if Flight uses END.
-        
-        In 6E, Flight with GLIDING modifier doesn't use END.
-        """
-        # Stub: would check if 6E and has GLIDING modifier
-        # For now, return True (standard behavior)
-        return self.uses_end
+        from kirby_cost.objects.base import is_6e, GenericObject
+        if is_6e() and GenericObject.find_object_by_id(
+                self.assigned_modifiers, "GLIDING") is not None:
+            return False
+        return getattr(self, "_uses_end_flag", False)
+
+    @uses_end.setter
+    def uses_end(self, value: bool) -> None:
+        self._uses_end_flag = bool(value)
     
     @property
     def damage_display(self) -> str:

@@ -227,6 +227,20 @@ class CompoundPower(Power, xmlid="COMPOUNDPOWER"):
                 return f"[{count}{suffix}]"
         return f"[{count}]"
 
+    @property
+    def types(self) -> list:
+        """Every child's types, gathered (CompoundPower.java:506-512).
+
+        A compound power has no type of its own; it is whatever its parts
+        are. HTMLWriter.filterByType branches on this, so a compound holding
+        a Detect must answer SENSORY -- inheriting the base's own (empty)
+        list printed no `sensory_power` where Hero Designer prints one.
+        """
+        gathered = []
+        for obj in self.powers:
+            gathered.extend(obj.types or ())
+        return gathered
+
     def get_save_xml(self):
         """Serialize compound power including sub-powers."""
         element = self.get_general_save_xml()
