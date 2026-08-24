@@ -244,123 +244,14 @@ class Power(CharAffectingObject):
 
     @property
     def end_usage(self) -> int:
+        """``GenericObject.getEndUsage``, shared with Characteristic.
+
+        The algorithm is the BASE one in Java; it lived here alone,
+        which is why a characteristic bought as a power had none.
         """
-        Calculate END cost for this power.
-        
-        Formula:
-        END Cost = (Active Cost / AP per END) × END Multiplier
-        
-        Modifiers:
-        - CHARGES: No END cost (returns 0)
-        - COSTSEND: Use specified AP per END, may have HALFEND option
-        - REDUCEDEND: May reduce to HALFEND or eliminate END cost
-        - COSTSENDONLYTOACTIVATE: Only costs END to activate
-        - INCREASEDEND: Multiplies END cost
-        
-        Converted from com.hero.objects.GenericObject.getEndUsage()
-        
-        Returns:
-            END cost as integer
-        """
-        from kirby_cost.core.context import EngineContext
-        from kirby_cost.objects.base import GenericObject, option_alias
-        
-        ap_per_end = self.ap_per_end
-        active_cost = self.active_cost
-        end_multiplier = 1.0
-        
-        # Collect all modifiers (assigned + parent list)
-        all_modifiers = list(self.assigned_modifiers)
-        parent = self._parent
-        if self.main_power:
-            parent = self.main_power.parent
-        
-        if parent:
-            all_modifiers.extend(parent.assigned_modifiers)
-        
-        # CHARGES modifier: No END cost
-        if GenericObject.find_object_by_id(all_modifiers, "CHARGES"):
-            ap_per_end = 0
-        
-        # COSTSEND modifier
-        costs_end_mod = GenericObject.find_object_by_id(all_modifiers, "COSTSEND")
-        if costs_end_mod:
-            # Get AP per END from rules
-            active_hero = EngineContext.active_hero()
-            if active_hero and active_hero.rules:
-                ap_per_end = active_hero.rules.ap_per_end
-            if (costs_end_mod.selected_option and 
-                costs_end_mod.selected_option.xmlid == "HALFEND"):
-                end_multiplier = 0.5
-        
-        # REDUCEDEND modifier
-        reduced_end_mod = GenericObject.find_object_by_id(all_modifiers, "REDUCEDEND")
-        if reduced_end_mod:
-            if (reduced_end_mod.selected_option and
-                reduced_end_mod.selected_option.xmlid == "HALFEND"):
-                end_multiplier = 0.5
-            else:
-                ap_per_end = 0  # No END cost
-            # Recalculate active cost without REDUCEDEND
-            active_cost = self._compute_active_cost(reduced_end_mod.xmlid)
-        
-        # COSTSENDONLYTOACTIVATE modifier
-        costs_only_activate_mod = GenericObject.find_object_by_id(all_modifiers, "COSTSENDONLYTOACTIVATE")
-        if costs_only_activate_mod:
-            # Recalculate active cost without this modifier
-            active_cost = self._compute_active_cost(costs_only_activate_mod.xmlid)
-        
-        # INCREASEDEND modifier
-        increased_end_mod = GenericObject.find_object_by_id(all_modifiers, "INCREASEDEND")
-        if increased_end_mod:
-            # Check for CIRCUMSTANCE adder
-            circumstance_adder = GenericObject.find_object_by_id(
-                increased_end_mod.assigned_adders, "CIRCUMSTANCE"
-            )
-            if not circumstance_adder and increased_end_mod.selected_option:
-                level_value = increased_end_mod.selected_option.level_value
-                end_multiplier = round_half_up(level_value)
-        
-        # Handle Automaton defense cost multiplier
-        # (Reduces active cost for END calculation if NOSTUN automaton)
-        active_hero = EngineContext.active_hero()
-        if (self.types and "DEFENSE" in self.types and 
-            active_hero and active_hero.powers):
-            automaton = GenericObject.find_object_by_id(active_hero.powers, "AUTOMATON")
-            if (automaton and automaton.selected_option and
-                automaton.selected_option.xmlid.upper().startswith("NOSTUN")):
-                # Divide active cost by defense multiplier for END calculation
-                defense_mult = getattr(automaton, 'get_defense_cost_multiplier', lambda: 1)()
-                if defense_mult != 0:
-                    active_cost = active_cost / float(defense_mult)
-        
-        # Calculate base END cost
-        end_cost = 0.0
-        if ap_per_end != 0:
-            end_cost = active_cost / float(ap_per_end)
-        
-        # Minimum 1 END if active cost > 0 and we have an AP per END
-        if round_half_down(end_cost) == 0 and active_cost > 0.0 and ap_per_end != 0:
-            end_cost = 1.0
-        
-        # Round before applying multiplier
-        end_cost = round_half_down(end_cost)
-        
-        # Apply multiplier
-        end_cost = end_cost * end_multiplier
-        
-        # Minimum 1 END after multiplier if active cost > 0
-        if round_half_down(end_cost) == 0 and active_cost > 0.0 and ap_per_end != 0:
-            end_cost = 1.0
-        
-        # Ensure non-negative
-        if end_cost < 0.0:
-            end_cost = 0.0
-        
-        # Store and return the END cost
-        self.end = int(round_half_down(end_cost))
-        return self.end
-    
+        from kirby_cost.objects.base import compute_end_usage
+        return compute_end_usage(self, self.ap_per_end)
+
     def get_md_levels(self) -> int:
         """Get Mental Defense levels from this power."""
         if self.md_increase_levels != 0:

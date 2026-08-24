@@ -1721,3 +1721,116 @@ def is_6e() -> bool:
         return True
     tid = getattr(hero, "original_template_id", None) or "Main6E"
     return "6E" in tid
+
+
+
+def compute_end_usage(obj, ap_per_end: int) -> int:
+    """``GenericObject.getEndUsage`` (GenericObject.java:1775-1850).
+
+    Lives here, not on one subclass, because in Java it is the BASE
+    implementation and everything inherits it. This engine had it on `Power`
+    only, leaving `GenericObject` and `Characteristic` with stubs that
+    returned `self.end` or a flat 0 -- so a Strength or Leaping bought as a
+    POWER reported no END at all, where Hero Designer prints its cost.
+
+    `ap_per_end` is a parameter because the callers disagree on how to obtain
+    it: a Characteristic's depends on the character's template (the heroic STR
+    rate), a Power's on whether it uses END at all.
+    """
+    from kirby_cost.core.context import EngineContext
+    from kirby_cost.objects.base import GenericObject, option_alias
+
+    active_cost = obj.active_cost
+    end_multiplier = 1.0
+
+    # Collect all modifiers (assigned + parent list)
+    all_modifiers = list(obj.assigned_modifiers)
+    parent = obj._parent
+    if obj.main_power:
+        parent = obj.main_power.parent
+
+    if parent:
+        all_modifiers.extend(parent.assigned_modifiers)
+
+    # CHARGES modifier: No END cost
+    if GenericObject.find_object_by_id(all_modifiers, "CHARGES"):
+        ap_per_end = 0
+
+    # COSTSEND modifier
+    costs_end_mod = GenericObject.find_object_by_id(all_modifiers, "COSTSEND")
+    if costs_end_mod:
+        # Get AP per END from rules
+        active_hero = EngineContext.active_hero()
+        if active_hero and active_hero.rules:
+            ap_per_end = active_hero.rules.ap_per_end
+        if (costs_end_mod.selected_option and 
+            costs_end_mod.selected_option.xmlid == "HALFEND"):
+            end_multiplier = 0.5
+
+    # REDUCEDEND modifier
+    reduced_end_mod = GenericObject.find_object_by_id(all_modifiers, "REDUCEDEND")
+    if reduced_end_mod:
+        if (reduced_end_mod.selected_option and
+            reduced_end_mod.selected_option.xmlid == "HALFEND"):
+            end_multiplier = 0.5
+        else:
+            ap_per_end = 0  # No END cost
+        # Recalculate active cost without REDUCEDEND
+        active_cost = obj._compute_active_cost(reduced_end_mod.xmlid)
+
+    # COSTSENDONLYTOACTIVATE modifier
+    costs_only_activate_mod = GenericObject.find_object_by_id(all_modifiers, "COSTSENDONLYTOACTIVATE")
+    if costs_only_activate_mod:
+        # Recalculate active cost without this modifier
+        active_cost = obj._compute_active_cost(costs_only_activate_mod.xmlid)
+
+    # INCREASEDEND modifier
+    increased_end_mod = GenericObject.find_object_by_id(all_modifiers, "INCREASEDEND")
+    if increased_end_mod:
+        # Check for CIRCUMSTANCE adder
+        circumstance_adder = GenericObject.find_object_by_id(
+            increased_end_mod.assigned_adders, "CIRCUMSTANCE"
+        )
+        if not circumstance_adder and increased_end_mod.selected_option:
+            level_value = increased_end_mod.selected_option.level_value
+            end_multiplier = round_half_up(level_value)
+
+    # Handle Automaton defense cost multiplier
+    # (Reduces active cost for END calculation if NOSTUN automaton)
+    active_hero = EngineContext.active_hero()
+    if (obj.types and "DEFENSE" in obj.types and 
+        active_hero and active_hero.powers):
+        automaton = GenericObject.find_object_by_id(active_hero.powers, "AUTOMATON")
+        if (automaton and automaton.selected_option and
+            automaton.selected_option.xmlid.upper().startswith("NOSTUN")):
+            # Divide active cost by defense multiplier for END calculation
+            defense_mult = getattr(automaton, 'get_defense_cost_multiplier', lambda: 1)()
+            if defense_mult != 0:
+                active_cost = active_cost / float(defense_mult)
+
+    # Calculate base END cost
+    end_cost = 0.0
+    if ap_per_end != 0:
+        end_cost = active_cost / float(ap_per_end)
+
+    # Minimum 1 END if active cost > 0 and we have an AP per END
+    if round_half_down(end_cost) == 0 and active_cost > 0.0 and ap_per_end != 0:
+        end_cost = 1.0
+
+    # Round before applying multiplier
+    end_cost = round_half_down(end_cost)
+
+    # Apply multiplier
+    end_cost = end_cost * end_multiplier
+
+    # Minimum 1 END after multiplier if active cost > 0
+    if round_half_down(end_cost) == 0 and active_cost > 0.0 and ap_per_end != 0:
+        end_cost = 1.0
+
+    # Ensure non-negative
+    if end_cost < 0.0:
+        end_cost = 0.0
+
+    # Store and return the END cost
+    obj.end = int(round_half_down(end_cost))
+    return obj.end

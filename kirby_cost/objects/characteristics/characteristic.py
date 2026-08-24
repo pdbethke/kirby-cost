@@ -1108,14 +1108,18 @@ class Characteristic(CharAffectingObject):
 
     @property
     def end_usage(self) -> int:
+        """``GenericObject.getEndUsage``, which Java's Characteristic inherits.
+
+        Was a stub returning 0 outright -- "most characteristics don't cost
+        END... this would be overridden for movement characteristics". Java
+        defines no override at all: Characteristic.java only CALLS
+        getEndUsage (:1042, :1062), so it gets the base algorithm. The stub
+        meant a Strength or Leaping bought as a POWER printed no END where
+        Hero Designer prints 3, 8 or 4.
         """
-        Get END usage for this characteristic.
-        
-        For most characteristics, this is 0 unless they're purchased as powers.
-        """
-        # Most characteristics don't cost END
-        # This would be overridden for movement characteristics
-        return 0
+        from kirby_cost.core.context import EngineContext
+        from kirby_cost.objects.base import compute_end_usage
+        return compute_end_usage(self, self.ap_per_end(EngineContext.active_hero()))
     
     def figured_base_value(self, char_type: int, active_hero: Optional['Hero'] = None) -> float:
         """
