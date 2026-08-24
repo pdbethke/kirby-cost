@@ -830,7 +830,7 @@ class HDCLoader:
             # 6E, and SPD's "Phases:  3, 6, 9, 12" note. Each was added with
             # the oracle suite green, as this comment requires.
             for xmlid in ("RUNNING", "SWIMMING", "LEAPING",
-                          "STR", "PD", "ED", "BODY", "SPD"):
+                          "STR", "PD", "ED", "BODY", "SPD", "OMCV", "DMCV"):
                 cls = Characteristic._registry.get(xmlid)
                 if isinstance(cls, type) and issubclass(cls, Characteristic):
                     self._char_map[xmlid] = cls
