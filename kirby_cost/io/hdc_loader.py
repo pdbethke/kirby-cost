@@ -714,6 +714,7 @@ class HDCLoader:
         # Apply adder template (cost fields + types)
         adder.apply_adder_template(adder_tmpl)
 
+
         # Apply minimum cost from MINCOST skills
         if not adder.min_set and parent_xmlid in _ADDER_MINCOST_SKILLS:
             adder.minimum_cost = 1.0
@@ -1892,6 +1893,25 @@ class HDCLoader:
             chosen = Adder()
             chosen.xmlid = option_id.strip()
             chosen._alias = elem.get("OPTION_ALIAS") or ""
+            # KNOWN WRONG, and not fixable here: an option's DISPLAY comes
+            # from the TEMPLATE and only its ALIAS from the document. Main6E
+            # declares
+            #   <OPTION XMLID="VERYCOMMON" DISPLAY="Very Common"
+            #           ALIAS="(Very Common">
+            # -- the alias opens a bracket the surrounding text closes, the
+            # display is the bare label, and HD's DISPLAY token prints the
+            # latter. Setting display to the alias makes an .hde export write
+            # "(Very Common" where Hero Designer writes "Very Common".
+            #
+            # It cannot be corrected at this point OR in
+            # _apply_template_to_adder, because AdderTemplate does not carry
+            # its options at all -- the .hdt parser reads them
+            # (hdt_parser._parse_options) but the provider drops them when it
+            # builds the AdderTemplate. Fixing this means giving AdderTemplate
+            # an options map first.
+            #
+            # Harmless for COST and for column-2 text, both of which read the
+            # alias. It shows up only where the display is printed directly.
             chosen._display = chosen._alias
             chosen._selected = True
             chosen.parent = adder
