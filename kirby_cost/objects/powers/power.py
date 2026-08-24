@@ -213,7 +213,7 @@ class Power(CharAffectingObject):
         if hero is not None and hero.rules is not None:
             n = hero.rules.ap_per_end
             if self.xmlid == "STR":
-                n = hero.rules.str_ap_per_end
+                n = hero.rules.get_str_ap_per_end(hero)
         return n if self.uses_end else 0
     
     @property

@@ -178,6 +178,55 @@ class CompoundPower(Power, xmlid="COMPOUNDPOWER"):
             ret = f"<i>{self._name}:</i>  {ret}"
         return ret
 
+    @property
+    def end_usage(self) -> int:
+        """The children's END, summed (CompoundPower.java:295-303).
+
+        A compound power has no active cost of its own, so the inherited
+        Power.end_usage computed END from zero and always answered 0. Java
+        sums the parts, and it temporarily reparents each child onto the
+        compound's OWN parent list first -- a child's END consults its
+        parent's modifiers, and the framework above the compound is the one
+        that should have that say.
+        """
+        total = 0
+        for obj in self.powers:
+            original = obj.parent
+            obj.parent = self._parent
+            try:
+                total += obj.end_usage
+            finally:
+                obj.parent = original
+        return total
+
+    @property
+    def column3_output(self) -> str:
+        """``CompoundPower.getColumn3Output`` (CompoundPower.java:253-286).
+
+        As Power's rule, except the Charges modifier is looked for across the
+        CHILDREN -- the container carries none itself -- and the first child
+        that has one decides.
+        """
+        from kirby_cost.objects.base import GenericObject
+        usage = self.end_usage
+        if usage > 0:
+            return str(usage)
+        charges = None
+        for obj in self.powers:
+            found = GenericObject.find_object_by_id(obj.assigned_modifiers, "CHARGES")
+            if found is not None:
+                charges = found
+                break
+        if charges is None:
+            return "0"
+        option = getattr(charges, "selected_option", None)
+        count = (getattr(option, "alias", "") or "") if option else ""
+        for adder_id, suffix in (("BOOSTABLE", " bc"), ("RECOVERABLE", " rc"),
+                                 ("CONTINUING", " cc"), ("NEVERRECOVER", " nr")):
+            if GenericObject.find_object_by_id(charges.assigned_adders, adder_id) is not None:
+                return f"[{count}{suffix}]"
+        return f"[{count}]"
+
     def get_save_xml(self):
         """Serialize compound power including sub-powers."""
         element = self.get_general_save_xml()

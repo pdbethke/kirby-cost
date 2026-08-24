@@ -649,7 +649,7 @@ class Characteristic(CharAffectingObject):
             # The only structural difference found is that Bokor alone has
             # Growth. See tests/test_hde_characteristics.py.
             if self.xmlid == "STR":
-                n = active_hero.rules.str_ap_per_end
+                n = active_hero.rules.get_str_ap_per_end(active_hero)
 
         # Check if this uses END
         if not self.uses_end:
@@ -669,7 +669,7 @@ class Characteristic(CharAffectingObject):
             n = active_hero.rules.ap_per_end
             # STR uses different AP per END
             if self.xmlid == "STR":
-                n = active_hero.rules.str_ap_per_end
+                n = active_hero.rules.get_str_ap_per_end(active_hero)
         
         # Check if this uses END
         if not self.uses_end:

@@ -34,7 +34,10 @@ class Rules:
         
         # END settings
         self.ap_per_end: int = 10  # 6E default
-        self.str_ap_per_end: int = 5  # STR END cost
+        #: NOT the figure to read -- use `get_str_ap_per_end()`. This is the
+        #: stored value, which Rules.java defaults to 10 (:858, :861, :1951);
+        #: the 5 applies only under a heroic template. It was hardcoded 5 here.
+        self.str_ap_per_end: int = 10
         
         # Equipment
         self.equipment_allowed: bool = True
@@ -88,7 +91,7 @@ class Rules:
         self.base_points = 400
         self.disad_points = 75
         self.ap_per_end = 10
-        self.str_ap_per_end = 5
+        self.str_ap_per_end = 10   # Rules.java:1951
         self.equipment_allowed = True
         self.ncm_selected = False
         self._multiplier_allowed = True
@@ -130,6 +133,27 @@ class Rules:
     def use_languages_as_int_skill(self) -> bool:
         """Check if languages use INT-based skill rolls (6E: False)."""
         return False
+
+    def get_str_ap_per_end(self, active_hero=None) -> int:
+        """Active Points per END for STR. ``Rules.getSTRAPPerEND`` (:616-634).
+
+        **5 under a heroic template, 10 otherwise** -- and only when the rules
+        are otherwise default. Java tests the active template's id, and every
+        parent template's id, for "Heroic" or "Normal".
+
+        The case matters: `indexOf("Heroic")` does NOT match
+        "Superheroic6E", whose h is lower case. So Bokor on Heroic6E pays
+        STR/5 and Ravel on Superheroic6E pays STR/10 -- which is exactly what
+        Hero Designer prints for them, and what this engine got wrong for
+        every superheroic character by storing a flat 5.
+        """
+        template_id = ""
+        if active_hero is not None:
+            template_id = (getattr(active_hero, "original_template_id", None)
+                           or getattr(active_hero, "template_name", "") or "")
+        if "Heroic" in template_id or "Normal" in template_id:
+            return 5
+        return self.str_ap_per_end
 
     def use_increased_damage_differentiation(self) -> bool:
         """Whether leftover STR resolves to half-dice and pips.

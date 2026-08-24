@@ -170,7 +170,7 @@ class Strength(Characteristic, xmlid="STR"):
             n = 0
         if GenericObject.find_object_by_id(modifiers, "COSTSEND") is not None:
             if active_hero is not None and active_hero.rules is not None:
-                n = active_hero.rules.str_ap_per_end
+                n = active_hero.rules.get_str_ap_per_end(active_hero)
         if GenericObject.find_object_by_id(modifiers, "REDUCEDEND") is not None:
             reduced_end = GenericObject.find_object_by_id(modifiers, "REDUCEDEND")
             if reduced_end is not None and reduced_end.selected_option is not None:

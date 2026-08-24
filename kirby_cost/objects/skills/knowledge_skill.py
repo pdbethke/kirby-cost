@@ -63,15 +63,21 @@ class KnowledgeSkill(Skill, xmlid="KNOWLEDGE_SKILL"):
     def _init(self, element) -> None:
         """Initialize from XML element, including TYPE for selected_type."""
         super()._init(element)
+        # ONCE. Folded in from restore_from_save, which used to run after
+        # _init -- but the fold left BOTH calls in place, and this setter is
+        # not idempotent.
+        #
+        # `selected_type_by_display` decides whether to rewrite `display` by
+        # asking whether the CURRENT selected type already matches the alias
+        # (KnowledgeSkill.java:491-503). On the first call the type is still
+        # the default, so the answer is no and the template's display stands.
+        # The second call then finds the type it just set, agrees with the
+        # alias, and overwrites "Knowledge Skill" with "CuK". Java calls it
+        # exactly once, from restoreFromSave (:464-470).
         if element is not None:
             type_str = element.get("TYPE", "")
             if type_str and type_str.strip():
                 self.selected_type_by_display(type_str)
-        # Folded in from restore_from_save, which ran after _init.
-        # One ingest per class; see engine/xml_attrs.py.
-        type_str = element.get("TYPE", "")
-        if type_str and type_str.strip():
-            self.selected_type_by_display(type_str)
 
     @property
     def column2_output(self) -> str:
