@@ -632,6 +632,24 @@ class Characteristic(CharAffectingObject):
         
         if active_hero is not None and active_hero.rules is not None:
             n = active_hero.rules.ap_per_end
+            # RESTORED 2026-08-24 after being removed the same day. Java has
+            # this special-case in the BASE getAPPerEnd
+            # (GenericObject.java:1344-1346), so removing it was unfaithful --
+            # it was taken out because it made two of three corpus characters
+            # match instead of one, which is scoring, not evidence.
+            #
+            # The contradiction it was meant to resolve is REAL and remains
+            # open: with this line, Bokor's STR END is 15/5 = 3 and matches
+            # HD exactly, while Ravel comes out 2 against HD's 1 and Power Lad
+            # 8 against 4 -- both exactly double. Without it, those two match
+            # and Bokor is a third of what HD says. All three files carry an
+            # identical <STR> element bar its LEVELS, none has a <RULES>
+            # element or an APPEREND override, the template says
+            # USESEND="Yes", and none has a COSTSEND or REDUCEDEND modifier.
+            # The only structural difference found is that Bokor alone has
+            # Growth. See tests/test_hde_characteristics.py.
+            if self.xmlid == "STR":
+                n = active_hero.rules.str_ap_per_end
 
         # Check if this uses END
         if not self.uses_end:

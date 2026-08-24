@@ -846,6 +846,18 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         return 0
 
     @property
+    def column3_output(self) -> str:
+        """The purchase list's third column -- END usage when there is any.
+
+        ``GenericObject.getColumn3Output`` (GenericObject.java:1526). Empty,
+        not "0", when the object costs no END. `Power` overrides this with a
+        three-way rule and `List` with a blank; both matter to the .hde
+        export, which had no base to inherit from at all before this.
+        """
+        usage = self.end_usage
+        return str(usage) if usage > 0 else ""
+
+    @property
     def end_usage(self) -> int:
         """Get the END usage (cost per use)."""
         if hasattr(self, 'end'):

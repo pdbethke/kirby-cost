@@ -205,6 +205,32 @@ class Power(CharAffectingObject):
         return 10
     
     @property
+    def column3_output(self) -> str:
+        """``Power.getColumn3Output`` (Power.java:105-131).
+
+        Three branches, and the middle one is the surprise: a power that costs
+        no END prints "0" where the base class prints nothing. A power paid
+        for with Charges prints the charge count in brackets instead, suffixed
+        by the kind of charge -- bc boostable, rc recoverable, cc continuing,
+        nr never-recovers.
+        """
+        from kirby_cost.objects.base import GenericObject
+        usage = self.end_usage
+        if usage > 0:
+            return str(usage)
+        charges = GenericObject.find_object_by_id(self.assigned_modifiers, "CHARGES")
+        if charges is None:
+            return "0"
+        option = getattr(charges, "selected_option", None)
+        count = getattr(option, "alias", "") or "" if option else ""
+        adders = charges.assigned_adders
+        for adder_id, suffix in (("BOOSTABLE", " bc"), ("RECOVERABLE", " rc"),
+                                 ("CONTINUING", " cc"), ("NEVERRECOVER", " nr")):
+            if GenericObject.find_object_by_id(adders, adder_id) is not None:
+                return f"[{count}{suffix}]"
+        return f"[{count}]"
+
+    @property
     def end_usage(self) -> int:
         """
         Calculate END cost for this power.
