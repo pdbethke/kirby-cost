@@ -83,3 +83,65 @@ def test_uses_end_is_forceable_despite_its_irregular_xml_name():
         xmlid="CUSTOMPOWER", uses_end=True,
         campaign_forced=frozenset({"uses_end"})))
     assert power.uses_end is True
+
+
+def test_a_forced_defense_beats_a_stated_one():
+    """The `stated` subtraction alone is not enough. Each of DEFENSE, TARGET
+    and RANGE carried a SECOND guard on the object's CURRENT value ("only if
+    empty", "only if N/A", "only if blank"), and a document that stated
+    MENTAL leaves `self.defense` non-empty -- so the forced NORMAL was
+    dropped even with "DEFENSE" removed from `stated`. Measured before the
+    fix: forced NORMAL over stated MENTAL came back MENTAL."""
+    power = _power_that_states("DEFENSE")
+    power.defense = "MENTAL"
+    power.apply_template(TemplateData(
+        xmlid="CUSTOMPOWER", defense="NORMAL",
+        campaign_forced=frozenset({"defense"})))
+    assert power.defense == "NORMAL"
+
+
+def test_a_forced_target_beats_a_stated_one():
+    """Same second guard as DEFENSE: `self.target in ("", "N/A")`. Measured
+    before the fix: forced SELFONLY over stated DCV came back DCV."""
+    power = _power_that_states("TARGET")
+    power.target = "DCV"
+    power.apply_template(TemplateData(
+        xmlid="CUSTOMPOWER", target="SELFONLY",
+        campaign_forced=frozenset({"target"})))
+    assert power.target == "SELFONLY"
+
+
+def test_a_forced_range_beats_a_stated_one():
+    """Same second guard again: `not (self.range or "").strip()`. Measured
+    before the fix: forced LOS over an existing 'No' came back 'No' -- a GM
+    who makes a power ranged got nothing."""
+    power = _power_that_states("RANGE")
+    power.range = "No"
+    power.apply_template(TemplateData(
+        xmlid="CUSTOMPOWER", range="LOS",
+        campaign_forced=frozenset({"range"})))
+    assert power.range == "LOS"
+
+
+def test_a_forced_uses_end_can_turn_endurance_OFF():
+    """The True direction was already covered; the False direction was a
+    guaranteed no-op, because the branch only ever assigned True
+    (`if tmpl.uses_end and "END" not in stated: self.uses_end = True`). A GM
+    who makes a power cost no END must get that, not silence."""
+    power = _power_that_states("END")
+    power.uses_end = True
+    power.apply_template(TemplateData(
+        xmlid="CUSTOMPOWER", uses_end=False,
+        campaign_forced=frozenset({"uses_end"})))
+    assert power.uses_end is False
+
+
+def test_a_forced_uses_end_off_works_on_a_document_that_said_nothing():
+    """Not only against a stated END: an object that never stated END at all
+    must also honour a campaign that turns endurance off."""
+    power = CustomPower()
+    power.uses_end = True
+    power.apply_template(TemplateData(
+        xmlid="CUSTOMPOWER", uses_end=False,
+        campaign_forced=frozenset({"uses_end"})))
+    assert power.uses_end is False

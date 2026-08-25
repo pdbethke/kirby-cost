@@ -585,11 +585,14 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         # default and wrong for a house rule: a rule a character can be exempt
         # from is not a rule, so an attribute the campaign forced is removed
         # from the guard, per attribute -- forcing one does not free the
-        # others. This does NOT cover cost fields (base_cost, minimum_cost,
-        # max_cost, level_cost, level_value) even though the corpus states
-        # BASECOST 371 times: those are not gated by `stated` at all -- they
-        # are set through min_set/max_set and _base_cost_from_xml -- and need
-        # their own branch, added by a later task.
+        # others. This does NOT cover the cost fields (base_cost,
+        # minimum_cost, max_cost) even though the corpus states BASECOST 371
+        # times: they are not gated by `stated` at all -- they are set through
+        # min_set/max_set and _base_cost_from_xml. That was measured, and the
+        # decision was to REFUSE those fields at `CampaignRules.set()` time
+        # rather than build a second branch here; see `_UNSUPPORTED_FIELDS` in
+        # kirby_cost/campaign/rules.py, which names each one and why. A GM who
+        # wants to re-price a power uses level_cost, which IS wired.
         #
         # The XML name is usually the field name upper-cased with underscores
         # removed -- HD's own convention, used verbatim by the *_increase
@@ -598,11 +601,12 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         # would subtract a name that was never in `stated` and the campaign's
         # rule would silently lose. Irregular names go in the override map.
         forced = getattr(tmpl, "campaign_forced", frozenset())
-        if forced:
-            stated = stated - {
-                _XML_NAME_OVERRIDES.get(f, f.upper().replace("_", ""))
-                for f in forced
-            }
+        forced_xml = {
+            _XML_NAME_OVERRIDES.get(f, f.upper().replace("_", ""))
+            for f in forced
+        }
+        if forced_xml:
+            stated = stated - forced_xml
 
         # TYPES come from the TEMPLATE. An object's own element rarely states
         # them -- Main6E declares `<DETECT ...><TYPE>SPECIAL</TYPE>
@@ -615,16 +619,33 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
             if declared and declared not in self._types:
                 self._types.append(declared)
 
-        if tmpl.uses_end and "END" not in stated:
+        # Each of these four carries a SECOND guard beyond `stated` -- on the
+        # object's CURRENT value ("only if it has no duration", "only if
+        # target is empty or N/A"), or, for uses_end, by only ever assigning
+        # True. Those guards stand in for the same precedence `stated` does,
+        # so removing a name from `stated` alone left the campaign losing
+        # anyway: measured, forced defense=NORMAL over a document that stated
+        # MENTAL came back MENTAL, forced target=SELFONLY over DCV came back
+        # DCV, forced range=LOS over "No" came back "No", and a forced
+        # uses_end=False could never be assigned at all. A forced field is
+        # therefore assigned UNCONDITIONALLY; the heuristic guards remain for
+        # the ordinary, uncampaigned path.
+        if "END" in forced_xml:
+            self.uses_end = tmpl.uses_end
+        elif tmpl.uses_end and "END" not in stated:
             self.uses_end = True
         if tmpl.duration and not self._duration and "DURATION" not in stated:
             self._duration = tmpl.duration
-        if tmpl.target and self.target in ("", "N/A") and "TARGET" not in stated:
+        if "TARGET" in forced_xml:
+            self.target = tmpl.target
+        elif tmpl.target and self.target in ("", "N/A") and "TARGET" not in stated:
             self.target = tmpl.target
         # DEFENSE, on the same terms as TARGET: the template states it, the
         # document rarely does, and the constructor's default is "NONE" --
         # which reads as an answer rather than as an absence.
-        if tmpl.defense and self.defense in ("", "NONE") and "DEFENSE" not in stated:
+        if "DEFENSE" in forced_xml:
+            self.defense = tmpl.defense
+        elif tmpl.defense and self.defense in ("", "NONE") and "DEFENSE" not in stated:
             self.defense = tmpl.defense
         # Combat facts stated by the template. These are what let a GM's house
         # rules reach the fight: kirby-cost reads the .hdt, so a campaign that
@@ -652,7 +673,9 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         # RANGE is the word that decides whether a power reaches at all, and
         # only the template states it — an HDC file never does. Without it
         # every power read as un-ranged and range_value returned 0.
-        if getattr(tmpl, "range", "") and not (self.range or "").strip() \
+        if "RANGE" in forced_xml:
+            self.range = tmpl.range
+        elif getattr(tmpl, "range", "") and not (self.range or "").strip() \
                 and "RANGE" not in stated:
             self.range = tmpl.range
 
