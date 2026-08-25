@@ -39,8 +39,9 @@ _NOT_OVERRIDABLE = frozenset({"campaign_forced"})
 #:     level_multiplier, min_set, max_set: read directly by `apply_template`
 #:     (base.py:398, :487-:509, :545, :551) and by `Adder.apply_template`.
 #:   * The nine below were the ones the first pass never probed. Each was
-#:     then forced through `CampaignRules` and observed changing a real
-#:     object, on 2026-08-25:
+#:     then forced through `CampaignRules` and observed changing a loaded
+#:     object, on 2026-08-25 (six via real character loads; three via
+#:     constructed objects, noted below):
 #:   * types      -> forcing ("PROBE",) on RKA gave Ravel's RKA `_types
 #:                   == ["PROBE"]` (base.py, the `tmpl.types` loop).
 #:   * attributes -> forcing SHOWOPTIONONLY="Yes" on PENETRATING flipped
@@ -53,8 +54,11 @@ _NOT_OVERRIDABLE = frozenset({"campaign_forced"})
 #:   * base_value -> forcing 42.0 on STR moved Ravel's STR `base_level`
 #:                   from 10.0 to 42.0 (hdc_loader.py:655).
 #:   * all_cost / group_cost / sense_cost -> forcing 55.0 on a sense-rate
-#:                   xmlid put 55.0 on all three of a SenseAdder
+#:                   xmlid put 55.0 on all three of a constructed SenseAdder
 #:                   (base.py, the sense-rate loop; hdc_loader.py:1615).
+#:                   (These three were probed via apply_template on a built
+#:                   object, not a real character load, because none of the
+#:                   authored characters carries a SenseAdder.)
 #:
 #: The one field that is neither wired nor listed as a rule is `class_name`,
 #: below: it has ZERO reads off a `TemplateData` anywhere in `kirby_cost/`.
@@ -144,20 +148,20 @@ class CampaignRules:
                 f"a field to its class default is not a capability that "
                 f"exists today.)"
             )
-        # Every one of the 53 template maneuvers carries XMLID="MANEUVER", so
-        # the maneuver index is keyed by DISPLAY and `hdc_loader` routes them
-        # to `get_maneuver`, never to `get_template_data`. "MANEUVER" is
-        # nonetheless IN the flat index (as Basic Strike, first wins), so the
-        # existence check below would accept this rule and it would be 100%
-        # inert. Refused here instead, before the check that would pass.
+        # Template maneuvers carry no XMLID — DISPLAY is their sole identity.
+        # So `hdc_loader` routes them to `get_maneuver` (keyed by display), not
+        # to `get_template_data`. If allowed here, this rule would find nothing
+        # on the template side and do nothing. Moreover, patching here by xmlid
+        # would rewrite all 53 maneuvers at once (they all parse with the same
+        # XMLID="MANEUVER" in HDC). Refused here instead, before the check.
         if xmlid.upper() == "MANEUVER":
             raise ValueError(
-                "'MANEUVER' cannot be the subject of a campaign rule: all 53 "
-                "template maneuvers share XMLID=\"MANEUVER\" and are looked "
-                "up by their display name, so this rule would never be read "
-                "-- and applying it by xmlid would rewrite all 53 at once. "
-                "Overriding one maneuver needs a rule keyed by display, "
-                "which does not exist yet."
+                "'MANEUVER' cannot be the subject of a campaign rule: template "
+                "maneuvers carry no XMLID (DISPLAY is their identity), so this "
+                "rule would find nothing on the template side. Moreover, all 53 "
+                "HDC maneuvers are written XMLID=\"MANEUVER\", so patching by "
+                "xmlid would rewrite all 53 at once. Overriding one maneuver "
+                "needs a rule keyed by display, which does not exist yet."
             )
         if self._provider.get_template_data(xmlid) is None:
             raise ValueError(

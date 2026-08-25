@@ -717,12 +717,12 @@ class HDTTemplateProvider:
         None means "custom maneuver": Java builds one from the HDC element
         alone when no template maneuver matches the display.
 
-        NOT campaign-patched, deliberately. All 53 template maneuvers carry
-        XMLID="MANEUVER" -- that is why this index is keyed by display at all
-        -- so patching here by xmlid would apply one MANEUVER rule to all 53
-        at once. `CampaignRules.set()` therefore REFUSES "MANEUVER" outright,
-        so there is no accepted rule for this door to drop. A rule keyed by
-        maneuver display is a real feature; it is not this one.
+        NOT campaign-patched, deliberately. Template maneuvers carry no XMLID
+        (DISPLAY is their sole identity), so this index is keyed by display.
+        `CampaignRules.set()` therefore REFUSES "MANEUVER" outright: the rule
+        would find nothing on the template side, and even if it did, all 53
+        HDC maneuvers parse as XMLID="MANEUVER", so patching would rewrite all
+        53 at once. A rule keyed by maneuver display is a real feature, not this.
         """
         return self._maneuvers.get(display)
 
