@@ -744,14 +744,37 @@ class HDTTemplateProvider:
         sections fall through to the flat first-wins index, which is right
         for every other xmlid in the template.
         """
+        found = None
         if section is not None:
             found = self._by_section.get((section, xmlid))
-            if found is not None:
-                return found
-        return self._index.get(xmlid)
+        if found is None:
+            found = self._index.get(xmlid)
+        return _with_campaign_overrides(xmlid, found)
 
     def __len__(self) -> int:
         return len(self._index)
 
     def __repr__(self) -> str:  # pragma: no cover - debugging aid
         return f"HDTTemplateProvider({self.path!s}, {len(self._index)} objects)"
+
+
+def _with_campaign_overrides(xmlid: str, tmpl):
+    """Apply the active campaign's rules to *tmpl*, or return it unchanged.
+
+    A COPY, always. The entries handed out here come from `self._index`, which
+    every later caller shares -- patching one in place would leak a campaign's
+    rules into the next character loaded, and `TemplateData` is frozen
+    precisely so that cannot happen by accident.
+    """
+    if tmpl is None:
+        return None
+    from kirby_cost.core.context import EngineContext
+    rules = EngineContext.campaign_rules()
+    if not rules:
+        return tmpl
+    forced = rules.fields_for(xmlid)
+    if not forced:
+        return tmpl
+    import dataclasses
+    changes = {field: rules.get(xmlid, field) for field in forced}
+    return dataclasses.replace(tmpl, campaign_forced=frozenset(forced), **changes)
