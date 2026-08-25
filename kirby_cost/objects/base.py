@@ -32,6 +32,13 @@ if TYPE_CHECKING:
     from kirby_cost.objects.modifier import Modifier
     from kirby_cost.objects.list import List as HeroList
 
+#: Fields whose XML attribute name is NOT the de-underscored upper-case form.
+#: `uses_end` is gated on "END", not "USESEND" -- derive it and a campaign's
+#: forced override silently misses the guard, leaving the document's own
+#: value to win with no error. Add to this map, don't trust the derivation,
+#: whenever a new field's XML name diverges from its Python name.
+_XML_NAME_OVERRIDES = {"uses_end": "END"}
+
 
 class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
                     DeserializationMixin, SerializationMixin, ABC):
@@ -576,16 +583,26 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         # A campaign's rules outrank the document. Everything below is guarded
         # on "the source did not state this", which is right for a template
         # default and wrong for a house rule: a rule a character can be exempt
-        # from is not a rule, and the corpus states BASECOST 371 times. So an
-        # attribute the campaign forced is removed from the guard, per
-        # attribute -- forcing one does not free the others.
+        # from is not a rule, so an attribute the campaign forced is removed
+        # from the guard, per attribute -- forcing one does not free the
+        # others. This does NOT cover cost fields (base_cost, minimum_cost,
+        # max_cost, level_cost, level_value) even though the corpus states
+        # BASECOST 371 times: those are not gated by `stated` at all -- they
+        # are set through min_set/max_set and _base_cost_from_xml -- and need
+        # their own branch, added by a later task.
         #
-        # The XML name is the field name upper-cased with underscores removed.
-        # That is HD's own convention, used verbatim by the *_increase family
-        # further down this method, not a coincidence worth a lookup table.
+        # The XML name is usually the field name upper-cased with underscores
+        # removed -- HD's own convention, used verbatim by the *_increase
+        # family further down this method. It is NOT always that: `uses_end`
+        # is gated on "END", not the derived "USESEND", so deriving it here
+        # would subtract a name that was never in `stated` and the campaign's
+        # rule would silently lose. Irregular names go in the override map.
         forced = getattr(tmpl, "campaign_forced", frozenset())
         if forced:
-            stated = stated - {f.upper().replace("_", "") for f in forced}
+            stated = stated - {
+                _XML_NAME_OVERRIDES.get(f, f.upper().replace("_", ""))
+                for f in forced
+            }
 
         # TYPES come from the TEMPLATE. An object's own element rarely states
         # them -- Main6E declares `<DETECT ...><TYPE>SPECIAL</TYPE>

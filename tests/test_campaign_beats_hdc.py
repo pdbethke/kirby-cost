@@ -57,3 +57,29 @@ def test_a_campaign_does_not_free_attributes_it_did_not_force():
         xmlid="CUSTOMPOWER", defense="NORMAL", killing=False,
         campaign_forced=frozenset({"killing"})))
     assert power.defense == "MENTAL"
+
+
+def test_uses_end_is_forceable_despite_its_irregular_xml_name():
+    """`uses_end` is gated on the XML name "END", not the derived "USESEND".
+    CustomPower declares END in its schema (same trap as KILLING/DEFENSE
+    above), so this reaches the real guard rather than passing vacuously.
+
+    Unlike killing/defense, this field is only ever SET to True by
+    apply_template (`if tmpl.uses_end and "END" not in stated: self.uses_end
+    = True`) -- it never assigns False. So the document-wins scenario is a
+    source that explicitly stated END="No" (uses_end False) with a template
+    that says True: the "END" in stated guard normally protects that explicit
+    "No" from the template. Forcing "uses_end" must let the campaign's
+    template value win instead.
+
+    Before _XML_NAME_OVERRIDES existed, forcing "uses_end" subtracted the
+    derived "USESEND" -- a name never in `stated` -- so "END" survived in the
+    guard and the document's stated "No" silently kept beating the campaign
+    and the template's True."""
+    assert "END" in {d.attr for d in CustomPower.xml_schema()}
+    power = _power_that_states("END")
+    power.uses_end = False
+    power.apply_template(TemplateData(
+        xmlid="CUSTOMPOWER", uses_end=True,
+        campaign_forced=frozenset({"uses_end"})))
+    assert power.uses_end is True
