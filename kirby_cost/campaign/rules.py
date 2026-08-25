@@ -32,8 +32,14 @@ _UNSUPPORTED_FIELDS = {
     # every object changes how the engine costs everything and needs its own
     # oracle-gated change. Use level_cost to re-price a power.
     "base_cost": "not applied by apply_template; use level_cost to re-price",
-    "minimum_cost": "not applied by apply_template",
-    "max_cost": "not applied by apply_template",
+    # apply_template DOES assign these (base.py:546, :552) -- but gated on
+    # tmpl.min_set / tmpl.max_set, which are false for a typical power. And
+    # forcing min_set/max_set on would surface the TEMPLATE's own
+    # minimum_cost/max_cost, never a campaign-forced one, because this field
+    # is itself blocked. So the value a GM sets here can never reach an
+    # object by either route.
+    "minimum_cost": "gated on min_set, and forcing min_set surfaces the template's value, not this one",
+    "max_cost": "gated on max_set, and forcing max_set surfaces the template's value, not this one",
     # Gated on the object not already having a duration, which it does by the
     # time a campaign could matter.
     "duration": "the object already holds a duration when the template applies",
