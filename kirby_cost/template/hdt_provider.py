@@ -768,6 +768,9 @@ def _with_campaign_overrides(xmlid: str, tmpl):
     """
     if tmpl is None:
         return None
+    # Deferred, not circular: core.context has no runtime edge back into
+    # template today. Kept local anyway so hdt_provider doesn't pick up a
+    # module-level dependency on core.context that nothing currently forces.
     from kirby_cost.core.context import EngineContext
     rules = EngineContext.campaign_rules()
     if not rules:
@@ -775,6 +778,5 @@ def _with_campaign_overrides(xmlid: str, tmpl):
     forced = rules.fields_for(xmlid)
     if not forced:
         return tmpl
-    import dataclasses
     changes = {field: rules.get(xmlid, field) for field in forced}
-    return dataclasses.replace(tmpl, campaign_forced=frozenset(forced), **changes)
+    return replace(tmpl, campaign_forced=frozenset(forced), **changes)
