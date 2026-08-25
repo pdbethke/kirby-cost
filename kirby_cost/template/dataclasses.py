@@ -5,6 +5,7 @@ These represent the shape of data the cost engine expects from any source
 loader converts raw dicts into these before handing them to domain objects.
 """
 from dataclasses import dataclass, field
+from typing import Optional
 
 
 @dataclass(frozen=True)
@@ -95,6 +96,24 @@ class TemplateData:
     #: at all, and it is stated only by the template.
     range: str = ""
     target: str = ""
+    #: Which defence the power is tested against -- NORMAL, MENTAL, POWER,
+    #: SPECIAL, NONE. `hdt_parser` has always read it (:333) and nothing
+    #: carried it, so every loaded power reported the constructor's "NONE"
+    #: and a consumer had to guess. kirby-combat guessed by xmlid and said so:
+    #: "without a reliable signal in kirby-cost's parse we default to PD for
+    #: HKA/HTH and ED for ranged blasts".
+    defense: str = ""
+    #: Combat facts the template states about the power itself. TRI-STATE:
+    #: ``None`` means "the template said nothing", which is NOT the same as
+    #: ``False`` -- a class such as KillingAttackRanged sets ``killing = True``
+    #: in its constructor, and a template that is silent must not undo that.
+    #: An explicit ``KILLING="No"`` in the .hdt DOES undo it, which is the
+    #: point: a GM running a heroic campaign edits the template, kirby-cost
+    #: emits the changed fact, and kirby-combat acts on it. Same for the rest.
+    killing: Optional[bool] = None
+    does_body: Optional[bool] = None
+    does_damage: Optional[bool] = None
+    does_knockback: Optional[bool] = None
     uses_end: bool = False
     is_power: bool = False
     class_name: str = ""

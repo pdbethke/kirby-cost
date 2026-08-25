@@ -331,6 +331,10 @@ class HDTParser:
             'target': elem.get('TARGET', ''),
             'range': elem.get('RANGE', ''),
             'defense': elem.get('DEFENSE', ''),
+            'killing': self._parse_optional_yesno(elem, 'KILLING'),
+            'does_body': self._parse_optional_yesno(elem, 'DOESBODY'),
+            'does_damage': self._parse_optional_yesno(elem, 'DOESDAMAGE'),
+            'does_knockback': self._parse_optional_yesno(elem, 'DOESKNOCKBACK'),
             
             # Input/option labels
             'input_label': elem.get('INPUTLABEL', ''),
@@ -540,6 +544,20 @@ class HDTParser:
             return ''
         return (elem.text or '').strip()
     
+    @staticmethod
+    def _parse_optional_yesno(elem, attribute: str):
+        """Yes/No attribute as a tri-state: None when the attribute is absent.
+
+        The distinction matters. `killing` is also set by some object
+        constructors, so "the template did not mention it" has to be
+        distinguishable from "the template said No" -- otherwise applying a
+        template would silently clear a class's own answer.
+        """
+        raw = elem.get(attribute)
+        if raw is None:
+            return None
+        return raw.strip().upper().startswith('Y')
+
     def _parse_float(self, value: str) -> float:
         """Parse a string to float, returning 0.0 on error."""
         if not value:

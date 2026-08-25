@@ -311,6 +311,11 @@ def _template_data(entry: dict[str, Any], *, is_power: bool) -> TemplateData:
         duration=entry.get("duration") or "",
         range=(_attrs(entry).get("RANGE") or ""),
         target=entry.get("target") or "",
+        defense=entry.get("defense") or "",
+        killing=entry.get("killing"),
+        does_body=entry.get("does_body"),
+        does_damage=entry.get("does_damage"),
+        does_knockback=entry.get("does_knockback"),
         uses_end=bool(entry.get("uses_end")),
         is_power=is_power,
         # The engine resolves classes through its own xmlid registry; the

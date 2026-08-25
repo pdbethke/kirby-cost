@@ -591,6 +591,34 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
             self._duration = tmpl.duration
         if tmpl.target and self.target in ("", "N/A") and "TARGET" not in stated:
             self.target = tmpl.target
+        # DEFENSE, on the same terms as TARGET: the template states it, the
+        # document rarely does, and the constructor's default is "NONE" --
+        # which reads as an answer rather than as an absence.
+        if tmpl.defense and self.defense in ("", "NONE") and "DEFENSE" not in stated:
+            self.defense = tmpl.defense
+        # Combat facts stated by the template. These are what let a GM's house
+        # rules reach the fight: kirby-cost reads the .hdt, so a campaign that
+        # edits KILLING="No" on the killing attacks, or turns knockback off,
+        # emits changed facts that kirby-combat consumes without knowing a rule
+        # was changed. The tri-state is load-bearing -- see TemplateData.killing.
+        # An HDC file that states the attribute itself still wins over both.
+        for attribute, xml_name in (
+            ("killing", "KILLING"),
+            ("does_body", "DOESBODY"),
+            ("does_damage", "DOESDAMAGE"),
+            ("does_knockback", "DOESKNOCKBACK"),
+        ):
+            stated_value = getattr(tmpl, attribute, None)
+            if stated_value is None or xml_name in stated:
+                continue
+            # A subclass may DERIVE the fact rather than store it -- Maneuver
+            # computes does_damage from its own effect string and exposes it
+            # read-only. That is an authority, not a gap: an object that works
+            # the answer out from itself is not waiting to be told. Skip it.
+            descriptor = getattr(type(self), attribute, None)
+            if isinstance(descriptor, property) and descriptor.fset is None:
+                continue
+            setattr(self, attribute, stated_value)
         # RANGE is the word that decides whether a power reaches at all, and
         # only the template states it — an HDC file never does. Without it
         # every power read as un-ranged and range_value returned 0.
