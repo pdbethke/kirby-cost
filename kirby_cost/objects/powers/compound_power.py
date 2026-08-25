@@ -102,6 +102,22 @@ class CompoundPower(Power, xmlid="COMPOUNDPOWER"):
         child's own list back. Doing that by copy rather than in place would
         change what the children print, because a modifier reads its parent.
         """
+        return self._column2(include_names=True)
+
+    @property
+    def nameless_column2_output(self) -> str:
+        """``CompoundPower.getNamelessColumn2Output`` (CompoundPower.java:389).
+
+        Java blanks its OWN name and renders the children NAMELESS too:
+        `getColumn2Output(false)` calls `getNamelessColumn2Output()` on each
+        child where the named form calls `getTextOutput()`. Inheriting the
+        base class's version printed every child's `<i>Name:</i>` prefix, so
+        an .hde export carried names Hero Designer omits.
+        """
+        return self._column2(include_names=False)
+
+    def _column2(self, *, include_names: bool) -> str:
+        """``getColumn2Output(boolean)`` (CompoundPower.java:198)."""
         parent_mods = list(self._parent.assigned_modifiers) if self._parent else []
         ret = ""
 
@@ -141,7 +157,13 @@ class CompoundPower(Power, xmlid="COMPOUNDPOWER"):
             try:
                 if ret.strip():
                     ret += self.list_separator
-                ret += obj.get_text_output()
+                if include_names:
+                    ret += obj.get_text_output()
+                else:
+                    # A property on some classes, a zero-argument method on
+                    # others; this engine is not consistent about it.
+                    nameless = obj.nameless_column2_output
+                    ret += nameless() if callable(nameless) else nameless
                 if self.display_active_cost:
                     ret += f" (Real Cost: {round_half_down(obj.real_cost_pre_list)})"
             finally:
@@ -152,9 +174,72 @@ class CompoundPower(Power, xmlid="COMPOUNDPOWER"):
         if self.display_active_cost:
             ret = (f"(Total: {round_half_up(self.active_cost)} Active Cost, "
                    f"{round_half_up(self.real_cost_pre_list)} Real Cost) " + ret)
-        if self._name and self._name.strip():
+        if include_names and self._name and self._name.strip():
             ret = f"<i>{self._name}:</i>  {ret}"
         return ret
+
+    @property
+    def end_usage(self) -> int:
+        """The children's END, summed (CompoundPower.java:295-303).
+
+        A compound power has no active cost of its own, so the inherited
+        Power.end_usage computed END from zero and always answered 0. Java
+        sums the parts, and it temporarily reparents each child onto the
+        compound's OWN parent list first -- a child's END consults its
+        parent's modifiers, and the framework above the compound is the one
+        that should have that say.
+        """
+        total = 0
+        for obj in self.powers:
+            original = obj.parent
+            obj.parent = self._parent
+            try:
+                total += obj.end_usage
+            finally:
+                obj.parent = original
+        return total
+
+    @property
+    def column3_output(self) -> str:
+        """``CompoundPower.getColumn3Output`` (CompoundPower.java:253-286).
+
+        As Power's rule, except the Charges modifier is looked for across the
+        CHILDREN -- the container carries none itself -- and the first child
+        that has one decides.
+        """
+        from kirby_cost.objects.base import GenericObject
+        usage = self.end_usage
+        if usage > 0:
+            return str(usage)
+        charges = None
+        for obj in self.powers:
+            found = GenericObject.find_object_by_id(obj.assigned_modifiers, "CHARGES")
+            if found is not None:
+                charges = found
+                break
+        if charges is None:
+            return "0"
+        option = getattr(charges, "selected_option", None)
+        count = (getattr(option, "alias", "") or "") if option else ""
+        for adder_id, suffix in (("BOOSTABLE", " bc"), ("RECOVERABLE", " rc"),
+                                 ("CONTINUING", " cc"), ("NEVERRECOVER", " nr")):
+            if GenericObject.find_object_by_id(charges.assigned_adders, adder_id) is not None:
+                return f"[{count}{suffix}]"
+        return f"[{count}]"
+
+    @property
+    def types(self) -> list:
+        """Every child's types, gathered (CompoundPower.java:506-512).
+
+        A compound power has no type of its own; it is whatever its parts
+        are. HTMLWriter.filterByType branches on this, so a compound holding
+        a Detect must answer SENSORY -- inheriting the base's own (empty)
+        list printed no `sensory_power` where Hero Designer prints one.
+        """
+        gathered = []
+        for obj in self.powers:
+            gathered.extend(obj.types or ())
+        return gathered
 
     def get_save_xml(self):
         """Serialize compound power including sub-powers."""

@@ -130,6 +130,11 @@ def _adder(entry: dict[str, Any]) -> AdderTemplate:
         level_power=_i(a, "LVLPOWER"),
         level_multiplier=_i(a, "LVLMULTIPLIER"),
         types=tuple(entry.get("types") or ()),
+        options={
+            (op.get("xmlid") or "").upper(): _option(op)
+            for op in (entry.get("options") or [])
+            if op.get("xmlid")
+        },
     )
 
 
@@ -211,11 +216,29 @@ def _sense_group_options(
     power has no levels, so the whole rate is the base cost.
     """
     attrs = _attrs(entry)
-    if "TARGETINGCOST" not in attrs and "NONTARGETINGCOST" not in attrs:
-        return {}
     if not groups:
         return {}
     level_value = _level_value(attrs)
+
+    if "TARGETINGCOST" not in attrs and "NONTARGETINGCOST" not in attrs:
+        # NOT extended to the GROUPCOST family, and that is a decision.
+        #
+        # SenseAdder.getOptions (:476-499) does give one option per sense
+        # group to powers priced with GROUPCOST -- Adjacent (Fixed Perception
+        # Point) among them -- and without it such a power's OPTION exports
+        # empty where Hero Designer writes "Sight Group".
+        #
+        # Adding it here broke 238 display strings the corpus DOES cover:
+        # Microscopic collapsed from "( x100)" to "( x1)" because a synthetic
+        # option displaced the power's own LVLPOWER, and constraining the
+        # synthetic option further moved the damage to EnhancedPerception and
+        # Telescopic. The interaction between a synthetic option's level
+        # fields and apply_template is not understood well enough to change
+        # safely, and one option key on one hand-built character does not
+        # justify guessing at it. See tests/test_byte_fidelity.py in
+        # kirby-sheet, which records the same gap from the other side.
+        return {}
+
     options: dict[str, OptionTemplate] = {}
     for group, display, provides in groups:
         if group in _EXCLUDED_SENSE_GROUPS:

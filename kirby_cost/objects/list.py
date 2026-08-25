@@ -327,6 +327,11 @@ class List(GenericObject):
         """Get suffix for column 2 output."""
         return ""
     
+    @property
+    def column3_output(self) -> str:
+        """A container has no END of its own (List.java:439)."""
+        return ""
+
     def column1_suffix(self, obj: GenericObject) -> str:
         """Get suffix for column 1 output."""
         return ""

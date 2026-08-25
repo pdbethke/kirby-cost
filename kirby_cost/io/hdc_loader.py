@@ -714,6 +714,28 @@ class HDCLoader:
         # Apply adder template (cost fields + types)
         adder.apply_adder_template(adder_tmpl)
 
+        # Restore the chosen option's DISPLAY from the template.
+        #
+        # `_build_adder` has no template in scope, so it sets the option's
+        # display to the document's OPTION_ALIAS. Those are different strings
+        # on purpose: Main6E declares
+        #   <OPTION XMLID="VERYCOMMON" DISPLAY="Very Common"
+        #           ALIAS="(Very Common">
+        # -- the alias opens a bracket the surrounding text closes, the
+        # display is the bare label. HD restores the option from the template
+        # by OPTIONID and then writes OPTION_ALIAS onto it, so both halves
+        # survive; this is that second half.
+        #
+        # The ALIAS is deliberately left alone: the document outranks the
+        # template there, and cost and column-2 text both read it.
+        chosen = adder.selected_option
+        if chosen is not None and adder_tmpl.options:
+            option_tmpl = adder_tmpl.options.get(
+                (getattr(chosen, "xmlid", "") or "").upper())
+            if option_tmpl is not None and option_tmpl.display:
+                chosen._display = option_tmpl.display
+
+
         # Apply minimum cost from MINCOST skills
         if not adder.min_set and parent_xmlid in _ADDER_MINCOST_SKILLS:
             adder.minimum_cost = 1.0
@@ -819,10 +841,18 @@ class HDCLoader:
             # in a class nothing had ever instantiated.
             #
             # So this list grows one xmlid at a time, and only with the oracle
-            # suite green. These three are here because their DISPLAY differs:
-            # HD writes "Running -12m (0m total)" where the base class gives
-            # "-12 Running".
-            for xmlid in ("RUNNING", "SWIMMING", "LEAPING"):
+            # suite green. The first three are here because their DISPLAY
+            # differs: HD writes "Running -12m (0m total)" where the base
+            # class gives "-12 Running".
+            #
+            # STR, PD, ED, BODY and SPD were added 2026-08-24 for the .hde
+            # export backend, which needs the display surface the base class
+            # cannot provide: STR's lift/END/damage strings, PD and ED's
+            # resistant and non-resistant totals, BODY's absence of a roll in
+            # 6E, and SPD's "Phases:  3, 6, 9, 12" note. Each was added with
+            # the oracle suite green, as this comment requires.
+            for xmlid in ("RUNNING", "SWIMMING", "LEAPING",
+                          "STR", "PD", "ED", "BODY", "SPD", "OMCV", "DMCV"):
                 cls = Characteristic._registry.get(xmlid)
                 if isinstance(cls, type) and issubclass(cls, Characteristic):
                     self._char_map[xmlid] = cls
@@ -1029,6 +1059,13 @@ class HDCLoader:
             lang_sim = rules_elem.get("LANGUAGESIMILARITIESUSED", "")
             if lang_sim.strip().upper().startswith("Y"):
                 hero.rules._language_similarities_used = True
+            # Rules.java:1237-1242. Absent, or not beginning with "Y", is
+            # False -- which is also the default when there is no RULES
+            # element at all (Rules.java:1992). Governs whether a STR that is
+            # not a multiple of 5 keeps its remainder as a half-die.
+            differentiation = rules_elem.get("USEINCREASEDDAMAGEDIFFERENTIATION", "")
+            hero.rules.use_increased_damage_differentiation_flag = (
+                differentiation.strip().upper().startswith("Y"))
 
         # Load each section.
         #
@@ -1877,6 +1914,25 @@ class HDCLoader:
             chosen = Adder()
             chosen.xmlid = option_id.strip()
             chosen._alias = elem.get("OPTION_ALIAS") or ""
+            # KNOWN WRONG, and not fixable here: an option's DISPLAY comes
+            # from the TEMPLATE and only its ALIAS from the document. Main6E
+            # declares
+            #   <OPTION XMLID="VERYCOMMON" DISPLAY="Very Common"
+            #           ALIAS="(Very Common">
+            # -- the alias opens a bracket the surrounding text closes, the
+            # display is the bare label, and HD's DISPLAY token prints the
+            # latter. Setting display to the alias makes an .hde export write
+            # "(Very Common" where Hero Designer writes "Very Common".
+            #
+            # It cannot be corrected at this point OR in
+            # _apply_template_to_adder, because AdderTemplate does not carry
+            # its options at all -- the .hdt parser reads them
+            # (hdt_parser._parse_options) but the provider drops them when it
+            # builds the AdderTemplate. Fixing this means giving AdderTemplate
+            # an options map first.
+            #
+            # Harmless for COST and for column-2 text, both of which read the
+            # alias. It shows up only where the display is printed directly.
             chosen._display = chosen._alias
             chosen._selected = True
             chosen.parent = adder

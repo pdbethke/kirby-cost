@@ -64,6 +64,14 @@ class AdderTemplate:
     level_power: int = 1
     level_multiplier: int = 1
     types: tuple[str, ...] = ()
+    #: The adder's own selectable options, by xmlid. The .hdt parser has
+    #: always read these (hdt_parser._parse_options) but the provider dropped
+    #: them, so an adder's chosen option had no template to be restored from
+    #: and the loader had to fall back to the DOCUMENT's alias for its
+    #: display. Those are different strings on purpose -- Main6E declares
+    #: `<OPTION XMLID="VERYCOMMON" DISPLAY="Very Common" ALIAS="(Very Common">`
+    #: -- and an export printed the bracketed one where HD prints the label.
+    options: dict = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

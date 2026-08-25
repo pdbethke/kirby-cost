@@ -320,19 +320,28 @@ class CharAffectingObject(GenericObject):
         Returns:
             Increase value
         """
-        increase = self.increase(char_type)
         increase_levels = self.increase_levels(char_type)
-        
-        if increase_levels <= 0:
+        if increase_levels == 0:
             return 0.0
-        
-        # This is a simplified version - subclasses may override
-        if primary:
-            # For primary, use levels directly
-            return (float(self._levels) / float(increase_levels)) * increase
-        else:
-            # For secondary, same calculation
-            return (float(self._levels) / float(increase_levels)) * increase
+
+        # CharAffectingObject.java:701-714, transcribed. The previous version
+        # was marked "a simplified version" and had BOTH branches identical,
+        # which double-counted: an object that affects the primary value was
+        # also counted into the secondary, and the secondary is computed as
+        # primary + this. Bokor's Resistant Protection made his PD read
+        # "12/22" instead of "12".
+        #
+        # The asymmetry is the point. An object affecting PRIMARY contributes
+        # to primary only; the secondary branch takes objects that do NOT
+        # affect primary. Both require affect_total.
+        if primary and (not self.affect_primary or not self.affect_total):
+            return 0.0
+        if not primary and (self.affect_primary or not self.affect_total):
+            return 0.0
+        if not self.affect_total:
+            return 0.0
+
+        return float(self.levels) * self.increase(char_type) / float(increase_levels)
     
     @staticmethod
     def check_figured(obj: 'GenericObject', char_type: int) -> bool:

@@ -376,7 +376,7 @@ class CostMixin:
         if active_hero is not None and hasattr(active_hero, 'rules') and active_hero.rules is not None:
             n = active_hero.rules.ap_per_end
             if self.xmlid == "STR":
-                n = active_hero.rules.str_ap_per_end
+                n = active_hero.rules.get_str_ap_per_end(active_hero)
         if not self.uses_end:
             return 0
         return n
@@ -387,7 +387,7 @@ class CostMixin:
         if active_hero is not None and hasattr(active_hero, 'rules') and active_hero.rules is not None:
             n = active_hero.rules.ap_per_end
             if self.xmlid == "STR":
-                n = active_hero.rules.str_ap_per_end
+                n = active_hero.rules.get_str_ap_per_end(active_hero)
         if not self.uses_end:
             n = 0
         return n

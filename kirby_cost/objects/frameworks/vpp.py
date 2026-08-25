@@ -302,6 +302,18 @@ class VariablePowerPool(List):
         
         return output
     
+
+    @property
+    def display(self) -> str:
+        """``VariablePowerPool.getDisplay`` (VariablePowerPool.java:206-208).
+
+        A literal, overriding whatever the file or template said. A Multipower
+        has no such override, which is why HD prints "Variable Power Pool" on
+        a pool's row and nothing at all on a multipower's -- both files carry
+        XMLID="GENERIC_OBJECT" and differ only in their tag.
+        """
+        return "Variable Power Pool"
+
     def column2_suffix(self, obj: GenericObject) -> str:
         """Get suffix showing real cost."""
         real_cost = obj.real_cost_pre_list

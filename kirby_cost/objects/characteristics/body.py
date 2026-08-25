@@ -21,8 +21,15 @@ class Body(Characteristic, xmlid="BODY"):
         return int(CharacteristicType.BODY)
     
     def roll(self, active_hero=None):
-        """Get roll (empty for 6E)."""
-        # In 6E, BODY doesn't have a roll
-        # This would need to check the template version
+        """Get roll. Body.java:43-49 -- EMPTY in 6E.
+
+        The edition check was left unfinished ("this would need to check the
+        template version"), so this returned the base roll unconditionally and
+        BODY printed "12-" where HD prints nothing. `is_6e()` is the check the
+        rest of the engine uses.
+        """
+        from kirby_cost.objects.base import is_6e
+        if is_6e():
+            return ""
         return super().roll(active_hero)
 

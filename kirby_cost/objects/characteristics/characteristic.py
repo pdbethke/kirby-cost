@@ -632,14 +632,29 @@ class Characteristic(CharAffectingObject):
         
         if active_hero is not None and active_hero.rules is not None:
             n = active_hero.rules.ap_per_end
-            # STR uses different AP per END
+            # RESTORED 2026-08-24 after being removed the same day. Java has
+            # this special-case in the BASE getAPPerEnd
+            # (GenericObject.java:1344-1346), so removing it was unfaithful --
+            # it was taken out because it made two of three corpus characters
+            # match instead of one, which is scoring, not evidence.
+            #
+            # The contradiction it was meant to resolve is REAL and remains
+            # open: with this line, Bokor's STR END is 15/5 = 3 and matches
+            # HD exactly, while Ravel comes out 2 against HD's 1 and Power Lad
+            # 8 against 4 -- both exactly double. Without it, those two match
+            # and Bokor is a third of what HD says. All three files carry an
+            # identical <STR> element bar its LEVELS, none has a <RULES>
+            # element or an APPEREND override, the template says
+            # USESEND="Yes", and none has a COSTSEND or REDUCEDEND modifier.
+            # The only structural difference found is that Bokor alone has
+            # Growth. See tests/test_hde_characteristics.py.
             if self.xmlid == "STR":
-                n = active_hero.rules.str_ap_per_end
-        
+                n = active_hero.rules.get_str_ap_per_end(active_hero)
+
         # Check if this uses END
         if not self.uses_end:
             return 0
-        
+
         return n
     
     def orig_ap_per_end(self, active_hero: Optional['Hero'] = None) -> int:
@@ -654,7 +669,7 @@ class Characteristic(CharAffectingObject):
             n = active_hero.rules.ap_per_end
             # STR uses different AP per END
             if self.xmlid == "STR":
-                n = active_hero.rules.str_ap_per_end
+                n = active_hero.rules.get_str_ap_per_end(active_hero)
         
         # Check if this uses END
         if not self.uses_end:
@@ -1093,14 +1108,18 @@ class Characteristic(CharAffectingObject):
 
     @property
     def end_usage(self) -> int:
+        """``GenericObject.getEndUsage``, which Java's Characteristic inherits.
+
+        Was a stub returning 0 outright -- "most characteristics don't cost
+        END... this would be overridden for movement characteristics". Java
+        defines no override at all: Characteristic.java only CALLS
+        getEndUsage (:1042, :1062), so it gets the base algorithm. The stub
+        meant a Strength or Leaping bought as a POWER printed no END where
+        Hero Designer prints 3, 8 or 4.
         """
-        Get END usage for this characteristic.
-        
-        For most characteristics, this is 0 unless they're purchased as powers.
-        """
-        # Most characteristics don't cost END
-        # This would be overridden for movement characteristics
-        return 0
+        from kirby_cost.core.context import EngineContext
+        from kirby_cost.objects.base import compute_end_usage
+        return compute_end_usage(self, self.ap_per_end(EngineContext.active_hero()))
     
     def figured_base_value(self, char_type: int, active_hero: Optional['Hero'] = None) -> float:
         """

@@ -34,7 +34,10 @@ class Rules:
         
         # END settings
         self.ap_per_end: int = 10  # 6E default
-        self.str_ap_per_end: int = 5  # STR END cost
+        #: NOT the figure to read -- use `get_str_ap_per_end()`. This is the
+        #: stored value, which Rules.java defaults to 10 (:858, :861, :1951);
+        #: the 5 applies only under a heroic template. It was hardcoded 5 here.
+        self.str_ap_per_end: int = 10
         
         # Equipment
         self.equipment_allowed: bool = True
@@ -55,6 +58,11 @@ class Rules:
         self.link_across_framework: int = Rules.WARN
         self.special_type_in_framework: int = Rules.WARN
         
+        # Damage differentiation. Rules.java:1992 (useDefault) and
+        # Rules.java:1237-1242 (parse) both settle on False unless the RULES
+        # element says "Y" -- HD's own default is off.
+        self.use_increased_damage_differentiation_flag: bool = False
+
         # Other settings
         self._multiplier_allowed: bool = True
         self.standard_effect_allowed: bool = True
@@ -83,7 +91,7 @@ class Rules:
         self.base_points = 400
         self.disad_points = 75
         self.ap_per_end = 10
-        self.str_ap_per_end = 5
+        self.str_ap_per_end = 10   # Rules.java:1951
         self.equipment_allowed = True
         self.ncm_selected = False
         self._multiplier_allowed = True
@@ -125,6 +133,49 @@ class Rules:
     def use_languages_as_int_skill(self) -> bool:
         """Check if languages use INT-based skill rolls (6E: False)."""
         return False
+
+    def get_str_ap_per_end(self, active_hero=None) -> int:
+        """Active Points per END for STR. ``Rules.getSTRAPPerEND`` (:616-634).
+
+        **5 under a heroic template, 10 otherwise** -- and only when the rules
+        are otherwise default. Java tests the active template's id, and every
+        parent template's id, for "Heroic" or "Normal".
+
+        The case matters: `indexOf("Heroic")` does NOT match
+        "Superheroic6E", whose h is lower case. So Bokor on Heroic6E pays
+        STR/5 and Ravel on Superheroic6E pays STR/10 -- which is exactly what
+        Hero Designer prints for them, and what this engine got wrong for
+        every superheroic character by storing a flat 5.
+        """
+        template_id = ""
+        if active_hero is not None:
+            template_id = (getattr(active_hero, "original_template_id", None)
+                           or getattr(active_hero, "template_name", "") or "")
+        if "Heroic" in template_id or "Normal" in template_id:
+            return 5
+        return self.str_ap_per_end
+
+    def use_increased_damage_differentiation(self) -> bool:
+        """Whether leftover STR resolves to half-dice and pips.
+
+        ``Rules.useIncreasedDamageDifferentiation()`` (Rules.java:2018).
+
+        With it OFF, a STR that is not a multiple of 5 simply loses the
+        remainder. With it ON, a remainder of 3 becomes a half-die and 4
+        becomes the next die less one -- see
+        ``Strength.hth_damage_string``, whose ON branch this makes reachable
+        for the first time.
+
+        Java parses it from the character's RULES element and defaults to
+        False when the element is absent or does not begin with "Y"
+        (Rules.java:1237-1242); ``useDefault()`` sets the same (Rules.java:1992).
+
+        THIS METHOD DID NOT EXIST until 2026-08-24, and
+        ``Strength.hth_damage_string`` -- its only caller -- raised
+        AttributeError every time it was reached. Nothing reached it, because
+        nothing ever instantiated Strength.
+        """
+        return self.use_increased_damage_differentiation_flag
 
     @property
     def rules_xml(self):

@@ -465,6 +465,13 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
                     chosen._selected = True
                     chosen._display_in_string = opt.display_in_string
                     chosen._levels = opt.levels
+                    # LEVEL VALUE too. Java reads it straight off the option
+                    # -- `mod.getSelectedOption().getLevelValue()` is how
+                    # Increased Endurance multiplies END (GenericObject.java:
+                    # 1824-1830) -- and leaving it at the constructor's 0.0
+                    # made a "2X" option multiply by nothing. Power Lad's STR
+                    # slot reported 1 END where Hero Designer prints 8.
+                    chosen._level_value = opt.level_value
                     chosen.parent = self
                     self._selected_option = chosen
 
@@ -566,6 +573,18 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         # subclass reads, and suppressing the template for an attribute that
         # was never loaded would leave the field at its constructor default.
         stated = self._stated_and_declared()
+
+        # TYPES come from the TEMPLATE. An object's own element rarely states
+        # them -- Main6E declares `<DETECT ...><TYPE>SPECIAL</TYPE>
+        # <TYPE>SENSORY</TYPE>` and the .hdc says nothing -- so reading only
+        # the document left every loaded object with an EMPTY type list.
+        # HTMLWriter.filterByType (:212-227) branches on exactly this, which
+        # is why an .hde export never printed `sensory_power: true`.
+        # Appended, not assigned: a document that does state a type keeps it.
+        for declared in tmpl.types or ():
+            if declared and declared not in self._types:
+                self._types.append(declared)
+
         if tmpl.uses_end and "END" not in stated:
             self.uses_end = True
         if tmpl.duration and not self._duration and "DURATION" not in stated:
@@ -678,8 +697,25 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
 
     @property
     def display(self) -> str:
-        """Get the display string."""
-        return self._display
+        """``GenericObject.getDisplay`` (GenericObject.java:1631-1656).
+
+        Substitutes a `[LVL]` placeholder with the level count, which a
+        template uses to name a power after what was bought: Unluck is
+        declared `DISPLAY="Unluck: [LVL]d6"` and prints as "Unluck: 1d6".
+        Returning the raw field left the placeholder in the output.
+
+        `level_power` raises rather than multiplies where a template says so,
+        matching Java, and the count is thousand-separated as NumberFormat
+        does.
+        """
+        display = self._display or ""
+        marker = display.upper().find("[LVL]")
+        if marker < 0:
+            return display
+        levels = self.levels
+        if getattr(self, "_level_power", 1) != 1:
+            levels = int(self._level_power ** self.levels)
+        return f"{display[:marker]}{levels:,}{display[marker + 5:]}"
 
     @display.setter
     def display(self, value: str) -> None:
@@ -844,6 +880,34 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
                 return 0
             return -1
         return 0
+
+    @property
+    def document_xmlid(self) -> str:
+        """The XMLID the DOCUMENT stated, which is not always `xmlid`.
+
+        HD's `getXMLID()` returns whatever the file said. This engine
+        overrides `xmlid` on the framework classes -- a Multipower reports
+        "MULTIPOWER" -- because dispatch and serialisation key on it, but the
+        file itself says `<MULTIPOWER XMLID="GENERIC_OBJECT">` and an exporter
+        reproducing HD must print GENERIC_OBJECT.
+
+        The value is already kept for round-trip (`_source_xmlid`, written
+        back by serialize.py:219); this only gives it a name consumers may
+        use.
+        """
+        return getattr(self, "_source_xmlid", "") or self.xmlid or ""
+
+    @property
+    def column3_output(self) -> str:
+        """The purchase list's third column -- END usage when there is any.
+
+        ``GenericObject.getColumn3Output`` (GenericObject.java:1526). Empty,
+        not "0", when the object costs no END. `Power` overrides this with a
+        three-way rule and `List` with a blank; both matter to the .hde
+        export, which had no base to inherit from at all before this.
+        """
+        usage = self.end_usage
+        return str(usage) if usage > 0 else ""
 
     @property
     def end_usage(self) -> int:
@@ -1274,9 +1338,18 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         if name:
             self._name = name
 
-        # Ensure display always has a usable value (fallback to name)
-        if not self._display and self._name:
-            self._display = self._name
+        # NO fallback from display to name. `GenericObject.getDisplay()`
+        # (GenericObject.java:1631-1634) blanks an empty display and returns
+        # it; it never substitutes the name. The fallback that used to live
+        # here -- "ensure display always has a usable value" -- made a named
+        # object report its NAME as its type, so an .hde export printed
+        # "Vodou Powers - gris gris bag powders" where HD prints nothing, and
+        # a power called "Mojo Hand" reported itself where HD reports
+        # "Hand-To-Hand Attack".
+        #
+        # Removed with the full gate green: 1450 passed, 0 skipped, including
+        # the 91,221-string display-fidelity comparison and the three
+        # authored characters. Nothing depended on it.
         
         # Parse cost attributes
         basecost = XMLUtility.get_value(element, "BASECOST")
@@ -1672,3 +1745,116 @@ def is_6e() -> bool:
         return True
     tid = getattr(hero, "original_template_id", None) or "Main6E"
     return "6E" in tid
+
+
+
+def compute_end_usage(obj, ap_per_end: int) -> int:
+    """``GenericObject.getEndUsage`` (GenericObject.java:1775-1850).
+
+    Lives here, not on one subclass, because in Java it is the BASE
+    implementation and everything inherits it. This engine had it on `Power`
+    only, leaving `GenericObject` and `Characteristic` with stubs that
+    returned `self.end` or a flat 0 -- so a Strength or Leaping bought as a
+    POWER reported no END at all, where Hero Designer prints its cost.
+
+    `ap_per_end` is a parameter because the callers disagree on how to obtain
+    it: a Characteristic's depends on the character's template (the heroic STR
+    rate), a Power's on whether it uses END at all.
+    """
+    from kirby_cost.core.context import EngineContext
+    from kirby_cost.objects.base import GenericObject, option_alias
+
+    active_cost = obj.active_cost
+    end_multiplier = 1.0
+
+    # Collect all modifiers (assigned + parent list)
+    all_modifiers = list(obj.assigned_modifiers)
+    parent = obj._parent
+    if obj.main_power:
+        parent = obj.main_power.parent
+
+    if parent:
+        all_modifiers.extend(parent.assigned_modifiers)
+
+    # CHARGES modifier: No END cost
+    if GenericObject.find_object_by_id(all_modifiers, "CHARGES"):
+        ap_per_end = 0
+
+    # COSTSEND modifier
+    costs_end_mod = GenericObject.find_object_by_id(all_modifiers, "COSTSEND")
+    if costs_end_mod:
+        # Get AP per END from rules
+        active_hero = EngineContext.active_hero()
+        if active_hero and active_hero.rules:
+            ap_per_end = active_hero.rules.ap_per_end
+        if (costs_end_mod.selected_option and 
+            costs_end_mod.selected_option.xmlid == "HALFEND"):
+            end_multiplier = 0.5
+
+    # REDUCEDEND modifier
+    reduced_end_mod = GenericObject.find_object_by_id(all_modifiers, "REDUCEDEND")
+    if reduced_end_mod:
+        if (reduced_end_mod.selected_option and
+            reduced_end_mod.selected_option.xmlid == "HALFEND"):
+            end_multiplier = 0.5
+        else:
+            ap_per_end = 0  # No END cost
+        # Recalculate active cost without REDUCEDEND
+        active_cost = obj._compute_active_cost(reduced_end_mod.xmlid)
+
+    # COSTSENDONLYTOACTIVATE modifier
+    costs_only_activate_mod = GenericObject.find_object_by_id(all_modifiers, "COSTSENDONLYTOACTIVATE")
+    if costs_only_activate_mod:
+        # Recalculate active cost without this modifier
+        active_cost = obj._compute_active_cost(costs_only_activate_mod.xmlid)
+
+    # INCREASEDEND modifier
+    increased_end_mod = GenericObject.find_object_by_id(all_modifiers, "INCREASEDEND")
+    if increased_end_mod:
+        # Check for CIRCUMSTANCE adder
+        circumstance_adder = GenericObject.find_object_by_id(
+            increased_end_mod.assigned_adders, "CIRCUMSTANCE"
+        )
+        if not circumstance_adder and increased_end_mod.selected_option:
+            level_value = increased_end_mod.selected_option.level_value
+            end_multiplier = round_half_up(level_value)
+
+    # Handle Automaton defense cost multiplier
+    # (Reduces active cost for END calculation if NOSTUN automaton)
+    active_hero = EngineContext.active_hero()
+    if (obj.types and "DEFENSE" in obj.types and 
+        active_hero and active_hero.powers):
+        automaton = GenericObject.find_object_by_id(active_hero.powers, "AUTOMATON")
+        if (automaton and automaton.selected_option and
+            automaton.selected_option.xmlid.upper().startswith("NOSTUN")):
+            # Divide active cost by defense multiplier for END calculation
+            defense_mult = getattr(automaton, 'get_defense_cost_multiplier', lambda: 1)()
+            if defense_mult != 0:
+                active_cost = active_cost / float(defense_mult)
+
+    # Calculate base END cost
+    end_cost = 0.0
+    if ap_per_end != 0:
+        end_cost = active_cost / float(ap_per_end)
+
+    # Minimum 1 END if active cost > 0 and we have an AP per END
+    if round_half_down(end_cost) == 0 and active_cost > 0.0 and ap_per_end != 0:
+        end_cost = 1.0
+
+    # Round before applying multiplier
+    end_cost = round_half_down(end_cost)
+
+    # Apply multiplier
+    end_cost = end_cost * end_multiplier
+
+    # Minimum 1 END after multiplier if active cost > 0
+    if round_half_down(end_cost) == 0 and active_cost > 0.0 and ap_per_end != 0:
+        end_cost = 1.0
+
+    # Ensure non-negative
+    if end_cost < 0.0:
+        end_cost = 0.0
+
+    # Store and return the END cost
+    obj.end = int(round_half_down(end_cost))
+    return obj.end

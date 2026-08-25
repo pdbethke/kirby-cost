@@ -12,6 +12,7 @@ from kirby_cost.objects.char_affecting import CharAffectingObject
 from kirby_cost.objects.base import GenericObject
 from kirby_cost.util.constants import CharacteristicType
 from kirby_cost.util.rounder import round_half_up
+from kirby_cost.objects.characteristics.characteristic import _active_hero
 
 if TYPE_CHECKING:
     from kirby_cost.model.hero import Hero
@@ -313,7 +314,12 @@ class DefenseCharacteristic(Characteristic):
                 if isinstance(item, Power):
                     char_obj = item
                     if (char_obj.increase_levels(char_type) <= 0 or
-                        not char_obj.resistant_defenses() or
+                        # NOT a call. `Power.__init__` assigns
+                        # `self.resistant_defenses = False`, which SHADOWS the
+                        # method of the same name declared below it, so the
+                        # attribute is what every instance carries. Calling it
+                        # raised "'bool' object is not callable".
+                        not char_obj.resistant_defenses or
                         (not char_obj.affect_primary and primary) or
                         not char_obj.affect_total):
                         continue
@@ -359,7 +365,10 @@ class DefenseCharacteristic(Characteristic):
         from kirby_cost.objects.talents.combat_luck import CombatLuck
 
         super()._calc_secondary_value(active_hero)
-        d = self.get_secondary_value()
+        # `self.secondary_value`, NOT `self.get_secondary_value()`. The getter
+        # calls THIS method, so reading through it re-entered here forever.
+        # super() has just assigned the field, which is the value wanted.
+        d = self.secondary_value
 
         if active_hero is not None:
             # Check talents for CombatLuck (secondary)

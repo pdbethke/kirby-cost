@@ -37,6 +37,13 @@ class ForceField(Power, xmlid="FORCEFIELD"):
         self.xmlid = ForceField.XMLID
         self._duration = "CONSTANT"
         self.can_affect_primary = True
+        # ForceField.java:274-277 overrides resistantDefenses() -> true. In 6E
+        # this power IS "Resistant Protection", so every point of it is
+        # resistant. Power.__init__ defaults the flag False and nothing here
+        # raised it, so DefenseCharacteristic.calc_resistant_total skipped the
+        # power entirely: Bokor's r_pd read 0 where HD says 10. Armor already
+        # sets this.
+        self.resistant_defenses = True
         self.pd_levels: int = 0
         self.ed_levels: int = 0
         self.md_levels: int = 0
@@ -198,3 +205,33 @@ class ForceField(Power, xmlid="FORCEFIELD"):
     
     
 
+    # ── Characteristic contribution ────────────────────────────────────
+    #
+    # ForceField.java:161-253 overrides getPdIncrease/getEdIncrease and their
+    # *IncreaseLevels. Without them this power contributes NOTHING to the
+    # PD/ED characteristic totals: DefenseCharacteristic._calc_primary_value
+    # reaches a power through increase()/increase_levels(), and the base
+    # class answers 0. Bokor's Resistant Protection (10 PD/10 ED) left his
+    # PD reading 2 instead of 12.
+    #
+    # Overriding the DISPATCH rather than declaring `pd_increase` properties:
+    # CharAffectingObject.__init__ assigns `self.pd_increase = 0.0` as a plain
+    # attribute, so a read-only property on the subclass breaks construction.
+    #
+    # The levels figure is `self.levels` -- the COMBINED PD+ED levels -- not
+    # pd_levels, matching getPdIncreaseLevels() -> getLevels(). increase_value
+    # scales increase/increase_levels by levels, so 10/20 * 20 = 10.
+
+    def increase(self, char_type: int) -> float:
+        from kirby_cost.util.constants import CharacteristicType
+        if char_type == CharacteristicType.PD:
+            return float(self.pd_levels)
+        if char_type == CharacteristicType.ED:
+            return float(self.ed_levels)
+        return super().increase(char_type)
+
+    def increase_levels(self, char_type: int) -> int:
+        from kirby_cost.util.constants import CharacteristicType
+        if char_type in (CharacteristicType.PD, CharacteristicType.ED):
+            return self.levels
+        return super().increase_levels(char_type)
