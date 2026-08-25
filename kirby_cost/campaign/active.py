@@ -20,8 +20,14 @@ from kirby_cost.core.context import EngineContext
 
 
 @contextmanager
-def campaign_rules(rules: Optional["CampaignRules"]):
-    """Run a block with *rules* active, restoring the previous value after."""
+def use_campaign_rules(rules: Optional["CampaignRules"]):
+    """Run a block with *rules* active, restoring the previous value after.
+
+    Named `use_` rather than plainly `campaign_rules` because the latter
+    collides with `EngineContext.campaign_rules()`, the GETTER -- and a module
+    that needs both (tests/test_campaign_active.py does) ends up importing two
+    different things under one name.
+    """
     previous = EngineContext.campaign_rules()
     EngineContext.set_campaign_rules(rules)
     try:

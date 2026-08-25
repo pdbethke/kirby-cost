@@ -317,8 +317,6 @@ def make_adder(
 def provider():
     """The configured HDT provider, or skip. Rules validate against a real
     template, so authoring them needs one resolvable."""
-    import os
-    import pytest
     from kirby_cost.template.hdt_provider import HDTTemplateProvider
     if not os.environ.get("KIRBY_COST_HDT"):
         pytest.skip("KIRBY_COST_HDT is not set")

@@ -67,17 +67,20 @@ class EngineContext:
     def campaign_rules(cls) -> Optional['CampaignRules']:
         """The active campaign's rule overrides, or None.
 
-        DELIBERATELY separate from `active_template`. That slot has nine
+        DELIBERATELY separate from `active_template`. That slot has EIGHT
         readers whose branches were never finished -- they only ever ran their
-        None side -- so populating it would switch nine stubs on at once. See
-        the campaign-rule-overrides spec, section 7.
+        None side -- so populating it would switch eight stubs on at once
+        (counted 2026-08-25: continuous, nonpersistent, norangemodifier,
+        persistent, disadvantage, combat_sense, simulate_death,
+        universal_translator; base.py:1814 mentions the slot in prose and does
+        not read it). See the campaign-rule-overrides spec, section 7.
         """
         return cls.get_instance()._campaign_rules
 
     @classmethod
     def set_campaign_rules(cls, rules: Optional['CampaignRules']) -> None:
         """Set the active campaign's rule overrides. Prefer the
-        `kirby_cost.campaign.campaign_rules` context manager, which restores
+        `kirby_cost.campaign.use_campaign_rules` context manager, which restores
         the previous value."""
         cls.get_instance()._campaign_rules = rules
 
