@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from kirby_cost.model.hero import Hero
     from kirby_cost.core.preferences import Preferences
     from kirby_cost.core.template import Template
+    from kirby_cost.campaign.rules import CampaignRules
 
 
 class EngineContext:
@@ -24,6 +25,7 @@ class EngineContext:
     _active_hero: Optional['Hero'] = None
     _active_template: Optional['Template'] = None
     _preferences: Optional['Preferences'] = None
+    _campaign_rules: Optional['CampaignRules'] = None
     
     def __init__(self):
         """Initialize EngineContext instance."""
@@ -60,7 +62,28 @@ class EngineContext:
         """Set the currently active template."""
         instance = cls.get_instance()
         instance._active_template = template
-    
+
+    @classmethod
+    def campaign_rules(cls) -> Optional['CampaignRules']:
+        """The active campaign's rule overrides, or None.
+
+        DELIBERATELY separate from `active_template`. That slot has EIGHT
+        readers whose branches were never finished -- they only ever ran their
+        None side -- so populating it would switch eight stubs on at once
+        (counted 2026-08-25: continuous, nonpersistent, norangemodifier,
+        persistent, disadvantage, combat_sense, simulate_death,
+        universal_translator; base.py:1814 mentions the slot in prose and does
+        not read it). See the campaign-rule-overrides spec, section 7.
+        """
+        return cls.get_instance()._campaign_rules
+
+    @classmethod
+    def set_campaign_rules(cls, rules: Optional['CampaignRules']) -> None:
+        """Set the active campaign's rule overrides. Prefer the
+        `kirby_cost.campaign.use_campaign_rules` context manager, which restores
+        the previous value."""
+        cls.get_instance()._campaign_rules = rules
+
     @classmethod
     def prefs(cls) -> 'Preferences':
         """Get preferences."""

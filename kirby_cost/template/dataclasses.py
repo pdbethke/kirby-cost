@@ -114,6 +114,11 @@ class TemplateData:
     does_body: Optional[bool] = None
     does_damage: Optional[bool] = None
     does_knockback: Optional[bool] = None
+    #: Field names this campaign forced, set by the provider when a
+    #: CampaignRules is active. `apply_template` reads it to let a campaign
+    #: outrank a value the character's own .hdc stated -- a house rule a
+    #: character can be exempt from is not a rule.
+    campaign_forced: frozenset = frozenset()
     uses_end: bool = False
     is_power: bool = False
     class_name: str = ""

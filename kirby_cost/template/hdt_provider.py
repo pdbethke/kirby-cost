@@ -716,11 +716,21 @@ class HDTTemplateProvider:
 
         None means "custom maneuver": Java builds one from the HDC element
         alone when no template maneuver matches the display.
+
+        NOT campaign-patched, deliberately. Template maneuvers carry no XMLID
+        (DISPLAY is their sole identity), so this index is keyed by display.
+        `CampaignRules.set()` therefore REFUSES "MANEUVER" outright: the rule
+        would find nothing on the template side, and even if it did, all 53
+        HDC maneuvers parse as XMLID="MANEUVER", so patching would rewrite all
+        53 at once. A rule keyed by maneuver display is a real feature, not this.
         """
         return self._maneuvers.get(display)
 
     def get_maneuver_map(self) -> dict[str, TemplateData]:
-        """display -> TemplateData for every maneuver the template defines."""
+        """display -> TemplateData for every maneuver the template defines.
+
+        Unpatched, for the reason `get_maneuver` gives.
+        """
         return self._maneuvers
 
     def get_nested_modifier(self, owner_xmlid: str,
@@ -731,8 +741,19 @@ class HDTTemplateProvider:
         does not have. Falling back to the global definition costs and prints
         the wrong thing; taking the nested one for everybody costs and prints
         the wrong thing for everybody else. It has to be asked per owner.
+
+        Campaign-patched on the way out, like `get_template_data`: this is a
+        SECOND door onto TemplateData, and `hdc_loader._apply_template_to_
+        modifier` tries it FIRST, falling back to the flat index only when it
+        returns None. Main6E holds 196 nested definitions across 59 owner
+        powers, every one of those xmlids also in the flat index -- so a rule
+        on COSTSEND validated fine and then reached every power EXCEPT the 59
+        that define it themselves. Keyed by the MODIFIER's xmlid, which is
+        what a GM writes the rule against; the owner only chooses which
+        definition is being patched.
         """
-        return self._nested_mods.get((owner_xmlid, mod_xmlid))
+        return _with_campaign_overrides(
+            mod_xmlid, self._nested_mods.get((owner_xmlid, mod_xmlid)))
 
     def get_template_data(self, xmlid: str,
                           section: str | None = None) -> Optional[TemplateData]:
@@ -744,14 +765,39 @@ class HDTTemplateProvider:
         sections fall through to the flat first-wins index, which is right
         for every other xmlid in the template.
         """
+        found = None
         if section is not None:
             found = self._by_section.get((section, xmlid))
-            if found is not None:
-                return found
-        return self._index.get(xmlid)
+        if found is None:
+            found = self._index.get(xmlid)
+        return _with_campaign_overrides(xmlid, found)
 
     def __len__(self) -> int:
         return len(self._index)
 
     def __repr__(self) -> str:  # pragma: no cover - debugging aid
         return f"HDTTemplateProvider({self.path!s}, {len(self._index)} objects)"
+
+
+def _with_campaign_overrides(xmlid: str, tmpl):
+    """Apply the active campaign's rules to *tmpl*, or return it unchanged.
+
+    A COPY, always. The entries handed out here come from `self._index`, which
+    every later caller shares -- patching one in place would leak a campaign's
+    rules into the next character loaded, and `TemplateData` is frozen
+    precisely so that cannot happen by accident.
+    """
+    if tmpl is None:
+        return None
+    # Deferred, not circular: core.context has no runtime edge back into
+    # template today. Kept local anyway so hdt_provider doesn't pick up a
+    # module-level dependency on core.context that nothing currently forces.
+    from kirby_cost.core.context import EngineContext
+    rules = EngineContext.campaign_rules()
+    if not rules:
+        return tmpl
+    forced = rules.fields_for(xmlid)
+    if not forced:
+        return tmpl
+    changes = {field: rules.get(xmlid, field) for field in forced}
+    return replace(tmpl, campaign_forced=frozenset(forced), **changes)
