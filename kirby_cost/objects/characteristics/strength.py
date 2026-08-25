@@ -53,6 +53,33 @@ class Strength(Characteristic, xmlid="STR"):
             d = d / math.pow(2.0, abs(d2))
         return d
     
+    def damage_dice(self, active_hero: Optional['Hero'] = None,
+                    *, primary: bool = True) -> tuple:
+        """This STR's Hand-to-Hand damage as NUMBERS: (full d6, half d6).
+
+        The same arithmetic `hth_damage_string` formats -- 5 STR to the die,
+        and a remainder above 2 buying a half-die -- exposed so a consumer
+        does not have to re-derive it or parse the string back.
+
+        It exists because a consumer DID re-derive it. kirby-combat computed
+        `STR // 5`, which drops the half-die: the two disagreed on 22 of 56
+        STR values, and 9 of 107 corpus villains were rolled short. STR 13 is
+        2 1/2d6 here and was 2d6 there.
+
+        Reported for the primary value by default; pass primary=False for the
+        secondary. NOTE this describes the NON-differentiated form, which is
+        HD's default; with Increased Damage Differentiation on, a remainder
+        can buy "d6-1" or a pip, which a (dice, half) pair cannot express --
+        ask `hth_damage_string` for those.
+        """
+        value = (self.get_primary_value(active_hero) if primary
+                 else self.get_secondary_value(active_hero))
+        dice = (value - float(int(value) % 5)) / 5.0
+        if dice < 0.0:
+            dice = 0.0
+        remainder = int(value) % 5
+        return round_half_up(dice), remainder > 2
+
     def hth_damage_string(self, active_hero: Optional['Hero'] = None) -> str:
         """Get Hand-to-Hand damage string."""
         primary = self.get_primary_value(active_hero)
