@@ -573,6 +573,19 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         # subclass reads, and suppressing the template for an attribute that
         # was never loaded would leave the field at its constructor default.
         stated = self._stated_and_declared()
+        # A campaign's rules outrank the document. Everything below is guarded
+        # on "the source did not state this", which is right for a template
+        # default and wrong for a house rule: a rule a character can be exempt
+        # from is not a rule, and the corpus states BASECOST 371 times. So an
+        # attribute the campaign forced is removed from the guard, per
+        # attribute -- forcing one does not free the others.
+        #
+        # The XML name is the field name upper-cased with underscores removed.
+        # That is HD's own convention, used verbatim by the *_increase family
+        # further down this method, not a coincidence worth a lookup table.
+        forced = getattr(tmpl, "campaign_forced", frozenset())
+        if forced:
+            stated = stated - {f.upper().replace("_", "") for f in forced}
 
         # TYPES come from the TEMPLATE. An object's own element rarely states
         # them -- Main6E declares `<DETECT ...><TYPE>SPECIAL</TYPE>
