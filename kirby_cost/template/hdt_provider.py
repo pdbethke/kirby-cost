@@ -716,11 +716,21 @@ class HDTTemplateProvider:
 
         None means "custom maneuver": Java builds one from the HDC element
         alone when no template maneuver matches the display.
+
+        NOT campaign-patched, deliberately. All 53 template maneuvers carry
+        XMLID="MANEUVER" -- that is why this index is keyed by display at all
+        -- so patching here by xmlid would apply one MANEUVER rule to all 53
+        at once. `CampaignRules.set()` therefore REFUSES "MANEUVER" outright,
+        so there is no accepted rule for this door to drop. A rule keyed by
+        maneuver display is a real feature; it is not this one.
         """
         return self._maneuvers.get(display)
 
     def get_maneuver_map(self) -> dict[str, TemplateData]:
-        """display -> TemplateData for every maneuver the template defines."""
+        """display -> TemplateData for every maneuver the template defines.
+
+        Unpatched, for the reason `get_maneuver` gives.
+        """
         return self._maneuvers
 
     def get_nested_modifier(self, owner_xmlid: str,
@@ -731,8 +741,19 @@ class HDTTemplateProvider:
         does not have. Falling back to the global definition costs and prints
         the wrong thing; taking the nested one for everybody costs and prints
         the wrong thing for everybody else. It has to be asked per owner.
+
+        Campaign-patched on the way out, like `get_template_data`: this is a
+        SECOND door onto TemplateData, and `hdc_loader._apply_template_to_
+        modifier` tries it FIRST, falling back to the flat index only when it
+        returns None. Main6E holds 196 nested definitions across 59 owner
+        powers, every one of those xmlids also in the flat index -- so a rule
+        on COSTSEND validated fine and then reached every power EXCEPT the 59
+        that define it themselves. Keyed by the MODIFIER's xmlid, which is
+        what a GM writes the rule against; the owner only chooses which
+        definition is being patched.
         """
-        return self._nested_mods.get((owner_xmlid, mod_xmlid))
+        return _with_campaign_overrides(
+            mod_xmlid, self._nested_mods.get((owner_xmlid, mod_xmlid)))
 
     def get_template_data(self, xmlid: str,
                           section: str | None = None) -> Optional[TemplateData]:

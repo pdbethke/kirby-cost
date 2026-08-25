@@ -21,10 +21,43 @@ _NOT_OVERRIDABLE = frozenset({"campaign_forced"})
 #: Fields a campaign may NOT set, and why. Derivation stays the rule so a new
 #: template fact is overridable automatically; this names the exceptions.
 #:
-#: Measured against a real character load, not assumed (task-5 brief): forcing
-#: any of these leaves the loaded object unchanged. Accepting them would mean
-#: a GM writes a rule, gets no error, and the rule silently does nothing --
-#: the exact defect this feature exists to remove.
+#: Accepting a field nothing reads would mean a GM writes a rule, gets no
+#: error, and the rule silently does nothing -- the exact defect this feature
+#: exists to remove.
+#:
+#: HOW THIS SET WAS ESTABLISHED, field by field, so a later reader knows what
+#: is measurement and what is inference. Every `TemplateData` field except
+#: `campaign_forced` was accounted for. Each entry listed below was measured
+#: INERT -- forced, and the loaded object did not change. Of the rest:
+#:
+#:   * killing, does_body, does_damage, does_knockback, defense, target,
+#:     range, uses_end: wired by `apply_template` and each one locked by a
+#:     test in tests/test_campaign_beats_hdc.py that asserts the forced value
+#:     reaches the object and outranks a document-stated one.
+#:   * level_cost: measured end to end (tests/test_campaign_cost_fields.py:
+#:     Ravel's RKA moves 45 -> 30). display, level_value, level_power,
+#:     level_multiplier, min_set, max_set: read directly by `apply_template`
+#:     (base.py:398, :487-:509, :545, :551) and by `Adder.apply_template`.
+#:   * The nine below were the ones the first pass never probed. Each was
+#:     then forced through `CampaignRules` and observed changing a real
+#:     object, on 2026-08-25:
+#:   * types      -> forcing ("PROBE",) on RKA gave Ravel's RKA `_types
+#:                   == ["PROBE"]` (base.py, the `tmpl.types` loop).
+#:   * attributes -> forcing SHOWOPTIONONLY="Yes" on PENETRATING flipped
+#:                   that modifier's `show_option_only` to True (base.py:291).
+#:   * adders     -> forcing {} emptied `_template_adder_order` on RKA.
+#:   * options    -> forcing LARGE's level_cost=77/level_multiplier=9 moved
+#:                   Bokor's GROWTH to exactly those (base.py:428).
+#:   * option_aliases -> with LARGE removed from `options`, forcing
+#:                   {"LARGE": "HUGE"} resolved GROWTH's option to HUGE.
+#:   * base_value -> forcing 42.0 on STR moved Ravel's STR `base_level`
+#:                   from 10.0 to 42.0 (hdc_loader.py:655).
+#:   * all_cost / group_cost / sense_cost -> forcing 55.0 on a sense-rate
+#:                   xmlid put 55.0 on all three of a SenseAdder
+#:                   (base.py, the sense-rate loop; hdc_loader.py:1615).
+#:
+#: The one field that is neither wired nor listed as a rule is `class_name`,
+#: below: it has ZERO reads off a `TemplateData` anywhere in `kirby_cost/`.
 _UNSUPPORTED_FIELDS = {
     # apply_template never assigns tmpl.base_cost to a non-maneuver object
     # (its only base_cost write is from an OPTION, base.py:440), and never
@@ -46,6 +79,11 @@ _UNSUPPORTED_FIELDS = {
     # Not rules. Identity and a derived predicate.
     "xmlid": "identity, not a rule",
     "is_power": "derived from the object, not settable",
+    # Parsed by hdt_provider (:323) and dataclasses (:196) and then read by
+    # NOTHING: `grep -rn class_name kirby_cost/` finds only unrelated local
+    # variables in modifier.py and behaviors/registry.py, never a read off a
+    # TemplateData. Forcing it can therefore not change any loaded object.
+    "class_name": "carried by TemplateData but read by nothing, so forcing it cannot change a loaded object",
 }
 
 #: Every field of TemplateData, DERIVED rather than listed. Adding a template
@@ -91,6 +129,35 @@ class CampaignRules:
             raise ValueError(
                 f"{field!r} is not a template field, so nothing would ever "
                 f"read it.{hint}"
+            )
+        # A rule that sets None cannot do anything. `apply_template` skips a
+        # tri-state field whose template value is None (`if stated_value is
+        # None ... continue`), which is how "the template says nothing" is
+        # spelled -- so None means ABSENCE, not "revert to the class
+        # default". That second meaning is not a capability this engine has,
+        # and accepting None would only add another accepted-and-inert path.
+        if value is None:
+            raise ValueError(
+                f"a campaign rule cannot set {field!r} to None: None means "
+                f"'the template says nothing', so the rule would be skipped "
+                f"and do nothing. Set the value you want instead. (Reverting "
+                f"a field to its class default is not a capability that "
+                f"exists today.)"
+            )
+        # Every one of the 53 template maneuvers carries XMLID="MANEUVER", so
+        # the maneuver index is keyed by DISPLAY and `hdc_loader` routes them
+        # to `get_maneuver`, never to `get_template_data`. "MANEUVER" is
+        # nonetheless IN the flat index (as Basic Strike, first wins), so the
+        # existence check below would accept this rule and it would be 100%
+        # inert. Refused here instead, before the check that would pass.
+        if xmlid.upper() == "MANEUVER":
+            raise ValueError(
+                "'MANEUVER' cannot be the subject of a campaign rule: all 53 "
+                "template maneuvers share XMLID=\"MANEUVER\" and are looked "
+                "up by their display name, so this rule would never be read "
+                "-- and applying it by xmlid would rewrite all 53 at once. "
+                "Overriding one maneuver needs a rule keyed by display, "
+                "which does not exist yet."
             )
         if self._provider.get_template_data(xmlid) is None:
             raise ValueError(

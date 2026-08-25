@@ -19,7 +19,7 @@ import dataclasses
 
 import pytest
 
-from kirby_cost.campaign import CampaignRules, campaign_rules
+from kirby_cost.campaign import CampaignRules, use_campaign_rules
 from kirby_cost.campaign.rules import (
     OVERRIDABLE_FIELDS,
     _NOT_OVERRIDABLE,
@@ -91,7 +91,7 @@ def test_forcing_level_cost_reprices_the_power(provider):
 
     rules = CampaignRules(provider=provider)
     rules.set("RKA", "level_cost", forced_level_cost)
-    with campaign_rules(rules):
+    with use_campaign_rules(rules):
         hero = HDCLoader().load_file(str(hdc))
         forced = _find(hero, "RKA")
 
@@ -131,21 +131,54 @@ def test_every_unsupported_field_is_actually_rejected(provider, field):
 
 #: field -> a plausible value of the right type, for the "still accepted"
 #: check below. The value itself doesn't matter -- only that `set()` does not
-#: raise.
+#: raise. Must cover EVERY name in `OVERRIDABLE_FIELDS`; the test below
+#: parametrises over that set rather than over this dict, so a new
+#: `TemplateData` field shows up as a failure here instead of quietly going
+#: unchecked. That was the defect in the hand-written version: it listed six
+#: of the fifteen fields then wired, and nothing noticed the other nine.
 _EFFECTIVE_FIELD_VALUES = {
     "killing": True,
+    "does_body": True,
+    "does_damage": True,
+    "does_knockback": False,
     "defense": "NORMAL",
+    "display": "House Blast",
     "level_cost": 10.0,
+    "level_value": 1.0,
+    "level_power": 1,
+    "level_multiplier": 1,
+    "min_set": True,
+    "max_set": True,
     "range": "LOS",
     "target": "DCV",
     "uses_end": True,
+    "base_value": 12.0,
+    "all_cost": 5.0,
+    "group_cost": 5.0,
+    "sense_cost": 5.0,
+    "adders": {},
+    "options": {},
+    "option_aliases": {},
+    "types": ("SPECIAL",),
+    "attributes": {"DEFENSE": "NORMAL"},
 }
 
 
-@pytest.mark.parametrize("field", sorted(_EFFECTIVE_FIELD_VALUES))
+@pytest.mark.parametrize("field", sorted(OVERRIDABLE_FIELDS))
 def test_the_effective_fields_are_still_accepted(provider, field):
-    """Guards against over-broad subtraction: these fields DO get wired into
-    the loaded object by `apply_template`, and must stay settable."""
+    """Guards against over-broad subtraction: every field NOT in
+    `_UNSUPPORTED_FIELDS` was measured to reach a loaded object (see the
+    field-by-field record in kirby_cost/campaign/rules.py), so every one of
+    them must stay settable.
+
+    Parametrised over `OVERRIDABLE_FIELDS` itself, matching its sibling
+    `test_every_unsupported_field_is_actually_rejected`: the set maintains
+    the test rather than the other way round."""
+    assert field in _EFFECTIVE_FIELD_VALUES, (
+        f"{field!r} became overridable and nobody checked it is accepted. "
+        f"Give it a plausible value above -- or, if forcing it turns out to "
+        f"change nothing, add it to _UNSUPPORTED_FIELDS with the measurement."
+    )
     rules = CampaignRules(provider=provider)
     rules.set("RKA", field, _EFFECTIVE_FIELD_VALUES[field])
 
