@@ -588,6 +588,30 @@ class Characteristic(CharAffectingObject):
         else:
             self._levels = int(round_half_down(float(self.max_val - base)))
     
+    def roll_value(self, active_hero: Optional['Hero'] = None,
+                   *, primary: bool = True) -> int:
+        """This characteristic's roll as a NUMBER: the target for 3d6.
+
+        The figure `roll` formats. 9 + value/5, and the division is ROUNDED
+        (round_half_up), not truncated -- the campaign may move both the 9 and
+        the 5 through its rules, which is why this asks the hero rather than
+        hardcoding them.
+
+        Exposed because a consumer re-derived it in the string's absence.
+        kirby-combat computed `9 + CHAR // 5` in three places, and truncation
+        is not rounding: the two disagree on 16 of 40 characteristic values.
+        Bokor's INT 13 rolls 12- here and was 11- there; Ravel's EGO 18 is 13-
+        and was 12-, making every mental attack on him a point easier than the
+        rules allow.
+        """
+        base, denominator = 9, 5.0
+        if active_hero is not None and active_hero.rules is not None:
+            base = active_hero.rules.char_roll_base
+            denominator = active_hero.rules.char_roll_denominator
+        value = (self.get_primary_value(active_hero) if primary
+                 else self.get_secondary_value(active_hero))
+        return int(base + round_half_up(value / denominator))
+
     def roll(self, active_hero: Optional['Hero'] = None) -> str:
         """Get the roll string (e.g., "11-", "12-/14-")."""
         if not self.show_roll:
@@ -603,8 +627,9 @@ class Characteristic(CharAffectingObject):
         primary = self.get_primary_value(active_hero)
         secondary = self.get_secondary_value(active_hero)
         
-        n3 = int(n + round_half_up(primary / d))
-        n2 = int(n + round_half_up(secondary / d))
+        # ONE derivation: roll() formats what roll_value computes.
+        n3 = self.roll_value(active_hero, primary=True)
+        n2 = self.roll_value(active_hero, primary=False)
         
         if n3 != n2:
             return f"{n3}- / {n2}-"
