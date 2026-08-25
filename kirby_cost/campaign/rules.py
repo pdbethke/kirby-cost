@@ -18,13 +18,37 @@ from kirby_cost.template.dataclasses import TemplateData
 #: cannot be set as an override and then silently clobbered.
 _NOT_OVERRIDABLE = frozenset({"campaign_forced"})
 
+#: Fields a campaign may NOT set, and why. Derivation stays the rule so a new
+#: template fact is overridable automatically; this names the exceptions.
+#:
+#: Measured against a real character load, not assumed (task-5 brief): forcing
+#: any of these leaves the loaded object unchanged. Accepting them would mean
+#: a GM writes a rule, gets no error, and the rule silently does nothing --
+#: the exact defect this feature exists to remove.
+_UNSUPPORTED_FIELDS = {
+    # apply_template never assigns tmpl.base_cost to a non-maneuver object
+    # (its only base_cost write is from an OPTION, base.py:440), and never
+    # reads _base_cost_from_xml. Making the template's price authoritative for
+    # every object changes how the engine costs everything and needs its own
+    # oracle-gated change. Use level_cost to re-price a power.
+    "base_cost": "not applied by apply_template; use level_cost to re-price",
+    "minimum_cost": "not applied by apply_template",
+    "max_cost": "not applied by apply_template",
+    # Gated on the object not already having a duration, which it does by the
+    # time a campaign could matter.
+    "duration": "the object already holds a duration when the template applies",
+    # Not rules. Identity and a derived predicate.
+    "xmlid": "identity, not a rule",
+    "is_power": "derived from the object, not settable",
+}
+
 #: Every field of TemplateData, DERIVED rather than listed. Adding a template
 #: fact makes it overridable automatically. A hand-maintained list here would
 #: rebuild the exact trap this work came from -- a fact parsed into one
 #: structure and dropped because a second structure had no field for it.
 OVERRIDABLE_FIELDS = frozenset(
     f.name for f in dataclasses.fields(TemplateData)
-) - _NOT_OVERRIDABLE
+) - _NOT_OVERRIDABLE - frozenset(_UNSUPPORTED_FIELDS)
 
 
 class CampaignRules:
@@ -45,6 +69,16 @@ class CampaignRules:
         self._overrides: dict[tuple[str, str], Any] = {}
 
     def set(self, xmlid: str, field: str, value: Any) -> None:
+        # Checked before the OVERRIDABLE_FIELDS membership test below, and
+        # given its own message: an unsupported field IS a template field
+        # (it's a name a GM typed correctly), so the near-miss/typo message
+        # for an unknown field would be actively misleading here.
+        if field in _UNSUPPORTED_FIELDS:
+            raise ValueError(
+                f"{field!r} is a template field, but apply_template does not "
+                f"wire it into a loaded object, so a campaign rule on it "
+                f"would never take effect: {_UNSUPPORTED_FIELDS[field]}."
+            )
         if field not in OVERRIDABLE_FIELDS:
             near = difflib.get_close_matches(field, sorted(OVERRIDABLE_FIELDS), n=3)
             hint = f" Did you mean: {', '.join(near)}?" if near else ""

@@ -13,15 +13,29 @@ def test_a_rule_is_stored_and_read_back(provider):
 
 
 def test_the_overridable_fields_come_from_templatedata_not_a_hand_list():
-    """A second list would drift. Adding a template fact must make it
+    """A hand-written list would drift. Adding a template fact must make it
     overridable automatically -- that is the defect this whole line of work
     came from: a fact parsed into one structure and dropped because another
-    had no field for it. `campaign_forced` is excluded because the provider
-    writes it, rather than a GM."""
+    had no field for it.
+
+    This pins the DERIVATION, not the exclusions. Task 5 subtracts a second,
+    documented set (`_UNSUPPORTED_FIELDS` -- fields TemplateData carries but
+    `apply_template` never wires into a loaded object) on top of
+    `campaign_forced`, so pinning the exact excluded set here would fight
+    that test-by-test. The exact expression, `_UNSUPPORTED_FIELDS` included,
+    is pinned by `tests/test_campaign_cost_fields.py`'s
+    `test_overridable_fields_is_still_derived`, which owns that contract --
+    two tests asserting one expression means one of them is noise.
+    """
     import dataclasses
     from kirby_cost.template.dataclasses import TemplateData
-    expected = frozenset(f.name for f in dataclasses.fields(TemplateData)) - {"campaign_forced"}
-    assert OVERRIDABLE_FIELDS == expected
+    all_fields = frozenset(f.name for f in dataclasses.fields(TemplateData))
+    assert OVERRIDABLE_FIELDS <= all_fields, \
+        "a name not on TemplateData means a hand-list crept in"
+    assert "killing" in OVERRIDABLE_FIELDS, \
+        "a real template fact must be overridable"
+    assert "campaign_forced" not in OVERRIDABLE_FIELDS, \
+        "provider bookkeeping is not a rule"
 
 
 def test_an_unknown_field_is_refused_at_set_time(provider):
