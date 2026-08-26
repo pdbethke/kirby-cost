@@ -9,6 +9,7 @@ and dependency invariants are enforced here.
 """
 import ast
 import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -87,25 +88,47 @@ def test_engine_imports_no_orm_or_web_framework():
     assert not offenders, "kirby-cost must be pure code:\n" + "\n".join(offenders)
 
 
-def test_engine_never_imports_kirby_api():
-    """The real defect (2026-08-15 pure-code spec) was an upward
-    dependency: the engine (kirby-cost) importing from its own consumer
-    (a consumer's own package). Duplicate table declarations were a
-    *symptom* of that upward dependency, not the invariant itself — so
-    assert the root cause directly, not just its side effect.
+#: What this layer may depend on. An ALLOWLIST, deliberately.
+#:
+#: This test used to be a denylist named after the package it forbade. That
+#: name shipped: the published 0.4.0 sdist carries 66 test files, and this
+#: function's old name announced a private, unreleased package to anyone who
+#: downloaded it. A reader does not need the import to exist — the name of a
+#: test forbidding it is enough to infer what sits above.
+#:
+#: An allowlist says this layer's position positively and names nothing above
+#: it. It is also strictly stronger: it catches a consumer nobody anticipated,
+#: which a denylist by construction cannot.
+_OWN = {"kirby_cost"}
+_DECLARED = {"typing_extensions", "lxml"}   # must match pyproject `dependencies`
+_ALLOWED = _OWN | _DECLARED | set(sys.stdlib_module_names)
 
-    `mod == "kirby"` is an exact top-level-component match (see
-    `_top_level_imports`), so `import kirby_cost...` — kirby-cost's own
-    package — can never trip this.
+
+def test_the_allowlist_is_not_vacuous():
+    """Guards the guard: if `_ALLOWED` became everything, the test below could
+    not fail."""
+    assert "lxml" in _ALLOWED and "os" in _ALLOWED
+    assert "sqlalchemy" not in _ALLOWED, "the allowlist has stopped excluding anything"
+
+
+def test_the_engine_imports_only_what_sits_below_it():
+    """The real defect (2026-08-15 pure-code spec) was an UPWARD dependency:
+    the engine importing from something that consumes it. Duplicate table
+    declarations were a symptom of that, not the invariant — so this asserts
+    the direction itself.
+
+    Relative imports are skipped: they are intra-package by definition and
+    cannot point upward.
     """
     offenders = []
     for path in _tracked_py_files():
-        for mod in _top_level_imports(path):
-            if mod == "kirby":
-                offenders.append(f"{path.relative_to(ROOT)}: imports kirby.* (a consumer package)")
+        for mod in sorted(_top_level_imports(path)):
+            if mod not in _ALLOWED:
+                offenders.append(f"{path.relative_to(ROOT)}: imports {mod!r}")
     assert not offenders, (
-        "kirby_cost/ must never import kirby.* — that is the "
-        "upward dependency this gate exists to prevent:\n" + "\n".join(offenders)
+        "kirby_cost/ may import only the standard library, itself, and its "
+        "declared dependencies. Anything else is a dependency on a layer at "
+        "or above this one:\n" + "\n".join(offenders)
     )
 
 
