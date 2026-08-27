@@ -28,9 +28,28 @@ from kirby_cost.template.hdt_provider import HDTTemplateProvider
 TEMPLATE_DIR = Path(os.environ["KIRBY_COST_HDT"]).parent if os.environ.get(
     "KIRBY_COST_HDT") else None
 
+#: Every template this module loads. The guard below gates on ALL of them,
+#: not just one: it used to check Vehicle6E.hdt alone, while
+#: test_automaton_overrides_a_characteristic_rate loads Automaton6E.hdt. A
+#: directory holding some templates but not others -- HD's own template/ has
+#: seventeen, and partial copies of it exist -- therefore passed the guard and
+#: then raised FileNotFoundError inside the test, reporting a missing input as
+#: an engine failure. That is the exact hazard corpus.py's missing_inputs()
+#: docstring names: "it reads as configured and behaves as absent."
+_TEMPLATES_USED = ("Main6E.hdt", "Vehicle6E.hdt", "Automaton6E.hdt")
+
+_ABSENT = (
+    list(_TEMPLATES_USED) if TEMPLATE_DIR is None
+    else [t for t in _TEMPLATES_USED if not (TEMPLATE_DIR / t).is_file()]
+)
+
 pytestmark = pytest.mark.skipif(
-    TEMPLATE_DIR is None or not (TEMPLATE_DIR / "Vehicle6E.hdt").is_file(),
-    reason="HERO Designer template directory not available",
+    bool(_ABSENT),
+    reason=(
+        "HERO Designer template directory not available"
+        if TEMPLATE_DIR is None
+        else f"template directory is missing {', '.join(_ABSENT)}"
+    ),
 )
 
 

@@ -25,7 +25,10 @@ import pytest
 from kirby_cost.objects.base import GenericObject
 from kirby_cost.objects.modifier import Modifier
 from kirby_cost.objects.adder import Adder
-from tests.corpus import GENERATED, INPUTS, missing_inputs
+from tests.corpus import (
+    GENERATED, INPUTS, REQUIRED_SIBLING_TEMPLATES, missing_inputs,
+    missing_sibling_templates,
+)
 
 #: Everything the suite can be given: variables to set, plus fixtures to
 #: generate. Counted together because the guard treats them alike.
@@ -168,6 +171,21 @@ def pytest_report_header(config):
             f"kirby-cost: {len(LOADED_FROM_ENV_FILE)} inputs from "
             f".env.test ({', '.join(sorted(LOADED_FROM_ENV_FILE))})"
         )
+    absent_templates = missing_sibling_templates()
+    if absent_templates:
+        # Loud, and phrased as a diagnosis rather than a warning: on a partial
+        # template directory the fidelity and oracle tests fail with display
+        # mismatches that read as engine defects. Naming the cause here is the
+        # difference between "the engine is wrong" and "the input is partial".
+        lines.append(
+            f"kirby-cost: KIRBY_COST_HDT's directory is missing "
+            f"{len(absent_templates)} of {len(REQUIRED_SIBLING_TEMPLATES)} 6E "
+            f"templates ({', '.join(absent_templates)}) -- a template resolves "
+            f"its extends chain through its siblings, so costing will fall back "
+            f"and fidelity tests will fail. Point it at a COMPLETE HERO "
+            f"Designer template/ directory."
+        )
+
     missing = missing_inputs()
     if missing:
         lines.append(

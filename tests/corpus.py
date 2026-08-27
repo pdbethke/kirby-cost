@@ -153,6 +153,39 @@ INPUTS = {
     "KIRBY_COST_AUTHORED": "a directory of the three authored .hdc characters",
 }
 
+#: The 6E templates HD ships in its own template/ directory. KIRBY_COST_HDT
+#: names ONE .hdt, but a template resolves its `extends` chain through its
+#: SIBLINGS, and the corpus declares templates other than the one named --
+#: HSEG equipment packs among them. So a directory holding Main6E.hdt but not
+#: its siblings is configured and broken at the same time: costing silently
+#: falls back, and the fidelity tests then report display-string mismatches
+#: that look like engine defects. Measured 2026-08-27: pointing the variable
+#: at a 4-template partial copy failed 5 tests across test_display_fidelity,
+#: test_export_fidelity, test_oracle_fixtures and test_template_extends_chain;
+#: pointing it at the full 17-template directory passed all 1512.
+#:
+#: Reported rather than enforced. These tests SHOULD fail on a partial
+#: directory -- their results really are wrong -- so this names the cause in
+#: the run header instead of converting a real failure into a silent skip.
+REQUIRED_SIBLING_TEMPLATES = (
+    "Main6E.hdt", "Base6E.hdt", "Heroic6E.hdt", "Superheroic6E.hdt",
+    "Vehicle6E.hdt", "Automaton6E.hdt", "AI6E.hdt", "Computer6E.hdt",
+)
+
+
+def missing_sibling_templates() -> "list[str]":
+    """Which 6E templates are absent from KIRBY_COST_HDT's own directory.
+
+    Empty when the variable is unset -- that case is already reported as a
+    missing input, and saying it twice would read as two separate problems.
+    """
+    hdt = _from_env("KIRBY_COST_HDT")
+    if hdt is None:
+        return []
+    d = Path(hdt).parent
+    return [t for t in REQUIRED_SIBLING_TEMPLATES if not (d / t).is_file()]
+
+
 _FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
 #: Inputs that are not environment variables but generated files, kept out of
