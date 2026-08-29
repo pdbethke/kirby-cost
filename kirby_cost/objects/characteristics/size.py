@@ -13,7 +13,7 @@ from kirby_cost.util.constants import CharacteristicType
 from kirby_cost.util.rounder import round_half_up, round_down
 
 if TYPE_CHECKING:
-    from kirby_cost.model.hero import Hero
+    from kirby_cost.io.hdc_loader import LoadedHero as Hero  # the live hero type
 
 
 class Size(Characteristic, xmlid="SIZE"):

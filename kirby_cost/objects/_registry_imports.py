@@ -99,6 +99,4 @@ from kirby_cost.objects.martial_arts import (  # noqa: F401
     extra_damage_classes, maneuver, ranged_damage_classes, weapon_element,
 )
 
-# ── Plugins ─────────────────────────────────────────────────────────
-from kirby_cost.plugins.powers import coughing  # noqa: F401
 # fmt: on

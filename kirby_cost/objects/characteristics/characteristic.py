@@ -17,7 +17,7 @@ from kirby_cost.objects.frameworks import is_multipower, is_elemental_control, i
 from kirby_cost.objects.modifiers.linked import is_linked
 
 if TYPE_CHECKING:
-    from kirby_cost.model.hero import Hero
+    from kirby_cost.io.hdc_loader import LoadedHero as Hero  # the live hero type
     from kirby_cost.objects.modifier import Modifier
     from kirby_cost.objects.adder import Adder
     from kirby_cost.objects.frameworks.multipower import Multipower

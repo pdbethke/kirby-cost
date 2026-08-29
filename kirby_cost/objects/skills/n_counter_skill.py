@@ -14,7 +14,7 @@ from typing import ClassVar, Optional, TYPE_CHECKING
 from kirby_cost.objects.skills.skill import Skill
 
 if TYPE_CHECKING:
-    from kirby_cost.model.hero import Hero
+    from kirby_cost.io.hdc_loader import LoadedHero as Hero  # the live hero type
 
 
 class NCounterSkill(Skill, xmlid="NAVIGATION"):

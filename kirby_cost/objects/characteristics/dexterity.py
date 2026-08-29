@@ -12,7 +12,7 @@ from kirby_cost.util.rounder import round_half_up
 from kirby_cost.objects.characteristics.characteristic import _active_hero
 
 if TYPE_CHECKING:
-    from kirby_cost.model.hero import Hero
+    from kirby_cost.io.hdc_loader import LoadedHero as Hero  # the live hero type
 
 
 class Dexterity(Characteristic, xmlid="DEX"):

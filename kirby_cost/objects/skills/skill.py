@@ -16,7 +16,7 @@ from kirby_cost.engine.xml_attrs import XMLAttr
 from kirby_cost.util.rounder import round_half_down, round_half_up
 
 if TYPE_CHECKING:
-    from kirby_cost.model.hero import Hero
+    from kirby_cost.io.hdc_loader import LoadedHero as Hero  # the live hero type
     from kirby_cost.objects.adder import Adder
     from kirby_cost.objects.modifier import Modifier
 

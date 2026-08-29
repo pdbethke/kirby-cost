@@ -10,7 +10,7 @@ from kirby_cost.objects.base import GenericObject
 from kirby_cost.util.constants import characteristic_string
 
 if TYPE_CHECKING:
-    from kirby_cost.model.hero import Hero
+    from kirby_cost.io.hdc_loader import LoadedHero as Hero  # the live hero type
 
 
 class AutofireSkills(Skill, xmlid="AUTOFIRE_SKILLS"):

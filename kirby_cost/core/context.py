@@ -8,7 +8,7 @@ Converted from Java HeroDesigner.getInstance() pattern.
 from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from kirby_cost.model.hero import Hero
+    from kirby_cost.io.hdc_loader import LoadedHero as Hero  # the live hero type
     from kirby_cost.core.preferences import Preferences
     from kirby_cost.core.template import Template
     from kirby_cost.campaign.rules import CampaignRules

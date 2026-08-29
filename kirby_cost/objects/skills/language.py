@@ -12,7 +12,7 @@ from kirby_cost.objects.list import List as FrameworkList
 from kirby_cost.util.rounder import round_half_down
 
 if TYPE_CHECKING:
-    from kirby_cost.model.hero import Hero
+    from kirby_cost.io.hdc_loader import LoadedHero as Hero  # the live hero type
     from kirby_cost.ui.dialog.generic_dialog import GenericDialog
 
 

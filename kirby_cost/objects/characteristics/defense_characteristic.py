@@ -15,7 +15,7 @@ from kirby_cost.util.rounder import round_half_up
 from kirby_cost.objects.characteristics.characteristic import _active_hero
 
 if TYPE_CHECKING:
-    from kirby_cost.model.hero import Hero
+    from kirby_cost.io.hdc_loader import LoadedHero as Hero  # the live hero type
     from kirby_cost.objects.powers.compound_power import CompoundPower
     from kirby_cost.objects.powers.power import Power
     from kirby_cost.objects.powers.damage_resistance import DamageResistance

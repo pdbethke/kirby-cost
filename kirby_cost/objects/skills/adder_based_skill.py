@@ -16,7 +16,7 @@ from kirby_cost.objects.skills.skill import Skill
 from kirby_cost.objects.base import GenericObject
 
 if TYPE_CHECKING:
-    from kirby_cost.model.hero import Hero
+    from kirby_cost.io.hdc_loader import LoadedHero as Hero  # the live hero type
 
 
 class AdderBasedSkill(Skill, xmlid="SURVIVAL"):

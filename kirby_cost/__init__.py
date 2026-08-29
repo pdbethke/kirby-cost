@@ -29,7 +29,6 @@ from kirby_cost.objects.modifier import Modifier
 from kirby_cost.objects.adder import Adder
 
 # Character model
-from kirby_cost.model.hero import Hero
 from kirby_cost.model.rules import Rules
 
 # I/O
@@ -45,7 +44,6 @@ __all__ = [
     'Modifier',
     'Adder',
     # Character model
-    'Hero',
     'Rules',
     # I/O
     'XMLUtility',
