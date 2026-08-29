@@ -415,103 +415,31 @@ class Modifier(GenericObject):
         
         xmlid = xmlid.strip().upper()
         
-        # Map XMLID to class
-        modifier_map = {
-            "ONLYTOACTIVATE": "OnlyToActivate",
-            "TIMELIMIT": "TimeLimit",
-            "HALFRANGEMODIFIER": "HalfRangeModifier",
-            "DAMAGEOVERTIME": "DamageOverTime",
-            "AVAD": "AVAD",
-            "PHYSICALMANIFESTATION": "PhysicalManifestation",
-            "PARTIALCOVERAGE": "PartialCoverage",
-            "NOTELEPORT": "CannotEscapeWithTeleport",
-            "LIMITEDARCOFFIRE": "LimitedArcOfFire",
-            "MOBILE": "Mobile",
-            "FEEDBACK": "Feedback",
-            "ONLYONAPPROPRIATETERRAIN": "OnlyOnAppropriateTerrain",
-            "DELAYEDRETURNRATE": "DelayedReturnRate",
-            "VARIABLEEFFECT": "VariableEffect",
-            "ONLYTOSTARTING": "OnlyToStarting",
-            "SELFONLY": "SelfOnly",
-            "BEAM": "Beam",
-            "CANBEMISSILEDEFLECTED": "CanBeMissileDeflected",
-            "NOKB": "NoKB",
-            "COSTSENDONLYTOACTIVATE": "CostsENDOnlyToActivate",
-            "HARDENED": "Hardened",
-            "NOTTHROUGHMINDLINK": "NotThroughMindLink",
-            "COSTSENDTOMAINTAIN": "CostsENDToMaintain",
-            "NORMALRANGE": "NormalRange",
-            "TURNMODE": "TurnMode",
-            "AFFECTSDESOLID": "AffectsDesolid",
-            "AOE": "AreaEffect",
-            "ARMORPIERCING": "ArmorPiercing",
-            "AUTOFIRE": "Autofire",
-            "CUMULATIVE": "Cumulative",
-            "DELAYEDEFFECT": "DelayedEffect",
-            "DIFFICULTTODISPEL": "DifficultToDispel",
-            "DOESBODY": "DoesBODY",
-            "DOESKB": "DoesKB",
-            "DOUBLEKB": "DoubleKB",
-            "CONTINUOUS": "Continuous",
-            "PERSISTENT": "Persistent",
-            "INHERENT": "Inherent",
-            "EXPLOSION": "Explosion",
-            "HOLEINTHEMIDDLE": "HoleInTheMiddle",
-            "INDIRECT": "Indirect",
-            "INVISIBLE": "Invisible",
-            "MEGASCALE": "Megascale",
-            "NND": "NND",
-            "PENETRATING": "Penetrating",
-            "PERSONALIMMUNITY": "PersonalImmunity",
-            "INCREASEDMAXRANGE": "IncreasedMaxRange",
-            "LOS": "LineOfSight",
-            "NORANGEMODIFIER": "NoRangeModifier",
-            "RANGED": "Ranged",
-            "REDUCEDEND": "ReducedEND",
-            "STICKY": "Sticky",
-            "TRANSDIMENSIONAL": "Transdimensional",
-            "TRIGGER": "Trigger",
-            "UNCONTROLLED": "Uncontrolled",
-            "UOO": "UsableOnOthers",
-            "VARIABLEADVANTAGE": "VariableAdvantage",
-            "VARIABLELIMITATIONS": "VariableLimitations",
-            "VISIBLE": "Visible",
-            "AFFECTSPHYSICALWORLD": "AffectsPhysicalWorld",
-            "ACV": "AlternateCombatValue",
-            "ALWAYSON": "AlwaysOn",
-            "CHARGES": "Charges",
-            "CONCENTRATION": "Concentration",
-            "INSTANT": "Instant",
-            "NONPERSISTENT": "Nonpersistent",
-            "COSTSEND": "CostsEND",
-            "INCREASEDEND": "IncreasedEND",
-            "EXTRATIME": "ExtraTime",
-            "FOCUS": "Focus",
-            "GESTURES": "Gestures",
-            "INCANTATIONS": "Incantations",
-            "LINKED": "Linked",
-            "NORANGE": "NoRange",
-            "LIMITEDRANGE": "LimitedRange",
-            "RANGEBASEDONSTR": "RangeBasedOnSTR",
-            "REDUCEDBYRANGE": "ReducedByRange",
-            "SUBJECTTORANGEMODIFIER": "SubjectToRangeModifier",
-            "REQUIRESASKILLROLL": "RequiresSkillRoll",
-            "RESTRAINABLE": "Restrainable",
-            "SIDEEFFECTS": "SideEffects",
-        }
-        
-        class_name = modifier_map.get(xmlid)
-        if class_name:
-            # Import and instantiate the specific modifier class
-            module_name = f"kirby_cost.objects.modifiers.{class_name.lower()}"
-            try:
-                module = __import__(module_name, fromlist=[class_name])
-                modifier_class = getattr(module, class_name)
-                return modifier_class(element)
-            except (ImportError, AttributeError):
-                # Fall back to base Modifier if class not found
-                pass
-        
+        # Resolve through the registry that ``__init_subclass__`` already
+        # maintains (GenericObject._registry, xmlid -> class).
+        #
+        # This used to be a hand-written ``modifier_map`` of xmlid -> class
+        # NAME, resolved by importing ``kirby_cost.objects.modifiers.<name
+        # .lower()>`` inside a bare try/except. Four classes live in
+        # underscored modules -- self_only.py, no_kb.py, does_body.py,
+        # does_kb.py -- so that import raised ModuleNotFoundError, the
+        # except swallowed it, and the loader silently built a generic
+        # Modifier for SELFONLY, NOKB, DOESBODY and DOESKB. Those are on
+        # 13 / 24 / 72 / 3 corpus characters. Their cost and display were
+        # still right (the subclasses override neither), but their
+        # ``included()`` validation was unreachable, and nothing noticed
+        # because nothing calls ``included()``.
+        #
+        # Measured 2026-08-29 before this change: the map and the registry
+        # agreed on all 77 entries that resolved, and the registry held no
+        # modifier the map lacked. The map was a second registry that could
+        # only ever drift; it is gone.
+        import kirby_cost.objects._registry_imports  # noqa: F401 -- populate
+        from kirby_cost.objects.base import GenericObject
+        cls = GenericObject._registry.get(xmlid)
+        if cls is not None and cls is not Modifier and issubclass(cls, Modifier):
+            return cls(element)
+
         # Default to base Modifier
         modifier = Modifier()
         modifier._init(element)
