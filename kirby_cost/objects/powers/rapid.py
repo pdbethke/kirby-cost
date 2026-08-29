@@ -36,10 +36,19 @@ class Rapid(SenseAdder, xmlid="RAPID"):
         if self._name and self._name.strip():
             output = f"<i>{self._name}:</i>  {output}"
         
-        # Build "with" string
+        # Build "with" string. The sense this applies to is the document's
+        # OPTION ("Sight Group"), and a sense adder's template lists no
+        # options, so `_selected_option` is None here -- exactly the bug
+        # SenseAdder.column2_output documents and fixes with `option_alias`.
+        # This override still read `_selected_option`, so "Rapid ( x10)"
+        # printed without its " with Sight Group" while every sibling kept
+        # it. Found by the kitchen-sink fixture, 2026-08-29: no corpus
+        # character had ever bought Rapid.
+        from kirby_cost.objects.base import option_alias
         with_str = " with "
-        if self._selected_option:
-            with_str += self._selected_option.alias
+        option = (option_alias(self) or "").strip()
+        if option:
+            with_str += option
             adder_str = self.adder_string
             if adder_str and adder_str.strip():
                 with_str += ", " + adder_str

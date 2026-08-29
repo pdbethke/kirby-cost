@@ -82,6 +82,17 @@ def _cases():
                 reason="KIRBY_COST_AUTHORED unset, or the character is not in it",
             ),
         )
+    # The kitchen sink is nobody's build -- it is generated, so it never
+    # skips and needs no environment. It carries every registered 6E rule
+    # that no corpus character takes (see tests/kitchen_sink.py), and its
+    # fixture is the oracle's verdict on all of them.
+    import tempfile
+    from tests.kitchen_sink import write
+    yield pytest.param(
+        "KitchenSink",
+        write(Path(tempfile.gettempdir()) / "kirby-cost-KitchenSink.hdc"),
+        FIXTURE_DIR / "KitchenSink.json",
+    )
 
 
 def _load(name, hdc, fixture):
