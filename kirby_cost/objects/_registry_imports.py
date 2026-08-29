@@ -38,9 +38,8 @@ from kirby_cost.objects.skills import (  # noqa: F401
     cramming, custom_skill, defense_maneuver, enhancer, knowledge_skill,
     language,
     mental_combat_levels, n_counter_skill, penalty_skill_levels,
-    professional_skill, rapid_attack_hth, rapid_attack_ranged,
-    skill_levels, transport_familiarity, two_weapon_fighting_hth,
-    two_weapon_fighting_ranged, weapon_familiarity,
+    professional_skill, rapid_attack_hth, skill_levels, transport_familiarity, two_weapon_fighting_hth,
+    weapon_familiarity,
 )
 
 # ── Perks ───────────────────────────────────────────────────────────
@@ -53,7 +52,7 @@ from kirby_cost.objects.perks import (  # noqa: F401
 from kirby_cost.objects.talents import (  # noqa: F401
     bump_of_direction, combat_luck, combat_sense, custom_talent, danger_sense,
     environmental_movement, lightning_reflexes_all,
-    lightning_reflexes_single, mage_sight, resistance, simulate_death,
+    resistance, simulate_death,
     speed_reading, striking_appearance, universal_translator,
 )
 

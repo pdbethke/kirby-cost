@@ -22,9 +22,7 @@ from kirby_cost.objects.skills.knowledge_skill import KnowledgeSkill
 from kirby_cost.objects.skills.language import Language
 from kirby_cost.objects.skills.autofire_skills import AutofireSkills
 from kirby_cost.objects.skills.rapid_attack_hth import RapidAttackHTH
-from kirby_cost.objects.skills.rapid_attack_ranged import RapidAttackRanged
 from kirby_cost.objects.skills.two_weapon_fighting_hth import TwoWeaponFightingHTH
-from kirby_cost.objects.skills.two_weapon_fighting_ranged import TwoWeaponFightingRanged
 
 __all__ = [
     'Skill',
@@ -46,7 +44,5 @@ __all__ = [
     'Language',
     'AutofireSkills',
     'RapidAttackHTH',
-    'RapidAttackRanged',
     'TwoWeaponFightingHTH',
-    'TwoWeaponFightingRanged',
 ]
