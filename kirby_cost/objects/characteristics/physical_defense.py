@@ -15,7 +15,6 @@ class PhysicalDefense(DefenseCharacteristic, xmlid="PD"):
     _DEFENSE_LABEL = "PD"
     _COMBAT_LUCK_INCREASE_ATTR = "pd_increase"
     _COMBAT_LUCK_INCREASE_LEVELS_ATTR = "pd_increase_levels"
-    _DAMAGE_RESISTANCE_LEVELS_ATTR = "pd_levels"
     _RESISTANCE_CHECK_INCLUDES_IS_RESISTANT = True
 
     # Backward-compatible aliases for the unified internal names

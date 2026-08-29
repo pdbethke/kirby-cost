@@ -63,7 +63,6 @@ class BehaviorRegistry:
         class_mappings = {
             'ABSORPTION': ('absorption', 'Absorption'),
             'AID': ('aid', 'Aid'),
-            'ARMOR': ('armor', 'Armor'),
             'CHANGEENVIRONMENT': ('change_environment', 'ChangeEnvironment'),
             'CLAIRSENTIENCE': ('clairsentience', 'Clairsentience'),
             'CLINGING': ('clinging', 'Clinging'),
@@ -71,7 +70,6 @@ class BehaviorRegistry:
             'CUSTOMPOWER': ('custom_power', 'CustomPower'),
             'DAMAGENEGATION': ('damage_negation', 'DamageNegation'),
             'DAMAGEREDUCTION': ('damage_reduction', 'DamageReduction'),
-            'DAMAGERESISTANCE': ('damage_resistance', 'DamageResistance'),
             'DARKNESS': ('darkness', 'Darkness'),
             'DENSITYINCREASE': ('density_increase', 'DensityIncrease'),
             'DESOLIDIFICATION': ('desolidification', 'Desolidification'),

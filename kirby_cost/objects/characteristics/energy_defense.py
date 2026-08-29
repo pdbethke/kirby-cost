@@ -15,7 +15,6 @@ class EnergyDefense(DefenseCharacteristic, xmlid="ED"):
     _DEFENSE_LABEL = "ED"
     _COMBAT_LUCK_INCREASE_ATTR = "ed_increase"
     _COMBAT_LUCK_INCREASE_LEVELS_ATTR = "ed_increase_levels"
-    _DAMAGE_RESISTANCE_LEVELS_ATTR = "ed_levels"
     _RESISTANCE_CHECK_INCLUDES_IS_RESISTANT = False
 
     # Backward-compatible aliases for the unified internal names

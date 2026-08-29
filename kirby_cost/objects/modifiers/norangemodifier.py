@@ -45,12 +45,11 @@ class NoRangeModifier(Modifier, xmlid="NORANGEMODIFIER"):
         from kirby_cost.core.context import EngineContext
         from kirby_cost.objects.frameworks.multipower import Multipower
         from kirby_cost.objects.frameworks.elemental_control import ElementalControl
-        from kirby_cost.objects.powers.find_weakness import FindWeakness
         from kirby_cost.objects.powers.teleportation import Teleportation
         template = EngineContext.active_template()
         if isinstance(generic_object, Teleportation) and template and template.is_6e():
             return ""
-        if isinstance(generic_object, (Multipower, ElementalControl, FindWeakness)):
+        if isinstance(generic_object, (Multipower, ElementalControl)):
             return ""
         if generic_object.range_value <= 0:
             return f"{self._display} can only be applied to Ranged Powers."

@@ -22,8 +22,22 @@ class TestModifierImports:
     """All 98 modifier classes import without error."""
 
     def test_all_modifiers_import(self):
+        """Every modifier class the registry knows is exported from the package.
+
+        Used to be `assert len(m.__all__) == 98` -- a count that went stale
+        the moment a class was deleted (2026-08-29, the 5E-only modifiers).
+        The property actually wanted is that no registered modifier is
+        missing from `__all__`, so that is what is asserted; the number is
+        derived, not remembered.
+        """
         import kirby_cost.objects.modifiers as m
-        assert len(m.__all__) == 98
+        import kirby_cost.objects._registry_imports  # noqa: F401 -- full registry
+        from kirby_cost.objects.base import GenericObject
+        registered = {c.__name__ for c in GenericObject._registry.values()
+                      if c.__module__.startswith("kirby_cost.objects.modifiers.")}
+        assert registered, "registry holds no modifier classes -- import order broke"
+        missing = sorted(registered - set(m.__all__))
+        assert missing == [], f"registered but not exported: {missing}"
 
     def test_key_advantages_import(self):
         from kirby_cost.objects.modifiers import (
@@ -34,7 +48,7 @@ class TestModifierImports:
 
     def test_key_limitations_import(self):
         from kirby_cost.objects.modifiers import (
-            ActivationRoll, AlwaysOn, Charges, Concentration,
+            AlwaysOn, Charges, Concentration,
             CostsEND, ExtraTime, Focus, Gestures,
             Incantations, IncreasedEND, Linked,
             RequiresSkillRoll, SideEffects, TimeLimit,
@@ -110,11 +124,6 @@ class TestSimpleLimitations:
         from kirby_cost.objects.modifiers import ExtraTime
         mod = ExtraTime()
         assert mod.XMLID == "EXTRATIME"
-
-    def test_activation_roll(self):
-        from kirby_cost.objects.modifiers import ActivationRoll
-        mod = ActivationRoll()
-        assert mod.XMLID == "ACTIVATIONROLL"
 
     def test_always_on(self):
         from kirby_cost.objects.modifiers import AlwaysOn

@@ -44,8 +44,7 @@ class HalfRangeModifier(Modifier, xmlid="HALFRANGEMODIFIER"):
         
         from kirby_cost.objects.frameworks.multipower import Multipower
         from kirby_cost.objects.frameworks.elemental_control import ElementalControl
-        from kirby_cost.objects.powers.find_weakness import FindWeakness
-        if isinstance(generic_object, (Multipower, ElementalControl, FindWeakness)):
+        if isinstance(generic_object, (Multipower, ElementalControl)):
             return ""
         if generic_object.range_value <= 0:
             return f"{self._display} can only be applied to Ranged Powers."

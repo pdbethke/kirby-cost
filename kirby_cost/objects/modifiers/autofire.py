@@ -196,15 +196,11 @@ class Autofire(Modifier, xmlid="AUTOFIRE"):
                 # Check for specific power types
                 from kirby_cost.objects.powers.drain import Drain
                 from kirby_cost.objects.powers.transform import Transform
-                from kirby_cost.objects.powers.transfer import Transfer
                 from kirby_cost.objects.powers.aid import Aid
                 from kirby_cost.objects.powers.dispel import Dispel
                 from kirby_cost.objects.powers.healing import Healing
-                from kirby_cost.objects.powers.succor import Succor
-                from kirby_cost.objects.powers.suppress import Suppress
                 
-                if isinstance(parent, (Drain, Transform, Transfer, Aid, Dispel, 
-                                      Healing, Succor, Suppress)):
+                if isinstance(parent, (Drain, Transform, Aid, Dispel, Healing)):
                     self.surcharge = True
         
         # ODDPOWER adder removes surcharge

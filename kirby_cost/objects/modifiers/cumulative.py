@@ -116,13 +116,12 @@ class Cumulative(Modifier, xmlid="CUMULATIVE"):
         if self.force_allow:
             return result
         
-        # Cannot be applied to Absorption, Aid, Healing, Succor
+        # Cannot be applied to Absorption, Aid, Healing
         from kirby_cost.objects.powers.absorption import Absorption
         from kirby_cost.objects.powers.aid import Aid
         from kirby_cost.objects.powers.healing import Healing
-        from kirby_cost.objects.powers.succor import Succor
         
-        if isinstance(generic_object, (Absorption, Aid, Healing, Succor)):
+        if isinstance(generic_object, (Absorption, Aid, Healing)):
             return (f"{generic_object.display} cannot have Cumulative applied to it, "
                    f"since it already has its own rules for how many Character points can be "
                    f"added to a particular Characteristic or Power and how and at what rate "

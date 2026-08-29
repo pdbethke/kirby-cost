@@ -18,7 +18,6 @@ if TYPE_CHECKING:
     from kirby_cost.io.hdc_loader import LoadedHero as Hero  # the live hero type
     from kirby_cost.objects.powers.compound_power import CompoundPower
     from kirby_cost.objects.powers.power import Power
-    from kirby_cost.objects.powers.damage_resistance import DamageResistance
     from kirby_cost.objects.talents.combat_luck import CombatLuck
 
 
@@ -31,7 +30,6 @@ class DefenseCharacteristic(Characteristic):
         _DEFENSE_LABEL: short label for display_notes (e.g. "PD")
         _COMBAT_LUCK_INCREASE_ATTR: CombatLuck attribute for increase (e.g. "pd_increase")
         _COMBAT_LUCK_INCREASE_LEVELS_ATTR: CombatLuck attribute for increase_levels
-        _DAMAGE_RESISTANCE_LEVELS_ATTR: DamageResistance attribute (e.g. "pd_levels")
         _RESISTANCE_CHECK_INCLUDES_IS_RESISTANT: bool - PD checks `and not self.is_resistant`
             in calc_resistance, ED does not.
     """
@@ -41,7 +39,6 @@ class DefenseCharacteristic(Characteristic):
     _DEFENSE_LABEL: str
     _COMBAT_LUCK_INCREASE_ATTR: str
     _COMBAT_LUCK_INCREASE_LEVELS_ATTR: str
-    _DAMAGE_RESISTANCE_LEVELS_ATTR: str
     _RESISTANCE_CHECK_INCLUDES_IS_RESISTANT: bool = True
 
     def __init_subclass__(cls, xmlid: str = "", **kwargs):
@@ -78,10 +75,6 @@ class DefenseCharacteristic(Characteristic):
     def _combat_luck_increase_levels(self, combat_luck: 'CombatLuck') -> int:
         """Get the defense-specific increase_levels from a CombatLuck instance."""
         return getattr(combat_luck, self._COMBAT_LUCK_INCREASE_LEVELS_ATTR)
-
-    def _damage_resistance_levels(self, dr: 'DamageResistance') -> int:
-        """Get the defense-specific levels from a DamageResistance instance."""
-        return getattr(dr, self._DAMAGE_RESISTANCE_LEVELS_ATTR)
 
     # ------------------------------------------------------------------
     # Iteration helper
@@ -168,7 +161,6 @@ class DefenseCharacteristic(Characteristic):
     def calc_defense_resistance(self, active_hero: Optional['Hero'] = None) -> None:
         """Calculate defense resistance."""
         from kirby_cost.objects.powers.compound_power import CompoundPower
-        from kirby_cost.objects.powers.damage_resistance import DamageResistance
 
         n3 = 0
 
@@ -179,10 +171,6 @@ class DefenseCharacteristic(Characteristic):
             # Check powers and equipment; for CompoundPower, process sub-powers directly
             for source in (active_hero.powers, getattr(active_hero, 'equipment', [])):
                 for item in source:
-                    if isinstance(item, DamageResistance):
-                        n3 += self._damage_resistance_levels(item)
-                        continue
-
                     if item.xmlid == self.xmlid:
                         def_char = item
                         if self.is_resistant:
@@ -206,10 +194,6 @@ class DefenseCharacteristic(Characteristic):
 
                     if isinstance(item, CompoundPower):
                         for sub_power in item.powers:
-                            if isinstance(sub_power, DamageResistance):
-                                n3 += self._damage_resistance_levels(sub_power)
-                                continue
-
                             if sub_power.xmlid != self.xmlid:
                                 continue
 

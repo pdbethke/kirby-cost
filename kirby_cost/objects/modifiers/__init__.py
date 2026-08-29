@@ -8,8 +8,6 @@ from kirby_cost.objects.modifier import Modifier
 
 # Import all specific modifier types
 from kirby_cost.objects.modifiers.avad import AVAD
-from kirby_cost.objects.modifiers.avld import AVLD
-from kirby_cost.objects.modifiers.activationroll import ActivationRoll
 from kirby_cost.objects.modifiers.affectsdesolid import AffectsDesolid
 from kirby_cost.objects.modifiers.affectsphysicalworld import AffectsPhysicalWorld
 from kirby_cost.objects.modifiers.alternatecombatvalue import AlternateCombatValue
@@ -17,7 +15,6 @@ from kirby_cost.objects.modifiers.alwayson import AlwaysOn
 from kirby_cost.objects.modifiers.areaeffect import AreaEffect
 from kirby_cost.objects.modifiers.armorpiercing import ArmorPiercing
 from kirby_cost.objects.modifiers.autofire import Autofire
-from kirby_cost.objects.modifiers.basedonecv import BasedOnECV
 from kirby_cost.objects.modifiers.beam import Beam
 from kirby_cost.objects.modifiers.canbemissiledeflected import CanBeMissileDeflected
 from kirby_cost.objects.modifiers.cannotescapewithteleport import CannotEscapeWithTeleport
@@ -29,18 +26,12 @@ from kirby_cost.objects.modifiers.costsendonlytoactivate import CostsENDOnlyToAc
 from kirby_cost.objects.modifiers.costsendtomaintain import CostsENDToMaintain
 from kirby_cost.objects.modifiers.cumulative import Cumulative
 from kirby_cost.objects.modifiers.damageovertime import DamageOverTime
-from kirby_cost.objects.modifiers.damage_shield import DamageShield
-from kirby_cost.objects.modifiers.delayedend import DelayedEND
 from kirby_cost.objects.modifiers.delayedeffect import DelayedEffect
 from kirby_cost.objects.modifiers.delayedreturnrate import DelayedReturnRate
 from kirby_cost.objects.modifiers.difficulttodispel import DifficultToDispel
 from kirby_cost.objects.modifiers.does_body import DoesBODY
 from kirby_cost.objects.modifiers.does_kb import DoesKB
-from kirby_cost.objects.modifiers.doesnotprovidementalawareness import DoesNotProvideMentalAwareness
-from kirby_cost.objects.modifiers.doubleendurancecost import DoubleEnduranceCost
 from kirby_cost.objects.modifiers.doublekb import DoubleKB
-from kirby_cost.objects.modifiers.dropped import Dropped
-from kirby_cost.objects.modifiers.endreserveorend import ENDReserveOrEND
 from kirby_cost.objects.modifiers.explosion import Explosion
 from kirby_cost.objects.modifiers.extratime import ExtraTime
 from kirby_cost.objects.modifiers.feedback import Feedback
@@ -59,7 +50,6 @@ from kirby_cost.objects.modifiers.invisible import Invisible
 from kirby_cost.objects.modifiers.limitedarcoffire import LimitedArcOfFire
 from kirby_cost.objects.modifiers.limitedrange import LimitedRange
 from kirby_cost.objects.modifiers.lineofsight import LineOfSight
-from kirby_cost.objects.modifiers.lingering import Lingering
 from kirby_cost.objects.modifiers.linked import Linked
 from kirby_cost.objects.modifiers.megascale import Megascale
 from kirby_cost.objects.modifiers.mobile import Mobile
@@ -73,7 +63,6 @@ from kirby_cost.objects.modifiers.notthroughmindlink import NotThroughMindLink
 from kirby_cost.objects.modifiers.onlyonappropriateterrain import OnlyOnAppropriateTerrain
 from kirby_cost.objects.modifiers.onlytoactivate import OnlyToActivate
 from kirby_cost.objects.modifiers.onlytostarting import OnlyToStarting
-from kirby_cost.objects.modifiers.others_only import OthersOnly
 from kirby_cost.objects.modifiers.partialcoverage import PartialCoverage
 from kirby_cost.objects.modifiers.penetrating import Penetrating
 from kirby_cost.objects.modifiers.persistent import Persistent
@@ -81,20 +70,16 @@ from kirby_cost.objects.modifiers.personalimmunity import PersonalImmunity
 from kirby_cost.objects.modifiers.physicalmanifestation import PhysicalManifestation
 from kirby_cost.objects.modifiers.rangebasedonstr import RangeBasedOnSTR
 from kirby_cost.objects.modifiers.ranged import Ranged
-from kirby_cost.objects.modifiers.realweapon import RealWeapon
 from kirby_cost.objects.modifiers.reducedbyrange import ReducedByRange
 from kirby_cost.objects.modifiers.reducedend import ReducedEND
-from kirby_cost.objects.modifiers.requiredhands import RequiredHands
 from kirby_cost.objects.modifiers.requiresskillroll import RequiresSkillRoll
 from kirby_cost.objects.modifiers.restrainable import Restrainable
 from kirby_cost.objects.modifiers.self_only import SelfOnly
-from kirby_cost.objects.modifiers.semiarmorpiercing import SemiArmorPiercing
 from kirby_cost.objects.modifiers.sideeffects import SideEffects
 from kirby_cost.objects.modifiers.sticky import Sticky
 from kirby_cost.objects.modifiers.subjecttorangemodifier import SubjectToRangeModifier
 from kirby_cost.objects.modifiers.timelimit import TimeLimit
 from kirby_cost.objects.modifiers.transdimensional import Transdimensional
-from kirby_cost.objects.modifiers.transparent import Transparent
 from kirby_cost.objects.modifiers.trigger import Trigger
 from kirby_cost.objects.modifiers.turnmode import TurnMode
 from kirby_cost.objects.modifiers.uncontrolled import Uncontrolled
@@ -102,14 +87,11 @@ from kirby_cost.objects.modifiers.usableonothers import UsableOnOthers
 from kirby_cost.objects.modifiers.variableadvantage import VariableAdvantage
 from kirby_cost.objects.modifiers.variableeffect import VariableEffect
 from kirby_cost.objects.modifiers.variablelimitations import VariableLimitations
-from kirby_cost.objects.modifiers.variabletarget import VariableTarget
 from kirby_cost.objects.modifiers.visible import Visible
 
 __all__ = [
     'Modifier',
     'AVAD',
-    'AVLD',
-    'ActivationRoll',
     'AffectsDesolid',
     'AffectsPhysicalWorld',
     'AlternateCombatValue',
@@ -117,7 +99,6 @@ __all__ = [
     'AreaEffect',
     'ArmorPiercing',
     'Autofire',
-    'BasedOnECV',
     'Beam',
     'CanBeMissileDeflected',
     'CannotEscapeWithTeleport',
@@ -129,18 +110,12 @@ __all__ = [
     'CostsENDToMaintain',
     'Cumulative',
     'DamageOverTime',
-    'DamageShield',
-    'DelayedEND',
     'DelayedEffect',
     'DelayedReturnRate',
     'DifficultToDispel',
     'DoesBODY',
     'DoesKB',
-    'DoesNotProvideMentalAwareness',
-    'DoubleEnduranceCost',
     'DoubleKB',
-    'Dropped',
-    'ENDReserveOrEND',
     'Explosion',
     'ExtraTime',
     'Feedback',
@@ -159,7 +134,6 @@ __all__ = [
     'LimitedArcOfFire',
     'LimitedRange',
     'LineOfSight',
-    'Lingering',
     'Linked',
     'Megascale',
     'Mobile',
@@ -173,7 +147,6 @@ __all__ = [
     'OnlyOnAppropriateTerrain',
     'OnlyToActivate',
     'OnlyToStarting',
-    'OthersOnly',
     'PartialCoverage',
     'Penetrating',
     'Persistent',
@@ -181,20 +154,16 @@ __all__ = [
     'PhysicalManifestation',
     'RangeBasedOnSTR',
     'Ranged',
-    'RealWeapon',
     'ReducedByRange',
     'ReducedEND',
-    'RequiredHands',
     'RequiresSkillRoll',
     'Restrainable',
     'SelfOnly',
-    'SemiArmorPiercing',
     'SideEffects',
     'Sticky',
     'SubjectToRangeModifier',
     'TimeLimit',
     'Transdimensional',
-    'Transparent',
     'Trigger',
     'TurnMode',
     'Uncontrolled',
@@ -202,7 +171,6 @@ __all__ = [
     'VariableAdvantage',
     'VariableEffect',
     'VariableLimitations',
-    'VariableTarget',
     'Visible',
 ]
 
