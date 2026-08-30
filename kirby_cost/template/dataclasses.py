@@ -86,6 +86,13 @@ class TemplateData:
     level_value: float = 0.0
     level_power: int = 1
     level_multiplier: int = 1
+    #: The element's CONTINUINGEFFECT -- whether the power's effect persists
+    #: after the Phase it was used in (an Entangle stays wrapped round the
+    #: target). Java reads it through `continuingEffect()`, a plain field read
+    #: (GenericObject.java:3003-3005). Parsed but never applied on the load
+    #: path; the applicability matrix reads it, because HD's prototypes carry
+    #: it and two duration rules branch on it.
+    continuing_effect: bool = False
     #: The element's LEVELSTART -- the level count HD's own prototype object
     #: carries before a character buys anything. A .hdc always states LEVELS,
     #: so nothing on the load path reads this; the applicability matrix does,

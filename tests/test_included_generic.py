@@ -503,3 +503,17 @@ def test_a_refusal_names_the_modifier_with_its_levels_substituted():
     assert mod.display == "Expanded Effect (x2 Characteristics or Powers simultaneously)"
     assert mod.included(template_power("ENERGYBLAST")) == \
         f"{mod.display} can only be applied to abilities of type adjustment"
+
+
+def test_costs_end_to_maintain_accepts_a_continuing_effect_instant_power():
+    """CostsENDToMaintain.java:63 refuses an INSTANT power only when it is not
+    a continuing effect. Main6E states CONTINUINGEFFECT="Yes" on Entangle,
+    Barrier, Summon and 20 others; the template pipeline parsed every other
+    attribute of those elements and dropped this one, so the prototype said
+    False and HD's own answer was refused. 6E1 p.155 (Costs Endurance To
+    Maintain): the Limitation is for a "continuing-effect" power -- HD agrees
+    with the book, and an Entangle is exactly that."""
+    power = template_power("ENTANGLE")          # INSTANT, CONTINUINGEFFECT=Yes
+    assert power.orig_duration == "INSTANT"
+    assert power.continuing_effect is True
+    assert template_modifier("COSTSENDTOMAINTAIN").included(power) == ""

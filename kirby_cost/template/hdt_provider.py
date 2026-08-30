@@ -314,6 +314,7 @@ def _template_data(entry: dict[str, Any], *, is_power: bool) -> TemplateData:
         level_power=_i(a, "LVLPOWER"),
         level_multiplier=_i(a, "LVLMULTIPLIER"),
         level_start=_i(a, "LEVELSTART"),
+        continuing_effect=(a.get("CONTINUINGEFFECT") or "").upper().startswith("Y"),
         minimum_cost=_f(a, "MINCOST"),
         min_set="MINCOST" in a,
         max_cost=_f(a, "MAXCOST"),
