@@ -814,12 +814,74 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
 
     @property
     def duration(self) -> str:
-        """Get the duration."""
-        return self._duration
+        """The EFFECTIVE duration -- GenericObject.java:1673-1761.
+
+        Java's ``getDuration()`` is not a field read: the duration Advantages
+        and Limitations rewrite it, and in 6E a blank duration reports
+        INSTANT. The engine returned the raw field, so every rule that
+        branches on duration answered a different question from HD's.
+        ``orig_duration`` (Java ``getOrigDuration()``, :1763) is the field.
+        """
+        duration = self._duration or ""
+        all_mods = self._java_all_assigned_modifiers()
+
+        def has(xmlid: str):
+            return GenericObject.find_object_by_id(all_mods, xmlid)
+
+        def has_own(xmlid: str):
+            return GenericObject.find_object_by_id(self.assigned_modifiers, xmlid)
+
+        if has("INSTANT") is not None:
+            return "INSTANT"
+
+        if is_6e():
+            if duration in ("PERSISTENT", "INHERENT"):
+                if has("NONPERSISTENT") is not None:
+                    return "CONSTANT"
+                if self.uses_end:
+                    return duration if has_own("COSTSENDTOMAINTAIN") is not None else "CONSTANT"
+                return duration
+            if has("INHERENT") is not None:
+                if self.uses_end:
+                    return "INHERENT" if has_own("COSTSENDTOMAINTAIN") is not None else "CONSTANT"
+                return "INHERENT"
+            if has("PERSISTENT") is not None:
+                if self.uses_end:
+                    reduced = has("REDUCEDEND")
+                    zero = (reduced is not None
+                            and reduced.selected_option is not None
+                            and reduced.selected_option.xmlid == "ZERO")
+                    if has_own("COSTSENDTOMAINTAIN") is not None or zero:
+                        return "PERSISTENT"
+                    return "CONSTANT"
+                return "PERSISTENT"
+            if has("CONTINUOUS") is not None:
+                return "CONSTANT"
+            if duration == "CONSTANT":
+                return "CONSTANT"
+            return "INSTANT"
+
+        # 5E (GenericObject.java:1737-1760)
+        if (has("NONPERSISTENT") is not None
+                or (duration in ("PERSISTENT", "INHERENT") and self.uses_end)):
+            return "CONSTANT"
+        if has("INHERENT") is not None:
+            return "INHERENT"
+        if has("PERSISTENT") is not None:
+            return "PERSISTENT"
+        if has("CONTINUOUS") is not None:
+            return "CONSTANT"
+        return duration.strip().upper()
 
     @duration.setter
     def duration(self, value: str) -> None:
         self._duration = value
+
+    @property
+    def orig_duration(self) -> str:
+        """The duration FIELD, before the duration modifiers rewrite it --
+        Java getOrigDuration(), GenericObject.java:1763-1765."""
+        return self._duration
 
     @property
     def defense(self) -> str:

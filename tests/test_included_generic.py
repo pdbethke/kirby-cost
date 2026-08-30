@@ -241,3 +241,40 @@ def test_hole_in_the_middle_needs_an_area_affecting_ability():
     assert mod.included(template_power("ENERGYBLAST")) == \
         f"{mod.display} can only be applied to abilities which affect an area."
     assert mod.included(template_power("DARKNESS")) == ""
+
+
+# --- the effective duration (GenericObject.getDuration) --------------------
+
+
+def test_a_blank_duration_reads_as_instant_under_a_6e_template():
+    """GenericObject.java:1734-1736 -- in 6E, an object whose DURATION field is
+    neither PERSISTENT, INHERENT nor CONSTANT, and which carries no duration
+    modifier, reports INSTANT. HD rule, no page: it is the fall-through of
+    getDuration(), not a book statement."""
+    from kirby_cost.objects.list import List as HeroList
+    obj = HeroList()
+    assert obj.orig_duration == ""
+    assert obj.duration == "INSTANT"
+
+
+def test_continuous_makes_an_instant_power_constant():
+    """GenericObject.java:1723-1725. 6E1 p.336 (Duration Advantages): the
+    Constant Advantage makes an Instant Power Constant. HD agrees; the engine
+    used to return the raw DURATION field and never saw the change."""
+    power = template_power("ENERGYBLAST")
+    assert power.duration == "INSTANT"
+    power.assigned_modifiers.append(template_modifier("CONTINUOUS"))
+    assert power.duration == "CONSTANT"
+    assert power.orig_duration == "INSTANT"
+
+
+def test_a_persistent_power_that_costs_end_reports_constant():
+    """GenericObject.java:1685-1698. 6E1 p.336: a Persistent Power must be 0
+    END; HD enforces that by reporting a Persistent power that still costs END
+    as Constant unless it takes Costs END To Maintain."""
+    power = template_power("FORCEFIELD")        # PERSISTENT in Main6E
+    power.uses_end = True
+    assert power.orig_duration == "PERSISTENT"
+    assert power.duration == "CONSTANT"
+    power.assigned_modifiers.append(template_modifier("COSTSENDTOMAINTAIN"))
+    assert power.duration == "PERSISTENT"

@@ -69,6 +69,17 @@ def template_power(xmlid: str) -> GenericObject:
     obj = cls()
     obj.xmlid = xmlid
     loader._apply_template_defaults(obj, xmlid, None)
+    # HD builds a prototype FROM the template entry, so the template's
+    # DURATION is the last word. The engine's loader applies it only when the
+    # class constructor left `_duration` empty (hdc_loader/base.py's
+    # "only if it has no duration" guard), so a class that hardcodes one --
+    # ForceWall and Telepathy both say CONSTANT where Main6E says INSTANT --
+    # keeps the wrong value and every duration rule answers the wrong
+    # question. Corrected here, on the prototype only; the loader's own
+    # precedence is a separate defect (see the Task 6 report).
+    tmpl = loader._get_template_data(xmlid, obj)
+    if tmpl is not None and getattr(tmpl, "duration", None):
+        obj._duration = tmpl.duration
     return obj
 
 

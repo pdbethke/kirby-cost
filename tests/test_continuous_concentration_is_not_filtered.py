@@ -28,12 +28,14 @@ Only two of those 8 reach the filter at all — the rest are CONSTANT-duration o
 name-excluded — and they are the two asserted here:
 
   JOSEPH_OTANGA  TRANSFORM    INSTANT, has EXTRATIME  -> guard keeps it, -1.0
-  SHADOW_COLOSSUS ENERGYBLAST INSTANT, no EXTRATIME   -> Java filters on a
-                                                         static read, yet the
-                                                         oracle records -0.5
+  SHADOW_COLOSSUS ENERGYBLAST INSTANT, no EXTRATIME   -> guard keeps it, -0.5
 
-So the oracle never applies the filter, and the residual disappears when the
-engine stops applying it either.
+The second line used to read "Java filters on a static read, yet the oracle
+records -0.5", an unexplained anomaly. It is explained: the guard reads
+``getDuration()``, not the DURATION field, and this Blast carries CONTINUOUS,
+so its effective duration is CONSTANT (GenericObject.java:1723-1725) and the
+filter is never reached. Both assertions are kept -- the field says INSTANT,
+the effective duration says CONSTANT.
 """
 from tests.corpus import corpus_root
 from pathlib import Path
@@ -67,7 +69,8 @@ def test_continuous_concentration_still_counts_on_an_instant_power():
     hero = HDCLoader().load_file(str(COLOSSUS))
     blast = _power(hero, "ENERGYBLAST", "Qliphothic Overload")
 
-    assert blast.duration == "INSTANT"
+    assert blast.orig_duration == "INSTANT"       # the DURATION field
+    assert blast.duration == "CONSTANT"           # CONTINUOUS rewrites it
     assert _concentration(blast).total_value == -0.5
 
 
