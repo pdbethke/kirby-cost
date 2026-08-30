@@ -301,3 +301,19 @@ def test_time_limit_refuses_a_non_instant_power_that_costs_end():
         "which cost END only to activate")
     power.assigned_modifiers.append(template_modifier("COSTSENDONLYTOACTIVATE"))
     assert mod.included(power) == ""
+
+
+def test_invisible_power_effects_does_not_refuse_a_6e_power_as_already_invisible():
+    """Invisible.java:280-300. The "X is already invisible." refusal is guarded
+    on `!getActiveTemplate().is6E()`; the port's `_is_6e_template()` returned a
+    hardcoded False, so it fired for every 6E power. 6E1 p.340 (Invisible Power
+    Effects) states no such restriction -- HD's rule is 5E-era and, correctly
+    gated, does not apply here. The VISIBLE-Limitation refusal is HD's own,
+    ungated by edition; no page."""
+    mod = template_modifier("INVISIBLE")
+    assert mod.included(template_power("ABSORPTION")) == ""
+    power = template_power("ENERGYBLAST")
+    power.assigned_modifiers.append(template_modifier("VISIBLE"))
+    assert mod.included(power) == (
+        f"{mod.display} cannot be applied to a Power/ability with the Visible "
+        "Limitation on it.")

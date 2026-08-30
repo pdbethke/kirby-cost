@@ -42,10 +42,11 @@ class Invisible(Modifier, xmlid="INVISIBLE"):
         Returns:
             True if 6E template, False otherwise
         """
-        # TODO: Implement template version checking
-        # Would need access to HeroDesigner.getActiveTemplate().is6E()
-        # For now, default to False (pre-6E behavior)
-        return False
+        # Java asks HeroDesigner.getActiveTemplate().is6E() (Invisible.java:291).
+        # This used to return a hardcoded False, so the 5E-only "already
+        # invisible" refusal fired under every 6E template.
+        from kirby_cost.objects.base import is_6e
+        return is_6e()
     
     def _is_mental_power_without_based_on_con(self, generic_object: GenericObject) -> bool:
         """
