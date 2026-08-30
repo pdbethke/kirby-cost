@@ -15,6 +15,7 @@ This is the base class for all purchasable items in Hero Designer:
 All cost calculations are based on this class.
 """
 
+import copy
 import math
 from typing import ClassVar, Optional, List, TYPE_CHECKING
 from abc import ABC
@@ -1241,6 +1242,182 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
                 if GenericObject.find_object_by_id(mods, mod.xmlid) is None:
                     mods.append(mod)
         return mods
+
+    # ------------------------------------------------------------------
+    # HD's third validation surface: verifyModifiers()
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _allows_other_modifiers(obj) -> bool:
+        """``allows_other_modifiers`` is a bool ATTRIBUTE on this class
+        (base.py:239) but a METHOD override on the martial-arts elements and
+        ``Disadvantage`` -- call it if callable, else read it. (Java has one
+        ``allowsOtherModifiers()`` method; the port split it.)"""
+        val = obj.allows_other_modifiers
+        return val() if callable(val) else val
+
+    def _verify_slot(self, slot, list_mods, findings) -> None:
+        """One slot's turn of the List walk (GenericObject.java:4468-4560,
+        and the identical constituent body at :4374-4460).
+
+        HD adds EVERY common modifier the slot does not already carry, then
+        walks them last-to-first: removes just that one, asks it about the
+        DETACHED slot with ``listModCheck`` set, and puts it back before the
+        next. Asking with the siblings present is deliberate -- that is the
+        configuration the slot would really be in. Nothing is left changed:
+        the slot's own list object, its parent and ``list_mod_check`` are
+        restored in ``finally``, even if an ``included()`` raises.
+
+        HD rule, no page (6E1 p.395's framework rules say a Multipower's
+        common modifiers apply to every slot; the legality check itself is
+        HD's, not the book's).
+        """
+        orig_list = slot.assigned_modifiers
+        orig = list(orig_list)
+        orig_parent = slot.parent
+        orig_check = slot.list_mod_check
+        missing = [m for m in list_mods
+                   if GenericObject.find_object_by_id(orig, m.xmlid) is None]
+        working = orig + missing
+        try:
+            slot.assigned_modifiers = list(working)
+            slot.parent = None                      # :4479 / :4377 -- detached while asking
+            for j in range(len(missing) - 1, -1, -1):   # :4482 last-to-first
+                mod = missing[j]
+                working.remove(mod)
+                slot.assigned_modifiers = list(working)
+                # NOTE (:4485) the Java also removes the modifier from the
+                # LIST's own assigned list here. With the slot detached no
+                # included() can reach the List, so it changes no verdict;
+                # omitted so this method leaves the List untouched.
+                if not GenericObject._allows_other_modifiers(slot):
+                    # :4491-4497 -- the refusal IS the verdict; the rest of
+                    # HD's dialog text is not ported.
+                    reason = (f"{slot.alias} does not allow modifiers with "
+                              f"its current configuration.")
+                else:
+                    slot.list_mod_check = True      # :4508-4510, around the ask only
+                    reason = mod.included(slot) or ""
+                    slot.list_mod_check = orig_check
+                if reason.strip():
+                    findings.append((mod, slot, reason))
+                working.insert(j, mod)
+                slot.assigned_modifiers = list(working)
+        finally:
+            slot.list_mod_check = orig_check
+            slot.assigned_modifiers = orig_list     # the SAME list object back
+            orig_list[:] = orig
+            slot.parent = orig_parent
+
+    def verify_modifiers(self) -> List[tuple]:
+        """Everything HD's ``verifyModifiers()`` would complain about here.
+
+        Ported from ``GenericObject.verifyModifiers`` (GenericObject.java:
+        4338-4630) with the dialogs and the "remove the illegal modifier"
+        preference taken out: each complaint becomes one
+        ``(modifier, slot_or_None, reason)`` tuple instead of a JOptionPane,
+        and ``[]`` is HD's ``true``. Nothing is mutated -- every list, parent
+        and ``list_mod_check`` this walk touches is restored, including when
+        an ``included()`` raises.
+
+        Three branches, in the Java's order:
+
+        * :4340-4348 a CompoundPower verifies its constituents first, and
+          HD returns immediately if one of them fails.
+        * :4363-4560 a List with slots checks each COMMON modifier against
+          each slot (``_verify_slot``), plus :4551-4560's re-ask of every
+          common modifier against the List itself when a slot is a Maneuver.
+        * :4565-4630 anything else re-asks its OWN assigned modifiers.
+
+        HD rule, no page.
+        """
+        from kirby_cost.objects.list import List as HeroList
+        from kirby_cost.objects.disads.disadvantage import Disadvantage
+        from kirby_cost.objects.powers.compound_power import CompoundPower
+        from kirby_cost.objects.powers.naked_modifier import NakedModifier
+        from kirby_cost.objects.martial_arts.maneuver import Maneuver
+        from kirby_cost.objects.characteristics.characteristic import Characteristic
+
+        findings: List[tuple] = []
+
+        # :4340-4348 -- a CompoundPower verifies its constituents first and
+        # HD bails out on the first one that fails.
+        if isinstance(self, CompoundPower):
+            for child in self.powers:
+                child_findings = child.verify_modifiers()
+                if child_findings:
+                    return child_findings
+
+        # :4352-4356 -- Disadvantages are never checked.
+        if isinstance(self, Disadvantage):
+            return findings
+
+        assigned_list = self.assigned_modifiers
+        assigned = list(assigned_list)
+
+        # :4363-4560 -- the List walk.
+        if isinstance(self, HeroList) and self.objects:
+            maneuvers_involved = False
+            for slot in self.objects:
+                if isinstance(slot, Maneuver):
+                    maneuvers_involved = True       # :4366-4368
+                if isinstance(slot, CompoundPower):
+                    # :4370-4468 -- HD detaches the CompoundPower, then runs
+                    # the identical body against each CONSTITUENT (its loop
+                    # variable is reassigned), not against the compound.
+                    cp_parent = slot.parent
+                    try:
+                        slot.parent = None          # :4376
+                        for constituent in slot.powers:
+                            self._verify_slot(constituent, assigned, findings)
+                    finally:
+                        slot.parent = cp_parent     # :4467 (HD reattaches to the List)
+                    continue
+                self._verify_slot(slot, assigned, findings)
+            # :4551-4560 -- with a Maneuver in the framework, every common
+            # modifier is asked about the List itself. HD guards this with
+            # `allOK`, which only goes false under the remove-illegal-mods
+            # preference; a report-only walk never sets it, so this always
+            # runs.
+            if maneuvers_involved:
+                for mod in assigned:
+                    reason = mod.included(self) or ""
+                    if reason.strip():
+                        findings.append((mod, None, reason))
+            return findings
+
+        # :4565-4630 -- the plain-object loop, last-to-first.
+        try:
+            for i in range(len(assigned) - 1, -1, -1):
+                mod = assigned[i]
+                # :4567-4571 -- a NakedModifier's public advantages are the
+                # point of the power; only private ones and limitations are
+                # re-checked.
+                if not mod.private and not mod.is_limitation and isinstance(self, NakedModifier):
+                    continue
+                working = assigned[:i] + assigned[i + 1:]   # :4572 remove before asking
+                self.assigned_modifiers = working
+                if not GenericObject._allows_other_modifiers(self):
+                    reason = (f"{self.alias} does not allow modifiers with "
+                              f"its current configuration.")           # :4575-4583
+                else:
+                    reason = mod.included(self) or ""                  # :4599
+                    if isinstance(self, Characteristic) and self.add_modifiers_to_base:
+                        # :4600-4614 -- HD asks a CLONE carrying the hero's
+                        # actual characteristic value folded into levels, so
+                        # a level-reading modifier sees the real total.
+                        from kirby_cost.core.context import EngineContext
+                        hero = EngineContext.active_hero
+                        clone = copy.copy(self)
+                        for c in (getattr(hero, "characteristics", None) or []):
+                            if c.xmlid == clone.xmlid:
+                                clone.levels = clone.levels + int(c.characteristic_value())
+                                break
+                        reason = mod.included(clone) or ""
+                if reason.strip():
+                    findings.append((mod, None, reason))
+        finally:
+            self.assigned_modifiers = assigned_list
+        return findings
 
     def effective_target(self) -> str:
         """Java GenericObject.getTarget (GenericObject.java:2805).

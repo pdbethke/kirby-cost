@@ -60,3 +60,23 @@ def test_an_absent_exclusive_attribute_means_exclusive():
     power._assigned_modifiers.append(template_modifier("NOKB"))
     v = exclusive_conflict("NOKB", power)
     assert v.allowed is False and "already" in v.reason
+
+
+def test_verify_reports_a_refused_common_modifier_on_its_slot():
+    from kirby_cost import verify
+    from tests.matrix_support import sink_hero
+    mp = next(o for o in sink_hero().powers if o.name == "Multipower")
+    findings = verify(mp)
+    assert any(f.slot_id is not None and not f.verdict.allowed for f in findings)
+    assert all(f.verdict.reason for f in findings)
+
+
+def test_verify_is_empty_for_a_clean_power():
+    from kirby_cost import verify
+    from tests.matrix_support import sink_hero
+    # NOT the brief's "Blast AOE": that power's MOBILE is one of the cells in
+    # tests/fixtures/included_stateful_known_gaps.json (the engine refuses it,
+    # HD allows it), so it is not clean until that gap closes. "Blast
+    # Penetrating" carries PENETRATING and HD is content with it.
+    blast = next(o for o in sink_hero().powers if o.name == "Blast Penetrating")
+    assert verify(blast) == []

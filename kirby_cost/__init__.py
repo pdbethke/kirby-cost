@@ -35,7 +35,7 @@ from kirby_cost.model.rules import Rules
 from kirby_cost.io.xml_utility import XMLUtility
 
 # Validation
-from kirby_cost.validation import Verdict, check, allowed_modifiers, exclusive_conflict
+from kirby_cost.validation import Verdict, check, allowed_modifiers, exclusive_conflict, Finding, verify
 
 __all__ = [
     # Core
@@ -51,7 +51,7 @@ __all__ = [
     # I/O
     'XMLUtility',
     # Validation -- the three doors a builder walks through (validation.py)
-    'Verdict', 'check', 'allowed_modifiers', 'exclusive_conflict',
+    'Verdict', 'check', 'allowed_modifiers', 'exclusive_conflict', 'Finding', 'verify',
 ]
 
 

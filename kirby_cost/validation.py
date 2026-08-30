@@ -21,6 +21,9 @@ HD keeps three separate surfaces and so does this module:
                             UI can grey the refused ones with their reason.
 * ``exclusive_conflict`` -- the add-time rule HD keeps OUTSIDE included():
                             an EXCLUSIVE modifier may appear once per object.
+* ``verify``             -- verifyModifiers(): re-check what is ALREADY on an
+                            object (and, for a framework, its common modifiers
+                            against every slot), reporting instead of removing.
 
 Pure: no session, no database, no I/O beyond reading the template once.
 Nothing here decides a rule; the rules are ``Modifier.included`` (ported
@@ -57,6 +60,22 @@ def check(modifier_xmlid: str, obj: GenericObject, *, option_id: str | None = No
         return Verdict(False, f"unknown modifier: {modifier_xmlid!r}")
     reason = mod.included(obj) or ""
     return Verdict(reason.strip() == "", reason)
+
+
+@dataclass(frozen=True)
+class Finding:
+    """One thing HD's ``verifyModifiers()`` would have raised a dialog about."""
+    modifier_xmlid: str
+    slot_id: str | None
+    verdict: Verdict
+
+
+def verify(obj: GenericObject) -> list[Finding]:
+    """HD's third surface: what verifyModifiers() would complain about on
+    ``obj`` -- its own modifiers re-checked and, for a framework, each common
+    modifier against each slot. Empty when HD is content. Never mutates."""
+    return [Finding(mod.xmlid, (str(slot._id) if slot is not None else None), Verdict(False, reason))
+            for mod, slot, reason in obj.verify_modifiers()]
 
 
 def allowed_modifiers(obj: GenericObject) -> list[tuple[TemplateData, Verdict]]:
