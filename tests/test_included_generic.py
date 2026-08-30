@@ -229,3 +229,15 @@ def test_cannot_escape_with_teleport_allows_only_barriers_and_entangles():
     assert mod.included(template_power("ENERGYBLAST")) == (
         f"{mod.display} can only be applied to Entangles or Powers which are "
         "used to create walls or barriers.")
+
+
+def test_hole_in_the_middle_needs_an_area_affecting_ability():
+    """HoleInTheMiddle.java:77-90 -- the port was a `return ""` stub with the
+    rule commented out. 6E1 p.337: the Advantage gives an area-affecting power
+    a safe zone at its centre. HD deviates in reach: it tests the object's own
+    TARGET=HEX, so a power made area-affecting by the Area Of Effect Advantage
+    (whose base TARGET is still DCV) is refused."""
+    mod = template_modifier("HOLEINTHEMIDDLE")
+    assert mod.included(template_power("ENERGYBLAST")) == \
+        f"{mod.display} can only be applied to abilities which affect an area."
+    assert mod.included(template_power("DARKNESS")) == ""

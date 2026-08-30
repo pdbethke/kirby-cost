@@ -48,10 +48,10 @@ class HoleInTheMiddle(Modifier, xmlid="HOLEINTHEMIDDLE"):
         if self.force_allow:
             return result
         
-        # TODO: Implement validation logic from Java source
-        # Should validate: only applies to HEX target abilities
-        # if generic_object.target != "HEX":
-        #     return f"{self.display} can only be applied to abilities which affect an area."
+        # HoleInTheMiddle.java:84-89 -- HD's proxy for "affects an area" is
+        # the object's own TARGET being HEX.
+        if generic_object.target != "HEX":
+            return f"{self._display} can only be applied to abilities which affect an area."
         return ""
     
     # TODO: Implement custom getColumn2Output() method from Java source
