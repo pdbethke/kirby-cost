@@ -807,3 +807,24 @@ def test_the_raw_target_batch_reads_the_modifier_aware_target():
     reason = template_modifier("RANGED").included(drain)
     assert reason == stateful_cell["reason"]
     assert reason == "Ranged cannot be applied to Self-Only Powers."
+
+
+def test_a_ranged_modifier_gives_an_hth_power_cost_based_range():
+    """RANGE is a word; an HKA says HTH, and the RANGED advantage makes it
+    ranged anyway -- GenericObject.java:2474-2545's else branch: ten metres
+    per point of total cost in 6E. HD rule, no page (the book states range
+    as 10m x Active Points/5 on 6E1 p.316; HD derives from total cost)."""
+    from tests.matrix_support import object_index, sink_hero
+    hka = next(o for o in sink_hero().powers if o.name == "HKA Ranged")
+    assert hka.range == "HTH"
+    assert hka.range_value == 150  # HD's echo for object 20260830000024
+
+
+def test_a_los_power_with_normal_range_reports_cost_based_range():
+    """Telepathy is RANGE="LOS"; the Normal Range limitation converts it to a
+    ranged power -- GenericObject.java:2419-2452: 6E, total cost x 10.
+    HD rule, no page."""
+    from tests.matrix_support import object_index, sink_hero
+    tp = next(o for o in sink_hero().powers if o.name == "Telepathy LOS")
+    assert tp.range == "LOS"
+    assert tp.range_value == 200  # HD's echo for object 20260830000020

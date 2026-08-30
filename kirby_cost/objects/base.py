@@ -1134,38 +1134,107 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         No Range and Damage Shield to nothing, Line Of Sight and Based On ECV
         to unlimited.
         """
-        from kirby_cost.util.rounder import round_half_up
+        from kirby_cost.util.rounder import round_half_down, round_half_up
         word = (self.range or "No").strip().upper()
         mods = self.all_assigned_modifiers
 
         def has(xmlid):
             return GenericObject.find_object_by_id(mods, xmlid) is not None
 
+        def cost_metres(round_fn):
+            # 6E: ten metres per point of TOTAL cost, before the adders that
+            # are not included in the base; 5E: five per Active Point.
+            if is_6e():
+                tot = self.total_cost
+                for ad in self.assigned_adders:
+                    if not ad.include_in_base() and not ad.custom:
+                        tot -= ad.total_cost
+                return int(round_fn(tot * 10))
+            return int(round_fn(self.active_cost * 5))
+
+        def increased_max_range():
+            """The recursive dance at GenericObject.java:2365-2382 (and its two
+            twins): remove INCREASEDMAXRANGE from the OWN list, re-derive the
+            range without it, restore, multiply by power^(levels*level_value),
+            round half DOWN. Returns None when the branch does not fire."""
+            inc = GenericObject.find_object_by_id(self.assigned_modifiers,
+                                                  "INCREASEDMAXRANGE")
+            if inc is None or inc.levels <= 0:
+                return None
+            value = float(inc.level_power) ** (inc.levels * inc.level_value)
+            if value <= 0:
+                return None
+            own = self.assigned_modifiers
+            own.remove(inc)
+            try:
+                real = self.range_value
+            finally:
+                own.append(inc)
+            return int(round_half_down(value * real))
+
+        def uoo_uaa():
+            mod = GenericObject.find_object_by_id(mods, "UOO")
+            if mod is None:
+                return None
+            opt = getattr(mod, "selected_option", None)
+            opt_id = (getattr(opt, "xmlid", "") or getattr(mod, "option_id", "") or "").upper()
+            return mod, opt_id == "UAA"
+
         ranged = word == "YES" or has("BASEDONCON")
         if ranged and (not has("MOBILE") or is_6e()):
+            # GenericObject.java:2346-2415
             if has("NORANGE") or has("DAMAGESHIELD"):
                 return 0
             if has("BOECV") and not has("NORMALRANGE"):
                 return -1
+            imr = increased_max_range()
+            if imr is not None:
+                return imr
             if has("LOS"):
                 return -1
-            total = self.total_cost
-            if is_6e():
-                for ad in self.assigned_adders:
-                    # Both halves were dead. `include_in_base` is a METHOD,
-                    # so the getattr handed back a bound method and `not` on
-                    # it was always False; and the attribute is `custom`, not
-                    # `is_custom`, so that getattr always defaulted. Nothing
-                    # was ever subtracted, and a Clairsentience with three
-                    # adders reported 500m of range where HD reports 200m.
-                    if not ad.include_in_base() and not ad.custom:
-                        total -= ad.total_cost
-                return int(round_half_up(total * 10))
-            return int(round_half_up(self.active_cost * 5))
+            ret = cost_metres(round_half_up)
+            uoo = uoo_uaa()
+            if uoo is not None:
+                _, uaa = uoo
+                if uaa:
+                    if has("LOS"):
+                        return -1
+                    if has("RANGED"):
+                        return ret
+                    return 0
+                return ret
+            return ret
         if word == "LOS" and not has("BASEDONCON") and (not has("MOBILE") or is_6e()):
+            # GenericObject.java:2419-2472: a Line Of Sight power.
             if has("DAMAGESHIELD"):
                 return 0
+            if has("NORMALRANGE"):
+                imr = increased_max_range()
+                if imr is not None:
+                    return imr
+                return cost_metres(round_half_up if is_6e() else round_half_down)
+            if has("SKINCONTACTREQUIRED"):
+                return 0
+            uoo = uoo_uaa()
+            if uoo is not None:
+                _, uaa = uoo
+                if uaa:
+                    if has("LOS"):
+                        return -1
+                    if has("RANGED"):
+                        return cost_metres(round_half_down)
+                    return 0
+                return -1
             return -1
+        # GenericObject.java:2474-2545: any other RANGE word (No, Self, HTH...)
+        # -- the RANGED (or Ranged Recombination) modifier makes it ranged.
+        if has("RANGED") or has("RANGEDRECOMBINATION"):
+            if has("BOECV") or has("LOS"):
+                return -1
+            imr = increased_max_range()
+            if imr is not None:
+                return imr
+            return cost_metres(round_half_down)
         return 0
 
     @property
