@@ -533,3 +533,15 @@ def test_the_movement_characteristics_are_self_only():
         mod = template_modifier("RANGED")
         assert mod.included(power) == \
             f"{mod.display} cannot be applied to Self-Only Powers.", xmlid
+
+
+def test_difficult_to_dispel_reproduces_hds_double_space():
+    """DifficultToDispel.java:95-97. HD writes two spaces between the two
+    sentences; the port wrote one. HD rule, no page -- 6E1 p.135 (Dispel) says
+    nothing about Inherent, the refusal is HD's own."""
+    mod = template_modifier("DIFFICULTTODISPEL")
+    power = template_power("AUTOMATON")          # INHERENT in Main6E
+    assert power.duration == "INHERENT"
+    assert mod.included(power) == (
+        f"{mod.display} cannot be applied to an Inherent ability.  "
+        "Inherent abilities cannot be Dispelled.")

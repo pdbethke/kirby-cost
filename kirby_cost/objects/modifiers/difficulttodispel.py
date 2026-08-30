@@ -104,10 +104,12 @@ class DifficultToDispel(Modifier, xmlid="DIFFICULTTODISPEL"):
         if self.force_allow:
             return result
         
-        # Cannot be applied to Inherent abilities
+        # Cannot be applied to Inherent abilities.
+        # DifficultToDispel.java:95-97 -- note the TWO spaces after the first
+        # sentence; HD's literal is reproduced exactly.
         duration = generic_object.duration
         if duration == "INHERENT":
-            return (f"{self.display} cannot be applied to an Inherent ability. "
+            return (f"{self.display} cannot be applied to an Inherent ability.  "
                    f"Inherent abilities cannot be Dispelled.")
         
         return ""
