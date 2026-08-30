@@ -2,10 +2,15 @@
 a modifier, answered the way Hero Designer answers them.
 
     >>> from kirby_cost import check
-    >>> from tests.matrix_support import template_power
-    >>> blast = template_power("ENERGYBLAST")  # a builder's in-progress power
+    >>> from kirby_cost.services.power_builder import build_power_from_spec
+    >>> blast, active, real = build_power_from_spec(
+    ...     {"xmlid": "ENERGYBLAST", "levels": 12, "modifiers": []}
+    ... )  # a builder's in-progress power
     >>> check("ZEROPHASE", blast).reason
     'Powers Can Be Changed As A Zero-Phase Action can only be applied to abilities of type vpp'
+
+See ``examples/validation_door.py`` for a runnable walkthrough of all three
+doors, including ``allowed_modifiers`` and ``exclusive_conflict``.
 
 HD keeps three separate surfaces and so does this module:
 
