@@ -144,15 +144,6 @@ _ADDER_OPTION_COSTS: dict[tuple[str, str, str], float] = {
     ("LIFESUPPORT", "IMMUNITY", "ALL"):          15.0,
 }
 
-# Modifier types from Main6E.hdt <TYPE> child elements.
-# These are needed for cost calculation filtering (e.g. VPP modifiers
-# should not propagate to slot active costs).
-_MODIFIER_TYPES: dict[str, list[str]] = {
-    "HALFPHASE":  ["VPP"],
-    "ZEROPHASE":  ["VPP"],
-    "NOSKILLROLL": ["VPP"],
-}
-
 # Sense template PROVIDES from Main6E.hdt.
 # These are capabilities built into each sense type's definition.
 # Used by Sense.total_cost to compute the 6E sense group deduction.
@@ -1839,14 +1830,11 @@ class HDCLoader:
                 mod.max_cost = float(psm["max_cost"])
                 mod.max_set = True
 
-        # Apply modifier types from Main6E.hdt (e.g. VPP type for ZEROPHASE,
-        # NOSKILLROLL, HALFPHASE — needed so VPP advantages don't propagate
-        # to slot active costs).
-        mod_types = _MODIFIER_TYPES.get(xmlid)
-        if mod_types:
-            for t in mod_types:
-                if t not in mod._types:
-                    mod._types.append(t)
+        # Modifier types (e.g. VPP for ZEROPHASE, NOSKILLROLL, HALFPHASE --
+        # needed so VPP advantages don't propagate to slot active costs) now
+        # come from the template via apply_template / _apply_template_to_modifier,
+        # which ran above through _build_modifier's caller. A three-entry hand
+        # table used to duplicate this for exactly those three xmlids.
 
         # Parse PRIVATE flag
         private_str = elem.get("PRIVATE", "")

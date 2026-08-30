@@ -679,6 +679,16 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
                 and "RANGE" not in stated:
             self.range = tmpl.range
 
+        # Applicability, from the template. Types were previously supplied
+        # only by a three-entry hand table in the loader (_MODIFIER_TYPES),
+        # so type gating in included() was dead for every other modifier.
+        if getattr(tmpl, "types", ()) and not getattr(self, "_types", None):
+            self._types = list(tmpl.types)
+        if hasattr(self, "_excludes"):
+            self._excludes = tuple(getattr(tmpl, "excludes", ()))
+            self._requires = tuple(getattr(tmpl, "requires", ()))
+            self._requires_all = bool(getattr(tmpl, "requires_all", False))
+
     def _stated_and_declared(self) -> frozenset:
         """XML attribute names the source stated that this class also reads."""
         stated = getattr(self, "_source_attrs", None)

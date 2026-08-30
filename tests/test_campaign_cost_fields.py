@@ -161,6 +161,9 @@ _EFFECTIVE_FIELD_VALUES = {
     "option_aliases": {},
     "types": ("SPECIAL",),
     "attributes": {"DEFENSE": "NORMAL"},
+    "excludes": ("LOS",),
+    "requires": ("AOE",),
+    "requires_all": True,
 }
 
 

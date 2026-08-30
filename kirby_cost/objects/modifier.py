@@ -62,6 +62,12 @@ class Modifier(GenericObject):
         self.requires: List[str] = []
         self._duration: str = ""
         self.requires_all: bool = False
+        # Applicability, from the template (apply_template). Distinct from
+        # the excludes/requires/requires_all above, which are declared but
+        # never set or read anywhere in this module.
+        self._excludes: tuple = ()
+        self._requires: tuple = ()
+        self._requires_all: bool = False
         self.full_display: bool = False
         self.show_option_only: bool = False
         self.show_option_in_parens: bool = False
