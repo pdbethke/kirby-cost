@@ -31,7 +31,9 @@ from kirby_cost.objects.modifiers.delayedreturnrate import DelayedReturnRate
 from kirby_cost.objects.modifiers.difficulttodispel import DifficultToDispel
 from kirby_cost.objects.modifiers.does_body import DoesBODY
 from kirby_cost.objects.modifiers.does_kb import DoesKB
+from kirby_cost.objects.modifiers.doubleendurancecost import DoubleEnduranceCost
 from kirby_cost.objects.modifiers.doublekb import DoubleKB
+from kirby_cost.objects.modifiers.endreserveorend import ENDReserveOrEND
 from kirby_cost.objects.modifiers.explosion import Explosion
 from kirby_cost.objects.modifiers.extratime import ExtraTime
 from kirby_cost.objects.modifiers.feedback import Feedback
@@ -115,7 +117,9 @@ __all__ = [
     'DifficultToDispel',
     'DoesBODY',
     'DoesKB',
+    'DoubleEnduranceCost',
     'DoubleKB',
+    'ENDReserveOrEND',
     'Explosion',
     'ExtraTime',
     'Feedback',

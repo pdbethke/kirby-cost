@@ -2017,6 +2017,42 @@ def is_6e() -> bool:
 
 
 
+def active_hero_objects(include_equipment: bool = False) -> List['GenericObject']:
+    """The active hero's powers, flattened one level into CompoundPower
+    children -- the shape three of the "hero-level read" modifiers each
+    walk by hand in Java: ``AffectsPhysicalWorld.java:64-68`` (looking for a
+    Desolidification), ``DoubleEnduranceCost.java:58-62`` and
+    ``ENDReserveOrEND.java:58-61`` (looking for an EnduranceReserve). Every
+    power on ``HeroDesigner.getActiveHero().getPowers()``, plus, for each
+    CompoundPower among them, its constituent powers -- never the framework
+    slots a ``List`` holds, which none of those three Java loops descend into.
+
+    ``include_equipment`` adds the equipment list flattened the same way, for
+    a caller that needs it too. Returns ``[]`` when no hero is active, which
+    is how a blank-character context (the prototype matrix) answers "nothing
+    to scan" without a null check at every call site.
+    """
+    from kirby_cost.core.context import EngineContext
+    hero = EngineContext.active_hero()
+    if hero is None:
+        return []
+
+    from kirby_cost.objects.powers.compound_power import CompoundPower
+
+    def flatten(objects) -> List['GenericObject']:
+        out: List['GenericObject'] = []
+        for o in objects or ():
+            out.append(o)
+            if isinstance(o, CompoundPower):
+                out.extend(getattr(o, "powers", None) or ())
+        return out
+
+    result = flatten(getattr(hero, "powers", None))
+    if include_equipment:
+        result += flatten(getattr(hero, "equipment", None))
+    return result
+
+
 def compute_end_usage(obj, ap_per_end: int) -> int:
     """``GenericObject.getEndUsage`` (GenericObject.java:1775-1850).
 

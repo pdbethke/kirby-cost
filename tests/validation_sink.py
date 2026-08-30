@@ -166,10 +166,10 @@ STATES = (
     _s("Force Field Costs END", ("CostsENDToMaintain", "Persistent", "Nonpersistent", "ReducedEND"),
        power("FORCEFIELD", "Resistant Protection", 6, 4, name="Force Field Costs END", input_="PD", children=[
            modifier("COSTSEND", "Costs Endurance", "-0.5", option="EVERYPHASE", option_alias="Costs END Every Phase")])),
-    # DoubleEnduranceCost NOT authored: kirby-cost has no such override class (grep -rli
-    # "doubleend" kirby_cost/objects/modifiers/*.py finds nothing). HD's actual "Double
-    # Endurance Cost" is the INCREASEDEND modifier's own "2X" OPTION (Main6E.hdt:17112),
-    # not a distinct modifier/class -- so there is no separate included() to exercise.
+    # Main6E's own "Double Endurance Cost" is the INCREASEDEND modifier's "2X" OPTION
+    # (Main6E.hdt:17112), not this state's business -- DoubleEnduranceCost the CLASS
+    # (Task 4) is a distinct Java modifier ported for other templates; see "Blast With
+    # End Reserve Modifiers" near the bottom of this file.
     _s("Flight Reduced END", ("ReducedEND", "IncreasedEND"),
        power("FLIGHT", "Flight", 10, 5, name="Flight Reduced END", children=[
            modifier("REDUCEDEND", "Reduced Endurance", "0.25", option="HALFEND", option_alias="1/2 END")])),
@@ -214,9 +214,9 @@ STATES = (
     _s("Blast Affects Physical World", ("AffectsPhysicalWorld",),
        power("ENERGYBLAST", "Blast", 8, 14, name="Blast Affects Physical World", children=[
            modifier("AFFECTSPHYSICALWORLD", "Affects Physical World", "2.0")])),
-    # ENDReserveOrEND and DoubleEnduranceCost NOT authored on this state either -- same
-    # reason as Flight Reduced END above; ENDReserveOrEND has no engine class at all
-    # (grep -rli "reserveorend" kirby_cost/objects/modifiers/*.py finds nothing).
+    # ENDReserveOrEND and DoubleEnduranceCost are authored separately below (Task 4) --
+    # neither is a Main6E.hdt template modifier, so they get their own state near the
+    # bottom of this file rather than crowding this one.
     _s("END Reserve", ("ReducedEND",),
        power("ENDURANCERESERVE", "Endurance Reserve", 40, 15, name="END Reserve", children=[
            power("ENDURANCERESERVEREC", "Recovery", 6, -1)])),
@@ -604,15 +604,17 @@ NOT_AUTHORED_BRANCHES: dict[str, dict[str, str]] = {
 # SURVEY_NAMES_WITH_NO_ENGINE_CLASS: Java overrides the survey names for which kirby-cost has
 # no Modifier subclass at all -- there is no included() to trace branches through, so these
 # cannot be NOT_AUTHORED_BRANCHES keys (the coverage test requires every key to be a real
-# override). DoubleEnduranceCost and ENDReserveOrEND are named at length in the survey (both
-# read HeroDesigner.getActiveHero() to scan for an EnduranceReserve power); HD's Double
-# Endurance Cost turned out to be INCREASEDEND's own "2X" OPTION, not a separate modifier, and
-# ENDReserveOrEND appears not to have been ported at all. The rest (AVLD, BasedOnECV,
-# DamageShield, DelayedEND, DoesNotProvideMentalAwareness, Dropped, Lingering, OthersOnly,
-# RealWeapon, RequiredHands, SemiArmorPiercing, Transparent, VariableTarget) simply have no
-# corresponding class in kirby_cost.objects.modifiers.
+# override). DoubleEnduranceCost and ENDReserveOrEND were both here until Task 4 ported them
+# (both read HeroDesigner.getActiveHero() to scan for an EnduranceReserve power) -- neither is
+# a Main6E.hdt template modifier (HD's own "Double Endurance Cost" checkbox is the
+# INCREASEDEND modifier's "2X" OPTION instead), so they are authored and exercised directly
+# rather than through this file's template-driven states; see "Blast With End Reserve
+# Modifiers" near the bottom of this file. The rest (AVLD, BasedOnECV, DamageShield,
+# DelayedEND, DoesNotProvideMentalAwareness, Dropped, Lingering, OthersOnly, RealWeapon,
+# RequiredHands, SemiArmorPiercing, Transparent, VariableTarget) simply have no corresponding
+# class in kirby_cost.objects.modifiers.
 SURVEY_NAMES_WITH_NO_ENGINE_CLASS = frozenset({
-    "DoubleEnduranceCost", "ENDReserveOrEND", "AVLD", "BasedOnECV", "DamageShield",
+    "AVLD", "BasedOnECV", "DamageShield",
     "DelayedEND", "DoesNotProvideMentalAwareness", "Dropped", "Lingering", "OthersOnly",
     "RealWeapon", "RequiredHands", "SemiArmorPiercing", "Transparent", "VariableTarget",
 })
@@ -639,6 +641,17 @@ def _add_char_modifiers(tag: str, state_name: str, mods: list[str]) -> str:
 STATES = STATES + (
     _s("Running Only On Terrain", ("Modifier", "OnlyOnAppropriateTerrain"), ""),
     _s("STR Reduced END And Linked", ("ReducedEND", "Linked"), ""),
+    # Task 4: ENDReserveOrEND and DoubleEnduranceCost now have engine classes
+    # (neither is a Main6E.hdt template modifier, so this state is not in the
+    # Java-oracle-generated stateful fixture -- registry dispatch doesn't need
+    # a template entry, only the loader's included-object graph does). The
+    # hero already carries an Endurance Reserve ("END Reserve" above), so
+    # both hero-scans here should find it and allow.
+    _s("Blast With End Reserve Modifiers", ("ENDReserveOrEND", "DoubleEnduranceCost"),
+       power("ENERGYBLAST", "Blast", 8, 999, name="Blast With End Reserve Modifiers", children=[
+           modifier("ENDRESERVEOREND", "END Reserve Or END", "0.25"),
+           modifier("DOUBLEENDCOST", "Double Endurance Cost", "-0.5"),
+       ])),
 )
 
 OBJECT_NAMES: dict[str, str] = {s.name: s.name for s in STATES}

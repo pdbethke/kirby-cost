@@ -621,6 +621,84 @@ def test_linked_allows_when_the_hero_has_another_power():
     assert template_modifier("LINKED").included(blast) == ""
 
 
+def test_end_reserve_or_end_needs_an_end_reserve_on_the_hero():
+    """END Reserve or END (HD rule, no page -- not in Main6E.hdt as a
+    template modifier, so untestable against the stateful matrix) is
+    meaningless without a Reserve; HD scans the hero for one
+    (ENDReserveOrEND.java:58-61). Main6E carries no template entry for this
+    xmlid, so it is exercised directly rather than through
+    ``template_modifier``."""
+    from kirby_cost.objects.modifiers.endreserveorend import ENDReserveOrEND
+    from kirby_cost.core.context import EngineContext
+    from kirby_cost.io.hdc_loader import LoadedHero
+    from tests.matrix_support import sink_hero, template_power
+
+    EngineContext.set_active_hero(LoadedHero())
+    assert ENDReserveOrEND().included(template_power("FLIGHT")) != ""
+
+    hero = sink_hero()
+    nnd = next(o for o in hero.powers if o.name == "Blast NND")
+    assert nnd.end_usage > 0
+    assert ENDReserveOrEND().included(nnd) == ""
+
+
+def test_double_endurance_cost_needs_an_end_reserve_on_the_hero():
+    """Same shape as ENDReserveOrEND (DoubleEnduranceCost.java:58-62); not a
+    Main6E.hdt template modifier either -- Main6E offers this as
+    INCREASEDEND's 2X option instead."""
+    from kirby_cost.objects.modifiers.doubleendurancecost import DoubleEnduranceCost
+    from kirby_cost.core.context import EngineContext
+    from kirby_cost.io.hdc_loader import LoadedHero
+    from tests.matrix_support import sink_hero, template_power
+
+    EngineContext.set_active_hero(LoadedHero())
+    assert DoubleEnduranceCost().included(template_power("FLIGHT")) != ""
+
+    hero = sink_hero()
+    EngineContext.set_active_hero(hero)
+    nnd = next(o for o in hero.powers if o.name == "Blast NND")
+    assert DoubleEnduranceCost().included(nnd) == ""
+
+
+def test_affects_physical_world_needs_desolidification_on_the_hero():
+    """6E1 p.386-387: Affects Physical World only makes sense on a
+    character who has Desolidification (AffectsPhysicalWorld.java:64-68)."""
+    from kirby_cost.core.context import EngineContext
+    from tests.matrix_support import (blank_hero_context, cells, sink_hero,
+                                      stateful_cells, template_modifier, template_power)
+    blank_hero_context()
+    reason = template_modifier("AFFECTSPHYSICALWORLD").included(template_power("ENERGYBLAST"))
+    cell = next(c for c in cells() if c["modifier"] == "AFFECTSPHYSICALWORLD" and c["power"] == "ENERGYBLAST")
+    assert reason == cell["reason"]
+
+    hero = sink_hero()
+    blast_apw = next(o for o in hero.powers if o.name == "Blast Affects Physical World")
+    assigned = next(m for m in blast_apw.assigned_modifiers if m.xmlid == "AFFECTSPHYSICALWORLD")
+    stateful_cell = next(c for c in stateful_cells()
+                          if c["object_id"] == str(blast_apw._id) and c["modifier"] == "AFFECTSPHYSICALWORLD"
+                          and c["tier"] == "assigned")
+    assert assigned.included(blast_apw) == stateful_cell["reason"]
+
+
+def test_not_through_mind_link_needs_mind_link_on_the_hero():
+    """6E1 p.421: Not Through Mind Link only makes sense on a character who
+    has Mind Link (NotThroughMindLink.java:52)."""
+    from kirby_cost.core.context import EngineContext
+    from tests.matrix_support import (blank_hero_context, cells, sink_hero,
+                                      stateful_cells, template_modifier, template_power)
+    blank_hero_context()
+    reason = template_modifier("NOTTHROUGHMINDLINK").included(template_power("TELEPATHY"))
+    cell = next(c for c in cells() if c["modifier"] == "NOTTHROUGHMINDLINK" and c["power"] == "TELEPATHY")
+    assert reason == cell["reason"]
+
+    hero = sink_hero()
+    telepathy = next(o for o in hero.powers if o.name == "Telepathy Not Through Mind Link")
+    assigned = next(m for m in telepathy.assigned_modifiers if m.xmlid == "NOTTHROUGHMINDLINK")
+    stateful_cell = next(c for c in stateful_cells()
+                          if c["object_id"] == str(telepathy._id) and c["modifier"] == "NOTTHROUGHMINDLINK"
+                          and c["tier"] == "assigned")
+    assert assigned.included(telepathy) == stateful_cell["reason"]
+
 
 def test_reduced_end_reads_the_hero_s_own_characteristic():
     """ReducedEND (HD rule, no page) on a Characteristic reads the ACTIVE
