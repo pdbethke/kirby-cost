@@ -95,6 +95,14 @@ def adder(xmlid, alias, basecost, levels=0):
 
 def power(xmlid, alias, levels, pos, name="", option=None, option_alias=None, input_=None, children=(), extra="",
           id_=None):
+    # A 6E Resistant Protection is costed from PDLEVELS/EDLEVELS (LEVELS is their
+    # sum) -- the shape HD writes (see any FORCEFIELD in an authored .hdc). Without
+    # them HD costs the power 0 and every cost-derived rule answers a different
+    # question; the first stateful fixture carried 59 such cells.
+    if xmlid == "FORCEFIELD" and "PDLEVELS" not in extra:
+        ed = (input_ or "PD").upper() == "ED"
+        extra += (f' PDLEVELS="{0 if ed else levels}" EDLEVELS="{levels if ed else 0}"'
+                  ' MDLEVELS="0" POWDLEVELS="0"')
     obj_id = id_ if id_ is not None else _next()
     opt = f' OPTION="{option}" OPTIONID="{option}" OPTION_ALIAS="{option_alias or option}"' if option else ""
     inp = f' INPUT="{input_}"' if input_ else ""

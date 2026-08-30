@@ -10,6 +10,10 @@ guard. This re-surveys every cell and rewrites the file from the answer.
         venv/bin/python -m tests.included_ledger --stateful   # stateful matrix (Task 3)
         venv/bin/python -m tests.included_ledger --seed       # one-time baseline write
 
+``--accept-new`` (with the default path): ADD newly disagreeing cells as raw lines
+instead of refusing -- for the case where an upstream fix or a regenerated fixture
+lets HD's question reach rules it never reached before. Curated values are kept.
+
 What it does (default, no ``--seed``):
 
 * **Refuses to write on a regression.** A cell that disagrees and is not
@@ -78,6 +82,7 @@ def _stateful_config():
 def main(argv: list[str]) -> int:
     stateful = "--stateful" in argv
     seed = "--seed" in argv
+    accept_new = "--accept-new" in argv
 
     ledger_path, survey_fn, modifier_of, total = (_stateful_config() if stateful else _prototype_config())
     survey = survey_fn()
@@ -102,16 +107,20 @@ def main(argv: list[str]) -> int:
     old: dict[str, str] = doc["gaps"]
 
     regressions = sorted(set(survey) - set(old))
-    if regressions:
+    if regressions and not accept_new:
         print(f"REGRESSION -- {len(regressions)} cells newly disagree; nothing written:")
         for key in regressions[:25]:
             print(f"  {key}\n      {survey[key]}")
         return 1
+    if regressions and accept_new:
+        print(f"accepting {len(regressions)} newly disagreeing cells as raw lines (fixture regenerated / an upstream fix reached new rules):")
+        for key in regressions:
+            print(f"  {key}")
 
     fixed = sorted(set(old) - set(survey))
     doc["gaps"] = {
-        key: (old[key] if is_curated(old[key]) else survey[key])
-        for key in old
+        key: (old[key] if key in old and is_curated(old[key]) else survey[key])
+        for key in list(old) + [k for k in survey if k not in old]
         if key in survey
     }
     clause = f"now {len(survey)} remain ({stamp})"
