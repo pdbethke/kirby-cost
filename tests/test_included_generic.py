@@ -620,3 +620,40 @@ def test_linked_allows_when_the_hero_has_another_power():
     blast = next(o for o in hero.powers if o.name == "Blast AOE")
     assert template_modifier("LINKED").included(blast) == ""
 
+
+
+def test_reduced_end_reads_the_hero_s_own_characteristic():
+    """ReducedEND (HD rule, no page) on a Characteristic reads the ACTIVE
+    HERO's own copy of that characteristic's END usage, not the object
+    under test's (ReducedEND.java:167-198; STR via getPrimaryEND(),
+    :170-176). The sink's STR carries ReducedEND itself, so hero-lookup and
+    self-lookup agree here; the fixture's echo is the verdict either way."""
+    from kirby_cost.core.context import EngineContext
+    from tests.matrix_support import sink_hero, stateful_cells
+
+    hero = sink_hero()
+    str_char = next(o for o in hero.characteristics if o.name == "STR Reduced END And Linked")
+    assigned = next(m for m in str_char.assigned_modifiers if m.xmlid == "REDUCEDEND")
+    stateful_cell = next(c for c in stateful_cells()
+                          if c["object_id"] == str(str_char._id) and c["modifier"] == "REDUCEDEND"
+                          and c["tier"] == "assigned")
+    assert assigned.included(str_char) == stateful_cell["reason"]
+
+
+def test_reduced_end_sees_past_a_charges_modifier_s_own_end_exemption():
+    """ReducedEND.java:132-166: HD asks the question against an isolated
+    copy of the object with any Charges modifier removed, so a Charges
+    modifier's own END exemption doesn't hide the ability's TRUE per-use
+    END cost. Flight Charges reads end_usage==0 with Charges attached but
+    HD still allows ReducedEND on it (the ``template`` tier -- REDUCEDEND is
+    never actually assigned to this power in the sink)."""
+    from kirby_cost.core.context import EngineContext
+    from tests.matrix_support import sink_hero, stateful_cells, template_modifier
+
+    hero = sink_hero()
+    flight = next(o for o in hero.powers if o.name == "Flight Charges")
+    assert flight.end_usage == 0
+    stateful_cell = next(c for c in stateful_cells()
+                          if c["object_id"] == str(flight._id) and c["modifier"] == "REDUCEDEND"
+                          and c["tier"] == "template")
+    assert template_modifier("REDUCEDEND").included(flight) == stateful_cell["reason"]

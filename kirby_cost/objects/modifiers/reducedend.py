@@ -131,62 +131,103 @@ class ReducedEND(Modifier, xmlid="REDUCEDEND"):
         result = super().included(generic_object)
         if result and result.strip():
             return result
-        
+
         if self.force_allow:
             return result
-        
-        # Clone object to check without affecting original
-        # Note: Would need proper clone() method
-        generic_object = generic_object  # For now, use directly
-        
-        # Cannot be applied with Increased END
-        if GenericObject.find_object_by_id(
-            generic_object.assigned_modifiers, "INCREASEDEND") is not None:
-            return f"{self.display} cannot be applied to an ability with the Increased END Limitation."
-        
-        # Cannot be applied with Costs END
-        if GenericObject.find_object_by_id(
-            generic_object.assigned_modifiers, "COSTSEND") is not None:
-            return f"{self.display} cannot be applied to an ability with the Costs END Limitation."
-        
-        # Cannot be applied with Costs END Only To Activate
-        if GenericObject.find_object_by_id(
-            generic_object.assigned_modifiers, "COSTSENDONLYTOACTIVATE") is not None:
-            return f"{self.display} cannot be applied to an ability with Costs END Only To Activate."
-        
-        # Cannot be applied with Costs END To Maintain
-        if GenericObject.find_object_by_id(
-            generic_object.assigned_modifiers, "COSTSENDTOMAINTAIN") is not None:
-            return f"{self.display} cannot be applied to an ability with Costs END To Maintain."
-        
-        # Can be applied to Multipower or ElementalControl
-        from kirby_cost.objects.frameworks.multipower import Multipower
-        from kirby_cost.objects.frameworks.elemental_control import ElementalControl
-        if isinstance(generic_object, (Multipower, ElementalControl)):
-            return ""
-        
-        # Can be applied to NakedModifier or CustomPower with APPerEnd
-        from kirby_cost.objects.powers.naked_modifier import NakedModifier
-        from kirby_cost.objects.powers.custom_power import CustomPower
-        if isinstance(generic_object, (NakedModifier, CustomPower)):
-            if generic_object.ap_per_end != 0:
+
+        # Java clones the object and detaches parent/main_power before
+        # asking anything further (ReducedEND.java:132-134), so the reads
+        # below see it in isolation rather than picking up a framework's
+        # own modifiers through ``compute_end_usage``'s parent walk. This
+        # engine has no ``clone()``; the same isolation is done by mutating
+        # the real object and restoring it in ``finally`` -- the pattern
+        # ``Linked.base_cost`` already uses for the same reason.
+        orig_parent = generic_object.parent
+        orig_main_power = generic_object.main_power
+        generic_object.parent = None
+        generic_object.main_power = None
+        try:
+            # Cannot be applied with Increased END
+            if GenericObject.find_object_by_id(
+                generic_object.assigned_modifiers, "INCREASEDEND") is not None:
+                return f"{self.display} cannot be applied to an ability with the Increased END Limitation."
+
+            # Cannot be applied with Costs END
+            if GenericObject.find_object_by_id(
+                generic_object.assigned_modifiers, "COSTSEND") is not None:
+                return f"{self.display} cannot be applied to an ability with the Costs END Limitation."
+
+            # Cannot be applied with Costs END Only To Activate
+            if GenericObject.find_object_by_id(
+                generic_object.assigned_modifiers, "COSTSENDONLYTOACTIVATE") is not None:
+                return f"{self.display} cannot be applied to an ability with Costs END Only To Activate."
+
+            # Cannot be applied with Costs END To Maintain
+            if GenericObject.find_object_by_id(
+                generic_object.assigned_modifiers, "COSTSENDTOMAINTAIN") is not None:
+                return f"{self.display} cannot be applied to an ability with Costs END To Maintain."
+
+            # Can be applied to Multipower or ElementalControl
+            from kirby_cost.objects.frameworks.multipower import Multipower
+            from kirby_cost.objects.frameworks.elemental_control import ElementalControl
+            if isinstance(generic_object, (Multipower, ElementalControl)):
                 return ""
-        
-        # Check if power costs END (excluding Charges)
-        charges_mod = GenericObject.find_object_by_id(
-            generic_object.assigned_modifiers, "CHARGES")
-        
-        # For Characteristics, check base END usage
-        from kirby_cost.objects.characteristics.characteristic import Characteristic
-        if isinstance(generic_object, Characteristic):
-            # Would need HeroDesigner.getActiveHero() check
-            # For now, check directly
-            if generic_object.end_usage == 0:
-                return f"{generic_object.display} does not cost END."
-            return ""
-        
-        # For other objects, check END usage
-        if generic_object.end_usage == 0:
-            return f"{generic_object.display} does not cost END."
-        
-        return ""
+
+            # Can be applied to NakedModifier or CustomPower with APPerEnd
+            from kirby_cost.objects.powers.naked_modifier import NakedModifier
+            from kirby_cost.objects.powers.custom_power import CustomPower
+            if isinstance(generic_object, (NakedModifier, CustomPower)):
+                if generic_object.ap_per_end != 0:
+                    return ""
+
+            # ReducedEND.java:162-166: a Charges modifier's own END
+            # exemption would otherwise hide the ability's TRUE per-use END
+            # cost -- Charges is a discount on how the ability is BOUGHT,
+            # not a statement that it never costs END. Removed here so
+            # ``end_usage`` below reads the underlying cost, restored before
+            # returning either way.
+            charges_mod = GenericObject.find_object_by_id(
+                generic_object.assigned_modifiers, "CHARGES")
+            orig_assigned = generic_object.assigned_modifiers
+            if charges_mod is not None:
+                generic_object.assigned_modifiers = [
+                    m for m in orig_assigned if m is not charges_mod]
+            try:
+                # ReducedEND.java:167-198: for a Characteristic, HD reads
+                # the ACTIVE HERO's OWN copy of that characteristic -- the
+                # hero-level read this override exists to port -- not the
+                # object under test. Strength's END usage is its
+                # getPrimaryEND() (:174-176), which folds in every power
+                # bought as added Strength; every other Characteristic uses
+                # its plain end_usage.
+                from kirby_cost.objects.characteristics.characteristic import Characteristic
+                from kirby_cost.objects.characteristics.strength import Strength
+                if isinstance(generic_object, Characteristic):
+                    active_hero = None
+                    if generic_object.add_modifiers_to_base:
+                        from kirby_cost.core.context import EngineContext
+                        active_hero = EngineContext.active_hero()
+                    if active_hero is not None:
+                        hero_char = next(
+                            (c for c in active_hero.characteristics
+                             if c.xmlid == generic_object.xmlid), None)
+                        char_end = (hero_char.end_usage if hero_char is not None
+                                    else generic_object.end_usage)
+                        if isinstance(hero_char, Strength):
+                            char_end = hero_char.primary_end(active_hero)
+                        if char_end == 0 and generic_object.end_usage == 0:
+                            return f"{generic_object.display} does not cost END."
+                        return ""
+                    if generic_object.end_usage == 0:
+                        return f"{generic_object.display} does not cost END."
+                    return ""
+
+                # For other objects, check END usage
+                if generic_object.end_usage == 0:
+                    return f"{generic_object.display} does not cost END."
+                return ""
+            finally:
+                generic_object.assigned_modifiers = orig_assigned
+        finally:
+            generic_object.parent = orig_parent
+            generic_object.main_power = orig_main_power
