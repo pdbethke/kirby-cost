@@ -735,3 +735,27 @@ def test_reduced_end_sees_past_a_charges_modifier_s_own_end_exemption():
                           if c["object_id"] == str(flight._id) and c["modifier"] == "REDUCEDEND"
                           and c["tier"] == "template")
     assert template_modifier("REDUCEDEND").included(flight) == stateful_cell["reason"]
+
+
+def test_affects_physical_world_uses_the_modifier_aware_target():
+    """AffectsPhysicalWorld.java:50 calls o.getTarget(), the modifier-aware
+    read (GenericObject.java:2805-2828 -- a SELFONLY modifier forces
+    SELFONLY even on a power whose raw ``target`` attribute is DCV), not
+    the raw ``target`` field. The sink's "Adjustable Drain" carries a
+    SELFONLY modifier; HD refuses AffectsPhysicalWorld on it for exactly
+    that reason -- the fixture's own echo shows state.target == SELFONLY
+    even though the object's raw target is DCV."""
+    from kirby_cost.core.context import EngineContext
+    from tests.matrix_support import sink_hero, stateful_cells, template_modifier
+
+    hero = sink_hero()
+    drain = next(o for o in hero.powers if o.name == "Adjustable Drain")
+    assert drain.target == "DCV"
+    assert drain.effective_target() == "SELFONLY"
+    stateful_cell = next(c for c in stateful_cells()
+                          if c["object_id"] == str(drain._id) and c["modifier"] == "AFFECTSPHYSICALWORLD"
+                          and c["tier"] == "template")
+    assert stateful_cell["state"]["target"] == "SELFONLY"
+    reason = template_modifier("AFFECTSPHYSICALWORLD").included(drain)
+    assert reason == stateful_cell["reason"]
+    assert reason != ""

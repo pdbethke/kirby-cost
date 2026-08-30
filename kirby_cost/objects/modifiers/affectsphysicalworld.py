@@ -48,7 +48,13 @@ class AffectsPhysicalWorld(Modifier, xmlid="AFFECTSPHYSICALWORLD"):
         from kirby_cost.core.context import EngineContext
         if isinstance(generic_object, NakedModifier):
             return ""
-        target = generic_object.target
+        # AffectsPhysicalWorld.java:50 calls o.getTarget() -- the modifier-aware
+        # read (GenericObject.java:2805-2828: a SELFONLY/BASEDONCON/UOO/BOECV/
+        # AOE/EXPLOSION modifier changes what target() answers), not the raw
+        # ``target`` attribute. A power with target DCV but a SELFONLY
+        # modifier attached (e.g. an Adjustable Drain slot) reads back as
+        # SELFONLY here, exactly as HD's own echo shows.
+        target = generic_object.effective_target()
         if target in ("SELFONLY", "N/A") and generic_object.xmlid not in ("SUMMON", "DUPLICATION"):
             return f"{self.display} can only be applied to Powers which affect others."
         if isinstance(generic_object, Desolidification):
