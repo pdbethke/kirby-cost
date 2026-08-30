@@ -41,11 +41,15 @@ class Flight(Power, xmlid="FLIGHT"):
         if is_6e() and GenericObject.find_object_by_id(
                 self.assigned_modifiers, "GLIDING") is not None:
             return False
-        return getattr(self, "_uses_end_flag", False)
+        # Java: `return super.usesEND()` -- the base's COMPUTED read (CHARGES
+        # forces False, COSTSEND True...), not a private flag. The old flag
+        # bypassed that computation and made a Charges-carrying Flight claim
+        # to use END.
+        return GenericObject.uses_end.fget(self)
 
     @uses_end.setter
     def uses_end(self, value: bool) -> None:
-        self._uses_end_flag = bool(value)
+        self._uses_end = bool(value)
     
     @property
     def damage_display(self) -> str:

@@ -679,7 +679,7 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         if "DEFENSE" in forced_xml:
             self.defense = tmpl.defense
         elif tmpl.defense and "DEFENSE" not in stated:
-            self.defense = tmpl.defense  # template beats the constructor, as DURATION above
+            self._defense = tmpl.defense  # template beats the constructor, as DURATION above
         # Combat facts stated by the template. These are what let a GM's house
         # rules reach the fight: kirby-cost reads the .hdt, so a campaign that
         # edits KILLING="No" on the killing attacks, or turns knockback off,
@@ -1027,11 +1027,48 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
 
     @property
     def defense(self) -> str:
-        """Get the defense type."""
-        return self._defense
+        """Java's computed getDefense() (GenericObject.java:1542-1567), not
+        the raw field: BASEDONCON forces NORMAL, BOECV its option (STANDARD
+        NORMAL, else MENTAL), UOO POWER, NND and AVLD SPECIAL -- read over the
+        object's own modifiers plus its parent List's, as the Java does."""
+        return self.defense_ignoring("")
+
+    def defense_ignoring(self, ignore_id: str) -> str:
+        """getDefense(String ignoreID) (GenericObject.java:1578-1620): the
+        same computation with one modifier xmlid left out -- AVLD prices
+        itself against the defense the power would have without AVLD."""
+        ret = self._defense
+        mods = self.all_assigned_modifiers
+
+        def has(xmlid):
+            return xmlid != ignore_id and GenericObject.find_object_by_id(mods, xmlid) is not None
+
+        if has("BASEDONCON"):
+            ret = "NORMAL"
+        if has("BOECV"):
+            mod = GenericObject.find_object_by_id(mods, "BOECV")
+            opt = getattr(mod, "selected_option", None)
+            opt_id = (getattr(opt, "xmlid", "") or getattr(mod, "option_id", "") or "").upper()
+            ret = "NORMAL" if opt_id == "STANDARD" else "MENTAL"
+        if has("UOO"):
+            ret = "POWER"
+        if has("NND"):
+            ret = "SPECIAL"
+        if has("AVLD"):
+            ret = "SPECIAL"
+        return ret
 
     @defense.setter
     def defense(self, value: str) -> None:
+        self._defense = value
+
+    @property
+    def orig_defense(self) -> str:
+        """The raw field -- what the template/document stated."""
+        return self._defense
+
+    @orig_defense.setter
+    def orig_defense(self, value: str) -> None:
         self._defense = value
 
     @property

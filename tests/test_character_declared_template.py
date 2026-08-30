@@ -71,4 +71,9 @@ def test_a_main6e_character_is_unaffected():
     assert hero.total_points == 1456.0
     flight = next((p for p in hero.powers if p.xmlid == "FLIGHT"), None)
     if flight is not None:
-        assert flight.uses_end is True
+        # This Flight carries REDUCEDEND (ZERO END): the raw field stays True,
+        # and the COMPUTED uses_end -- Java's usesEND(), GenericObject.java
+        # :4295-4328, where only HALFEND keeps END -- is False. The old
+        # `uses_end is True` assertion encoded the raw-field era.
+        assert flight.orig_uses_end is True
+        assert flight.uses_end is False

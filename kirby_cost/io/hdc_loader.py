@@ -1215,6 +1215,13 @@ class HDCLoader:
                     fw.xmlid = "ELEMENTALCONTROL"
                 # Store the framework XML tag for round-trip serialization
                 fw._framework_tag = tag
+                # A framework restored from the POWERS section is a Power in
+                # HD's classification -- Linked.java:455 asks o.isPower() of
+                # the List itself and HD answers yes (GenericObject.java:3547
+                # returns the field the powers-section restore sets). The
+                # engine never set it, so LINKED refused a Multipower/VPP HD
+                # allows.
+                fw._is_power = True
                 # Load framework modifiers
                 for mod_elem in elem.findall("MODIFIER"):
                     mod = self._build_modifier(mod_elem, fw)
