@@ -48,8 +48,14 @@ class Transdimensional(Modifier, xmlid="TRANSDIMENSIONAL"):
         if self.force_allow:
             return result
         
-        # No additional validation needed - uses base class validation
-        # Transdimensional modifier doesn't override included() in Java source
+        # Transdimensional.java:111-128. The port claimed Java has no
+        # override; it has one.
+        from kirby_cost.objects.powers.stretching import Stretching
+        if isinstance(generic_object, Stretching):
+            return ""
+        if generic_object.target not in ("DCV", "ECV", "HEX"):
+            return (f"{self._display} can only be applied to Powers which "
+                    "affect/are targeted on others.")
         return ""
     
     # TODO: Implement custom getColumn2Output() method from Java source

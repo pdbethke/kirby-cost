@@ -468,3 +468,21 @@ def test_nnd_turns_off_does_knockback_and_nokb_wins_over_doeskb():
     assert power.does_knockback is True
     power.assigned_modifiers.append(template_modifier("NOKB"))
     assert power.does_knockback is False
+
+
+# --- Round 2: the residue the matrix still names --------------------------
+
+
+def test_transdimensional_needs_a_power_aimed_at_someone_else():
+    """Transdimensional.java:111-128 -- the port was a `return ""` whose
+    comment falsely claimed Java has no override. Stretching is allowed
+    outright; otherwise the object's TARGET must be DCV, ECV or HEX. 6E1 p.350:
+    the Advantage lets a power "affect targets in other dimensions", so a power
+    that targets nobody has nothing to reach -- HD agrees with the book, and
+    TARGET is its proxy for "affects others"."""
+    mod = template_modifier("TRANSDIMENSIONAL")
+    assert mod.included(template_power("ENERGYBLAST")) == ""     # DCV
+    assert mod.included(template_power("STRETCHING")) == ""      # allowed outright
+    assert mod.included(template_power("FLIGHT")) == (
+        f"{mod.display} can only be applied to Powers which affect/are "
+        "targeted on others.")
