@@ -675,7 +675,7 @@ def test_affects_physical_world_needs_desolidification_on_the_hero():
     blast_apw = next(o for o in hero.powers if o.name == "Blast Affects Physical World")
     assigned = next(m for m in blast_apw.assigned_modifiers if m.xmlid == "AFFECTSPHYSICALWORLD")
     stateful_cell = next(c for c in stateful_cells()
-                          if c["object_id"] == str(blast_apw._id) and c["modifier"] == "AFFECTSPHYSICALWORLD"
+                          if c["object_id"] == blast_apw.hdc_id() and c["modifier"] == "AFFECTSPHYSICALWORLD"
                           and c["tier"] == "assigned")
     assert assigned.included(blast_apw) == stateful_cell["reason"]
 
@@ -695,7 +695,7 @@ def test_not_through_mind_link_needs_mind_link_on_the_hero():
     telepathy = next(o for o in hero.powers if o.name == "Telepathy Not Through Mind Link")
     assigned = next(m for m in telepathy.assigned_modifiers if m.xmlid == "NOTTHROUGHMINDLINK")
     stateful_cell = next(c for c in stateful_cells()
-                          if c["object_id"] == str(telepathy._id) and c["modifier"] == "NOTTHROUGHMINDLINK"
+                          if c["object_id"] == telepathy.hdc_id() and c["modifier"] == "NOTTHROUGHMINDLINK"
                           and c["tier"] == "assigned")
     assert assigned.included(telepathy) == stateful_cell["reason"]
 
@@ -713,7 +713,7 @@ def test_reduced_end_reads_the_hero_s_own_characteristic():
     str_char = next(o for o in hero.characteristics if o.name == "STR Reduced END And Linked")
     assigned = next(m for m in str_char.assigned_modifiers if m.xmlid == "REDUCEDEND")
     stateful_cell = next(c for c in stateful_cells()
-                          if c["object_id"] == str(str_char._id) and c["modifier"] == "REDUCEDEND"
+                          if c["object_id"] == str_char.hdc_id() and c["modifier"] == "REDUCEDEND"
                           and c["tier"] == "assigned")
     assert assigned.included(str_char) == stateful_cell["reason"]
 
@@ -732,7 +732,7 @@ def test_reduced_end_sees_past_a_charges_modifier_s_own_end_exemption():
     flight = next(o for o in hero.powers if o.name == "Flight Charges")
     assert flight.end_usage == 0
     stateful_cell = next(c for c in stateful_cells()
-                          if c["object_id"] == str(flight._id) and c["modifier"] == "REDUCEDEND"
+                          if c["object_id"] == flight.hdc_id() and c["modifier"] == "REDUCEDEND"
                           and c["tier"] == "template")
     assert template_modifier("REDUCEDEND").included(flight) == stateful_cell["reason"]
 
@@ -753,7 +753,7 @@ def test_affects_physical_world_uses_the_modifier_aware_target():
     assert drain.target == "DCV"
     assert drain.effective_target() == "SELFONLY"
     stateful_cell = next(c for c in stateful_cells()
-                          if c["object_id"] == str(drain._id) and c["modifier"] == "AFFECTSPHYSICALWORLD"
+                          if c["object_id"] == drain.hdc_id() and c["modifier"] == "AFFECTSPHYSICALWORLD"
                           and c["tier"] == "template")
     assert stateful_cell["state"]["target"] == "SELFONLY"
     reason = template_modifier("AFFECTSPHYSICALWORLD").included(drain)

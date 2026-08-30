@@ -3,8 +3,8 @@ without the dialogs: the same walk, returning what HD would have complained abou
 The stateful fixture's `assigned` and `framework` rows are the oracle: an object
 whose rows all agree must verify clean; an object with a refused row must name it.
 
-Two documented seams sit between this walk and those rows, and both are held
-open by name rather than papered over:
+One documented seam sits between this walk and those rows, and is held open
+by name rather than papered over:
 
 * **Cells the engine already gets wrong.** ``included_stateful_known_gaps.json``
   is the shrink-only ledger of every stateful cell where the engine's
@@ -12,14 +12,35 @@ open by name rather than papered over:
   those cells it necessarily inherits the engine's answer. They are owned by
   ``tests/test_included_stateful.py`` -- excluded from BOTH sides here, never
   silently absorbed.
-* **The oracle's tier-2 simplification.** The Java REMOVES a modifier from the
-  object before re-asking it (GenericObject.java:4572); the oracle
-  (CostCalculatorCLI.java, tier 2) asked with it still attached, on the
-  reasoning that ``Modifier.included()`` does not read the object's own
-  assigned list. That reasoning is wrong for three cells, because the engine
-  derives duration/range/target FROM the assigned modifiers -- so removing the
-  modifier changes the answer. This port follows the JAVA; the three cells are
-  named in ``ORACLE_TIER2_SIMPLIFICATION`` below.
+
+The oracle's ``assigned`` tier used to ask each modifier's ``included()`` with
+the modifier still attached, on the reasoning that ``Modifier.included()``
+does not read the object's own assigned list. That reasoning was wrong for
+three cells, because the engine derives duration/range/target FROM the
+assigned modifiers -- so removing the modifier before asking (what the Java
+actually does, ``GenericObject.java:4584-4661``) changes the answer.
+``CostCalculatorCLI.java``'s ``assigned`` tier now mirrors the Java exactly
+(remove, ask, restore, same list object) -- see kirby-hd-oracle
+``feat/included-hdc``. Two of the three affected cells now agree without a
+carve-out (they moved into the shrink-only ledger as ordinary regressions and
+are excluded above like any other known engine gap).
+
+The third -- ``PERSISTENT`` on object ``20260830000017`` ("Resistant
+Protection") -- survives as its own named exception, ``LOADER_DIVERGENCE``,
+below. It is NOT an oracle quirk: ``GenericObject.getDuration()``/
+``getOrigDuration()`` (:1673-1765) read the object's raw ``duration`` FIELD
+first, before any modifier presence check, so HD's refusal ("already
+Persistent") holds whether or not PERSISTENT is attached -- removing it makes
+no difference in the real Java, which is why the regenerated fixture's answer
+for this cell did not move. Our port's ``duration``/``orig_duration``
+properties read the same field (``base.py:824,994``), but this object's
+loaded field is ``"CONSTANT"``, not HD's ``"PERSISTENT"`` -- the
+constructor-hardcoded-duration loader follow-up (2026-08-30 anatomy note
+Follow-ups (1)), filed and explicitly not to be fixed here. With the
+modifier attached the loaded field is masked (the modifier-presence branch of
+``duration`` returns ``"PERSISTENT"`` either way), so ``test_included_stateful``
+sees no gap; only ``verify_modifiers``'s real removal exposes the field
+underneath.
 """
 from __future__ import annotations
 
@@ -34,23 +55,16 @@ from tests.matrix_support import (hdc_id, object_index, sink_hero, stateful_cell
 
 LEDGER_PATH = Path(__file__).parent / "fixtures" / "included_stateful_known_gaps.json"
 
-# (object id, modifier xmlid) cells where this walk and the oracle's `assigned`
-# rows differ ONLY because the Java removes the modifier before re-asking and
-# the oracle did not. Verified one at a time: with the modifier still attached
-# the engine returns HD's own verdict (these cells are NOT in the gap ledger);
-# detached, the derived state the modifier itself creates goes away.
-ORACLE_TIER2_SIMPLIFICATION = {
-    # PERSISTENT is what makes this Resistant Protection Persistent; detached,
-    # "Resistant Protection is already Persistent." no longer applies.
-    ("20260830000017", "PERSISTENT"): "hd_only",
-    # NORANGE is what makes this Blast unranged; detached it is a Ranged Power
-    # again, which is exactly what "No Range can only be applied to Ranged
-    # Powers." asks for.
-    ("20260830000022", "NORANGE"): "hd_only",
-    # The mirror case: AOE is what re-targets this (self-only) Resistant
-    # Protection onto a hex. Detached, the slot is self-targeted and AOE is
-    # refused -- HD's walk sees the refusal, the oracle's ask did not.
-    ("20260830000057", "AOE"): "py_only",
+# (object id, modifier xmlid) cells where verify_modifiers' own detach-then-ask
+# (correct: it mirrors GenericObject.java:4584-4661) disagrees with HD's real
+# answer not because of an oracle simplification, but because the LOADED
+# object's own state differs from HD's -- the loader follow-up, not a rule
+# defect. See the module docstring for the one cell currently here.
+LOADER_DIVERGENCE = {
+    ("20260830000017", "PERSISTENT"): (
+        "loader: orig_duration HD=PERSISTENT engine=CONSTANT; follow-up "
+        "2026-08-30 anatomy note Follow-ups (1)"
+    ),
 }
 
 
@@ -78,11 +92,8 @@ def _hd_refusals() -> tuple[dict, dict]:
         if stateful_key(c) in ledger:
             ignored[owner].add(cell)          # a known engine gap; not this test's verdict
             continue
-        simplification = ORACLE_TIER2_SIMPLIFICATION.get((c["object_id"], c["modifier"]))
-        if c["tier"] == "assigned" and simplification == "hd_only":
-            continue                          # HD's walk detaches it; the refusal evaporates
-        if c["tier"] == "assigned" and simplification == "py_only":
-            expected[owner].add(cell)         # HD's walk detaches it; the refusal appears
+        if c["tier"] == "assigned" and (c["object_id"], c["modifier"]) in LOADER_DIVERGENCE:
+            ignored[owner].add(cell)          # loader follow-up, not a rule defect
             continue
         if not c["allowed"]:
             expected[owner].add(cell)
