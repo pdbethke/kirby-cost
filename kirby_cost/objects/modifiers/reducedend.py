@@ -142,22 +142,22 @@ class ReducedEND(Modifier, xmlid="REDUCEDEND"):
         # Cannot be applied with Increased END
         if GenericObject.find_object_by_id(
             generic_object.assigned_modifiers, "INCREASEDEND") is not None:
-            return f"{self._display} cannot be applied to an ability with the Increased END Limitation."
+            return f"{self.display} cannot be applied to an ability with the Increased END Limitation."
         
         # Cannot be applied with Costs END
         if GenericObject.find_object_by_id(
             generic_object.assigned_modifiers, "COSTSEND") is not None:
-            return f"{self._display} cannot be applied to an ability with the Costs END Limitation."
+            return f"{self.display} cannot be applied to an ability with the Costs END Limitation."
         
         # Cannot be applied with Costs END Only To Activate
         if GenericObject.find_object_by_id(
             generic_object.assigned_modifiers, "COSTSENDONLYTOACTIVATE") is not None:
-            return f"{self._display} cannot be applied to an ability with Costs END Only To Activate."
+            return f"{self.display} cannot be applied to an ability with Costs END Only To Activate."
         
         # Cannot be applied with Costs END To Maintain
         if GenericObject.find_object_by_id(
             generic_object.assigned_modifiers, "COSTSENDTOMAINTAIN") is not None:
-            return f"{self._display} cannot be applied to an ability with Costs END To Maintain."
+            return f"{self.display} cannot be applied to an ability with Costs END To Maintain."
         
         # Can be applied to Multipower or ElementalControl
         from kirby_cost.objects.frameworks.multipower import Multipower

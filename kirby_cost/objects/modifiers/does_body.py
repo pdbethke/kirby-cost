@@ -45,7 +45,7 @@ class DoesBODY(Modifier, xmlid="DOESBODY"):
         
         # Cannot be applied to Flash
         if generic_object.xmlid == "FLASH":
-            return f"{self._display} cannot be applied to a Flash Attack."
+            return f"{self.display} cannot be applied to a Flash Attack."
         
         # Already does BODY
         if generic_object.does_body:
@@ -53,7 +53,7 @@ class DoesBODY(Modifier, xmlid="DOESBODY"):
         
         # Must do damage
         if not generic_object.does_damage:
-            return f"{self._display} can only be applied to abilities which damage the target."
+            return f"{self.display} can only be applied to abilities which damage the target."
         
         return ""
 

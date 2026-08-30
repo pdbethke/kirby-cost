@@ -51,7 +51,7 @@ class HoleInTheMiddle(Modifier, xmlid="HOLEINTHEMIDDLE"):
         # HoleInTheMiddle.java:84-89 -- HD's proxy for "affects an area" is
         # the object's own TARGET being HEX.
         if generic_object.target != "HEX":
-            return f"{self._display} can only be applied to abilities which affect an area."
+            return f"{self.display} can only be applied to abilities which affect an area."
         return ""
     
     # TODO: Implement custom getColumn2Output() method from Java source

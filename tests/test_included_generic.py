@@ -486,3 +486,20 @@ def test_transdimensional_needs_a_power_aimed_at_someone_else():
     assert mod.included(template_power("FLIGHT")) == (
         f"{mod.display} can only be applied to Powers which affect/are "
         "targeted on others.")
+
+
+def test_a_refusal_names_the_modifier_with_its_levels_substituted():
+    """Modifier.included()'s messages interpolate Java's getDisplay()
+    (GenericObject.java:1631-1656), which substitutes a `[LVL]` placeholder
+    with the level count -- the port interpolated the raw DISPLAY field. Main6E
+    declares Expanded Effect as `DISPLAY="Expanded Effect (x[LVL] ...)"
+    LEVELSTART="2"`, so HD writes "x2" and the engine wrote "x[LVL]". HD rule,
+    no page: the placeholder is a template mechanism, not a book statement.
+
+    Needs BOTH halves -- the substituting `display` AND the prototype carrying
+    LEVELSTART; with either alone the message reads "x[LVL]" or "x0"."""
+    mod = template_modifier("EXPANDEDEFFECT")   # TYPE=ADJUSTMENT
+    assert mod.levels == 2
+    assert mod.display == "Expanded Effect (x2 Characteristics or Powers simultaneously)"
+    assert mod.included(template_power("ENERGYBLAST")) == \
+        f"{mod.display} can only be applied to abilities of type adjustment"

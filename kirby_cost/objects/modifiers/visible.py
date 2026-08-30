@@ -47,14 +47,14 @@ class Visible(Modifier, xmlid="VISIBLE"):
         if "MENTAL" in generic_object.types and not GenericObject.find_object_by_id(generic_object.assigned_modifiers, "BASEDONCON") and not GenericObject.find_object_by_id(generic_object.assigned_modifiers, "BOECV"):
             return ""
         if GenericObject.find_object_by_id(generic_object.assigned_modifiers, "INVISIBLE"):
-            return f"{self._display} cannot be applied to a Power/ability with the Invisible Advantage on it."
+            return f"{self.display} cannot be applied to a Power/ability with the Invisible Advantage on it."
         focus_mod = GenericObject.find_object_by_id(generic_object.assigned_modifiers, "FOCUS")
         if focus_mod and isinstance(focus_mod, Focus) and focus_mod.selected_option and focus_mod.selected_option.xmlid.startswith("O"):
-            return f"{self._display} cannot be taken with the Limitation Focus if the Focus is Obvious."
+            return f"{self.display} cannot be taken with the Limitation Focus if the Focus is Obvious."
         parent = generic_object.parent
         if parent:
             parent_focus = GenericObject.find_object_by_id(parent.assigned_modifiers, "FOCUS")
             if parent_focus and isinstance(parent_focus, Focus) and not parent_focus.private and parent_focus.selected_option and parent_focus.selected_option.xmlid.startswith("O"):
-                return f"{self._display} cannot be taken with the Limitation Focus if the Focus is Obvious."
+                return f"{self.display} cannot be taken with the Limitation Focus if the Focus is Obvious."
 
         return ""

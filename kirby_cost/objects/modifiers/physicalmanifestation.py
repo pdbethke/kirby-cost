@@ -43,7 +43,7 @@ class PhysicalManifestation(Modifier, xmlid="PHYSICALMANIFESTATION"):
             return result
         
         if not generic_object.duration == "CONSTANT":
-            return f"{self._display} may only be applied to Constant Powers."
+            return f"{self.display} may only be applied to Constant Powers."
         return result
         
         return ""

@@ -45,8 +45,8 @@ class NotThroughMindLink(Modifier, xmlid="NOTTHROUGHMINDLINK"):
         from kirby_cost.core.context import EngineContext
         from kirby_cost.objects.powers.mind_link import MindLink
         if isinstance(generic_object, MindLink):
-            return f"{self._display} cannot be applied to Mind Link."
-        result = f"{self._display} can only be applied if the character has Mind Link."
+            return f"{self.display} cannot be applied to Mind Link."
+        result = f"{self.display} can only be applied if the character has Mind Link."
         active_hero = EngineContext.active_hero()
         if active_hero:
             for power in active_hero.powers:
@@ -54,7 +54,7 @@ class NotThroughMindLink(Modifier, xmlid="NOTTHROUGHMINDLINK"):
                     result = ""
                     break
         if not result and GenericObject.find_object_by_id(generic_object.assigned_modifiers, "BASEDONCON"):
-            return f"{self._display} cannot be applied to an ability with Based On CON."
+            return f"{self.display} cannot be applied to an ability with Based On CON."
         return result
         
         return ""

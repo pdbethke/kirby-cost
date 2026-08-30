@@ -50,9 +50,9 @@ class AffectsPhysicalWorld(Modifier, xmlid="AFFECTSPHYSICALWORLD"):
             return ""
         target = generic_object.target
         if target in ("SELFONLY", "N/A") and generic_object.xmlid not in ("SUMMON", "DUPLICATION"):
-            return f"{self._display} can only be applied to Powers which affect others."
+            return f"{self.display} can only be applied to Powers which affect others."
         if isinstance(generic_object, Desolidification):
-            return f"{self._display} cannot be applied to Desolidification.  It should be applied to the actual Powers/abilities that will affect the physical world while the character is Desolidified."
+            return f"{self.display} cannot be applied to Desolidification.  It should be applied to the actual Powers/abilities that will affect the physical world while the character is Desolidified."
         # Check if character has Desolidification
         active_hero = EngineContext.active_hero()
         if active_hero:
@@ -63,4 +63,4 @@ class AffectsPhysicalWorld(Modifier, xmlid="AFFECTSPHYSICALWORLD"):
                     for sub_power in power.powers:
                         if isinstance(sub_power, Desolidification):
                             return ""
-        return f"{self._display} may only be purchased by characters who have Desolidification."
+        return f"{self.display} may only be purchased by characters who have Desolidification."

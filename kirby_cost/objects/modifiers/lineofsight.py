@@ -46,8 +46,8 @@ class LineOfSight(Modifier, xmlid="LOS"):
                 GenericObject.find_object_by_id(generic_object.assigned_modifiers, "RANGED")):
             return ""
         if generic_object.range_value == 0:
-            return f"{self._display} can only be applied to Ranged Powers."
+            return f"{self.display} can only be applied to Ranged Powers."
         if generic_object.range_value < 0:
-            return f"{self._display} is already Line Of Sight."
+            return f"{self.display} is already Line Of Sight."
         
         return ""

@@ -138,6 +138,6 @@ class IncreasedMaxRange(Modifier, xmlid="INCREASEDMAXRANGE"):
         
         # Can only be applied to Ranged Powers
         if generic_object.range_value <= 0:
-            return f"{self._display} can only be applied to Ranged Powers."
+            return f"{self.display} can only be applied to Ranged Powers."
         
         return ""

@@ -125,13 +125,13 @@ class Sticky(Modifier, xmlid="STICKY"):
         # Can only be applied to Powers which affect/are targeted on others
         target = generic_object.target
         if target not in ("DCV", "ECV", "HEX"):
-            return f"{self._display} can only be applied to Powers which affect/are targeted on others."
+            return f"{self.display} can only be applied to Powers which affect/are targeted on others."
         
         # For Mental Powers, requires Based On CON
         types = generic_object.types
         if types and "MENTAL" in types:
             if GenericObject.find_object_by_id(
                 generic_object.assigned_modifiers, "BASEDONCON") is None:
-                return f"{self._display} cannot be applied to Mental Powers unless Based On CON is purchased."
+                return f"{self.display} cannot be applied to Mental Powers unless Based On CON is purchased."
         
         return ""

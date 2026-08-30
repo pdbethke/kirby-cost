@@ -44,6 +44,6 @@ class SubjectToRangeModifier(Modifier, xmlid="SUBJECTTORANGEMODIFIER"):
         
         if generic_object.range_value != -1:
             if not GenericObject.find_object_by_id(generic_object.assigned_modifiers, "NORMALRANGE"):
-                return f"{self._display} can only be applied to Line Of Sight Powers."
+                return f"{self.display} can only be applied to Line Of Sight Powers."
         
         return ""

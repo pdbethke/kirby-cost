@@ -134,15 +134,15 @@ class Cumulative(Modifier, xmlid="CUMULATIVE"):
         
         # Cannot be applied to abilities that cause STUN or BODY damage
         if generic_object.does_damage:
-            return f"{self._display} cannot be applied to abilities that cause STUN or BODY damage."
+            return f"{self.display} cannot be applied to abilities that cause STUN or BODY damage."
         
         # Can only be applied to abilities which act against a target's Defenses
         if generic_object.defense == "NONE":
-            return f"{self._display} can only be applied to abilities which act against a target's Defenses"
+            return f"{self.display} can only be applied to abilities which act against a target's Defenses"
         
         # Can only be applied to abilities which require an Attack Roll
         target = generic_object.target
         if target == "SELFONLY" or target == "N/A":
-            return f"{self._display} can only be applied to abilities which require an Attack Roll."
+            return f"{self.display} can only be applied to abilities which require an Attack Roll."
         
         return ""

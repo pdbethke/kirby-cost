@@ -265,6 +265,6 @@ class PartialCoverage(Modifier, xmlid="PARTIALCOVERAGE"):
         types = generic_object.types
         if (not isinstance(generic_object, (Body, Def, Clairsentience)) and
             (not types or "DEFENSE" not in types)):
-            return f"{self._display} may only be applied to BODY, Clairsentience, and Defense Powers."
+            return f"{self.display} may only be applied to BODY, Clairsentience, and Defense Powers."
         
         return ""

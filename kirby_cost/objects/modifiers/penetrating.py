@@ -105,16 +105,16 @@ class Penetrating(Modifier, xmlid="PENETRATING"):
         # Cannot be applied to Defense Powers
         types = generic_object.types
         if types and "DEFENSE" in types:
-            return f"{self._display} cannot be applied to Defense Powers."
+            return f"{self.display} cannot be applied to Defense Powers."
         
         # Can only be applied to abilities which require an Attack Roll
         target = generic_object.target
         if target == "SELFONLY" or target == "N/A":
-            return f"{self._display} can only be applied to abilities which require an Attack Roll."
+            return f"{self.display} can only be applied to abilities which require an Attack Roll."
         
         # Cannot be applied to No Normal Defense Attacks
         if GenericObject.find_object_by_id(
             generic_object.assigned_modifiers, "NND") is not None:
-            return f"{self._display} cannot be applied to No Normal Defense Attacks."
+            return f"{self.display} cannot be applied to No Normal Defense Attacks."
         
         return ""

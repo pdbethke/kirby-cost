@@ -45,12 +45,12 @@ class Instant(Modifier, xmlid="INSTANT"):
         if (GenericObject.find_object_by_id(generic_object.assigned_modifiers, "CONTINUOUS") or 
                 GenericObject.find_object_by_id(generic_object.assigned_modifiers, "PERSISTENT") or 
                 GenericObject.find_object_by_id(generic_object.assigned_modifiers, "INHERENT")):
-            return f"{self._display} cannot be assigned to an ability which have Continuous, Persistent, or Inherent assigned."
+            return f"{self.display} cannot be assigned to an ability which have Continuous, Persistent, or Inherent assigned."
         if generic_object.duration == "INSTANT":
             return f"{generic_object.display} is already Instant."
         if not generic_object.duration == "CONSTANT":
             if generic_object.duration == "PERSISTENT":
-                return f"{self._display} cannot be applied to a Persistent ability.  The ability must be made non-Persistent first."
-            return f"{self._display} can only be applied to Powers which are Constant."
+                return f"{self.display} cannot be applied to a Persistent ability.  The ability must be made non-Persistent first."
+            return f"{self.display} can only be applied to Powers which are Constant."
         
         return ""

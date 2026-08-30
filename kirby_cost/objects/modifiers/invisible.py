@@ -113,7 +113,7 @@ class Invisible(Modifier, xmlid="INVISIBLE"):
         # Can't apply if Visible limitation is present
         if GenericObject.find_object_by_id(
             generic_object.assigned_modifiers, "VISIBLE") is not None:
-            return f"{self._display} cannot be applied to a Power/ability with the Visible Limitation on it."
+            return f"{self.display} cannot be applied to a Power/ability with the Visible Limitation on it."
         
         return ""
     

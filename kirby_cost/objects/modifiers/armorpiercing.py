@@ -51,17 +51,17 @@ class ArmorPiercing(Modifier, xmlid="ARMORPIERCING"):
         from kirby_cost.objects.powers.teleportation import Teleportation
         
         if GenericObject.find_object_by_id(generic_object.assigned_modifiers, "NND"):
-            return f"{self._display} cannot be applied to abilities which have No Normal Defense."
+            return f"{self.display} cannot be applied to abilities which have No Normal Defense."
         
         if isinstance(generic_object, (Strength, Teleportation, Maneuver, NakedModifier)):
             return ""
         
         target = generic_object.target
         if target in ("SELFONLY", "N/A"):
-            return f"{self._display} can only be applied to abilities which affect/are targeted on others."
+            return f"{self.display} can only be applied to abilities which affect/are targeted on others."
         
         if generic_object.defense == "NONE":
-            return f"{self._display} can only be applied to abilities which act against a target's defenses."
+            return f"{self.display} can only be applied to abilities which act against a target's defenses."
         
         return ""
     

@@ -43,8 +43,8 @@ class Inherent(Modifier, xmlid="INHERENT"):
             return result
         
         if generic_object.end_usage > 0:
-            return f"{self._display} cannot be applied to abilities which cost END."
+            return f"{self.display} cannot be applied to abilities which cost END."
         if not generic_object.duration == "PERSISTENT":
-            return f"{self._display} can only be applied to abilities which are Persistent."
+            return f"{self.display} can only be applied to abilities which are Persistent."
         
         return ""

@@ -107,7 +107,7 @@ class DifficultToDispel(Modifier, xmlid="DIFFICULTTODISPEL"):
         # Cannot be applied to Inherent abilities
         duration = generic_object.duration
         if duration == "INHERENT":
-            return (f"{self._display} cannot be applied to an Inherent ability. "
+            return (f"{self.display} cannot be applied to an Inherent ability. "
                    f"Inherent abilities cannot be Dispelled.")
         
         return ""

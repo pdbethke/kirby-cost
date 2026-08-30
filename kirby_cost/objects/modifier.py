@@ -351,16 +351,16 @@ class Modifier(GenericObject):
             mine = self._duration.upper()
             if mine == "INSTANT":
                 if d != "INSTANT":
-                    return f"{self._display} can only be applied to Instant Powers."
+                    return f"{self.display} can only be applied to Instant Powers."
             elif mine == "CONSTANT":
                 if d == "INSTANT":
-                    return f"{self._display} can only be applied to Constant Powers."
+                    return f"{self.display} can only be applied to Constant Powers."
             elif mine == "PERSISTENT":
                 if d in ("INSTANT", "CONSTANT"):
-                    return f"{self._display} can only be applied to Persistent Powers."
+                    return f"{self.display} can only be applied to Persistent Powers."
             elif mine == "INHERENT":
                 if d in ("INSTANT", "CONSTANT", "PERSISTENT"):
-                    return f"{self._display} can only be applied to Inherent Powers."
+                    return f"{self.display} can only be applied to Inherent Powers."
 
         from kirby_cost.objects.list import List as HeroList
         from kirby_cost.objects.frameworks.elemental_control import ElementalControl
@@ -372,7 +372,7 @@ class Modifier(GenericObject):
         # rule lives on in HD for 5E-era builds, so it is an HD rule now.
         if (isinstance(obj, ElementalControl) and not self.is_limitation
                 and not modifier_parent):
-            return (f"{self._display} cannot be applied to an Elemental Control.  "
+            return (f"{self.display} cannot be applied to an Elemental Control.  "
                     "Advantages should be applied to each slot individually.")
 
         # Modifier.java:832-874 -- framework typing, then type matching.
@@ -385,19 +385,19 @@ class Modifier(GenericObject):
             if not types:
                 ret = ""
             elif not isinstance(obj, VariablePowerPool) and "VPP" in types:
-                ret = f"{self._display} can only be applied to a Variable Power Pool."
+                ret = f"{self.display} can only be applied to a Variable Power Pool."
             elif not isinstance(obj, Multipower) and "MP" in types:
-                ret = f"{self._display} can only be applied to a Multipower."
+                ret = f"{self.display} can only be applied to a Multipower."
             elif not isinstance(obj, ElementalControl) and "EC" in types:
-                ret = f"{self._display} can only be applied to an Elemental Control."
+                ret = f"{self.display} can only be applied to an Elemental Control."
             elif not isinstance(obj, HeroList) and "LIST" in types:
-                ret = f"{self._display} can only be applied to a List."
+                ret = f"{self.display} can only be applied to a List."
             else:
                 ret = ""
         else:
             # Modifier.java:854-865: ", " between, "or " before the last, and
             # nothing appended after -- the message has NO trailing period.
-            ret = f"{self._display} can only be applied to abilities of type "
+            ret = f"{self.display} can only be applied to abilities of type "
             for i, t in enumerate(types):
                 if i > 0:
                     ret += ", "
@@ -422,14 +422,14 @@ class Modifier(GenericObject):
             xmlid = xmlid.upper().strip()
             for mod in assigned:
                 if (mod.xmlid or "").upper().strip() == xmlid:
-                    return (f"{self._display} cannot be applied to abilties "
+                    return (f"{self.display} cannot be applied to abilties "
                             f"which have {mod.display}")
             if (obj.xmlid or "").upper().strip() == xmlid:
-                return f"{self._display} cannot be applied to {obj.display}"
+                return f"{self.display} cannot be applied to {obj.display}"
             for add in adders:
                 if ((add.xmlid or "").upper().strip() == xmlid
                         and getattr(add, "is_selected", False)):
-                    return (f"{self._display} cannot be applied to abilties "
+                    return (f"{self.display} cannot be applied to abilties "
                             f"which have {add.display}")
 
         # Modifier.java:900-965 -- REQUIRES, any-of or (REQUIRESALL) all-of.
@@ -445,11 +445,11 @@ class Modifier(GenericObject):
         # Java names it once in the prefix and again in the loop; that
         # duplication is HD's output and the matrix holds us to it.
         if len(requires) > 1:
-            ret = (f"{self._display} requires the following modifiers:  "
+            ret = (f"{self.display} requires the following modifiers:  "
                    if self._requires_all
-                   else f"{self._display} requires at least one of the following: ")
+                   else f"{self.display} requires at least one of the following: ")
         else:
-            ret = f"{self._display} requires {requires[0]}"
+            ret = f"{self.display} requires {requires[0]}"
         for i, r in enumerate(requires):
             if i > 0:
                 ret += ", "

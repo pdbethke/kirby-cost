@@ -46,6 +46,6 @@ class CanBeMissileDeflected(Modifier, xmlid="CANBEMISSILEDEFLECTED"):
                 generic_object.target == "DCV"):
             return f"{generic_object.display} can already be Missile Deflected."
         if generic_object.target not in ("DCV", "HEX", "ECV", "OCV", "OMCV", "DMCV"):
-            return f"{self._display} can only be applied to Attack Powers which are targeted on an opponent."
+            return f"{self.display} can only be applied to Attack Powers which are targeted on an opponent."
         
         return ""

@@ -95,17 +95,17 @@ class NND(Modifier, xmlid="NND"):
         # Can only be applied to abilities which affect others
         target = generic_object.target
         if target == "SELFONLY" or target == "N/A":
-            return f"{self._display} can only be applied to abilities which affect others."
+            return f"{self.display} can only be applied to abilities which affect others."
         
         # Can only be applied to abilities which act against standard Defense types
         defense = generic_object.defense
         if defense == "NONE":
-            return (f"{self._display} can only be applied to abilities which act against "
+            return (f"{self.display} can only be applied to abilities which act against "
                    f"one of the standard Defense types (Normal, Power, Flash, Mental).")
         
         # Cannot be applied with Penetrating
         if GenericObject.find_object_by_id(
             generic_object.assigned_modifiers, "PENETRATING") is not None:
-            return f"{self._display} cannot be applied to abilities with the Penetrating Advantage."
+            return f"{self.display} cannot be applied to abilities with the Penetrating Advantage."
         
         return ""

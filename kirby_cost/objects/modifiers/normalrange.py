@@ -43,6 +43,6 @@ class NormalRange(Modifier, xmlid="NORMALRANGE"):
             return result
         
         if generic_object.range_value != -1:
-            return f"{self._display} can only be applied to Line Of Sight Powers."
+            return f"{self.display} can only be applied to Line Of Sight Powers."
         
         return ""

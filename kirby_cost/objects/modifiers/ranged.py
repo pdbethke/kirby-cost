@@ -116,19 +116,19 @@ class Ranged(Modifier, xmlid="RANGED"):
         # Cannot be applied to Duplication
         from kirby_cost.objects.powers.duplication import Duplication
         if isinstance(generic_object, Duplication):
-            return f"{self._display} cannot be applied to Duplication."
+            return f"{self.display} cannot be applied to Duplication."
         
         # Cannot be applied to HTH Attack
         from kirby_cost.objects.powers.hand_to_hand_attack import HandToHandAttack
         if isinstance(generic_object, HandToHandAttack):
-            return f"{self._display} cannot be applied to HTH Attack."
+            return f"{self.display} cannot be applied to HTH Attack."
         
         # Ranged.java:115-120: Reflection is REFUSED; Missile Deflection is
         # the one that is allowed. The port had the first inverted and omitted
         # the second.
         from kirby_cost.objects.powers.reflection import Reflection
         if isinstance(generic_object, Reflection):
-            return f"{self._display} cannot be applied to Reflection."
+            return f"{self.display} cannot be applied to Reflection."
 
         from kirby_cost.objects.powers.missile_deflection import MissileDeflection
         if isinstance(generic_object, MissileDeflection):
@@ -142,7 +142,7 @@ class Ranged(Modifier, xmlid="RANGED"):
         # Cannot be applied to Self-Only Powers
         target = generic_object.target
         if target.upper() == "SELFONLY":
-            return f"{self._display} cannot be applied to Self-Only Powers."
+            return f"{self.display} cannot be applied to Self-Only Powers."
         
         # Cannot be applied if already Ranged
         if generic_object.range_value != 0:

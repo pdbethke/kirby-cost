@@ -88,7 +88,7 @@ class TimeLimit(Modifier, xmlid="TIMELIMIT"):
         
         # TimeLimit.java:85-105.
         if generic_object.duration not in ("PERSISTENT", "CONSTANT", "INSTANT"):
-            return (f"{self._display} can only be applied to Persistent, "
+            return (f"{self.display} can only be applied to Persistent, "
                     "Constant, or Instant Powers")
 
         if generic_object.uses_end and generic_object.duration != "INSTANT":
@@ -100,7 +100,7 @@ class TimeLimit(Modifier, xmlid="TIMELIMIT"):
                 option = go.selected_option
                 if option is not None and option.xmlid in ("ACTIVATE", "ONLYTOCHANGE"):
                     return ""
-            return (f"{self._display} can only be applied to abilities "
+            return (f"{self.display} can only be applied to abilities "
                     "which cost 0 END or which cost END only to activate")
         return ""
     

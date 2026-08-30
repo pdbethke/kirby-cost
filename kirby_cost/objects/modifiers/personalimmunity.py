@@ -43,6 +43,6 @@ class PersonalImmunity(Modifier, xmlid="PERSONALIMMUNITY"):
             return result
         
         if generic_object.target == "SELFONLY":
-            return f"{self._display} cannot be applied to self-only Powers."
+            return f"{self.display} cannot be applied to self-only Powers."
         
         return ""

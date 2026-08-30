@@ -87,7 +87,7 @@ class Megascale(Modifier, xmlid="MEGASCALE"):
         if isinstance(generic_object, Sense):
             if "RANGE" in generic_object.built_in_sense_adders():
                 return ""
-        return (f"{self._display} can only be applied to Powers which already "
+        return (f"{self.display} can only be applied to Powers which already "
                 "affect an area, Movement Powers (except Extradimensional "
                 "Movement and FTL Travel), and Powers which work at Range.")
     

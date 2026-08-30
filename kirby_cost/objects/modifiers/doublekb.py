@@ -107,6 +107,6 @@ class DoubleKB(Modifier, xmlid="DOUBLEKB"):
         
         # Can only be applied to abilities which do Knockback
         if not generic_object.does_knockback:
-            return f"{self._display} can only be applied to abilities which do Knockback."
+            return f"{self.display} can only be applied to abilities which do Knockback."
         
         return ""

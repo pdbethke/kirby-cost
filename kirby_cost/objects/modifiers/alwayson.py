@@ -43,15 +43,15 @@ class AlwaysOn(Modifier, xmlid="ALWAYSON"):
             return result
         
         if GenericObject.find_object_by_id(generic_object.assigned_modifiers, "FOCUS"):
-            return f"{self._display} may not be applied to abilities with the Focus Limitation."
+            return f"{self.display} may not be applied to abilities with the Focus Limitation."
         if GenericObject.find_object_by_id(generic_object.assigned_modifiers, "STOPSWHENSTUNNED"):
-            return f'{self._display} may not be applied to abilities with the "Stops working if Mentalist is Stunned" Limitation.'
+            return f'{self.display} may not be applied to abilities with the "Stops working if Mentalist is Stunned" Limitation.'
         if GenericObject.find_object_by_id(generic_object.assigned_modifiers, "STOPSWHENKOD"):
-            return f'{self._display} may not be applied to abilities with the "Stops working if Mentalist is Stunned" Knocked Out.'
+            return f'{self.display} may not be applied to abilities with the "Stops working if Mentalist is Stunned" Knocked Out.'
         duration = generic_object.duration
         if duration not in ("PERSISTENT", "INHERENT"):
-            return f"{self._display} may only be applied to abilities which are either Persistent or Inherent"
+            return f"{self.display} may only be applied to abilities which are either Persistent or Inherent"
         if generic_object.end_usage > 0:
-            return f"{self._display} may not be applied to abilities which use END"
+            return f"{self.display} may not be applied to abilities which use END"
         
         return ""

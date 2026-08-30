@@ -191,7 +191,7 @@ class AreaEffect(Modifier, xmlid="AOE"):
         
         # Cannot be applied to Possession
         if generic_object.xmlid == "POSSESSION":
-            return f"{self._display} cannot be applied to Possession."
+            return f"{self.display} cannot be applied to Possession."
         
         # Can be applied to Images in 6E
         # Note: Would need HeroDesigner.getActiveTemplate().is6E() check
@@ -204,18 +204,18 @@ class AreaEffect(Modifier, xmlid="AOE"):
         if target == "HEX":
             if GenericObject.find_object_by_id(
                 generic_object.assigned_modifiers, "AOE") is None:
-                return f"{self._display} cannot be applied to Powers which already affect an area."
+                return f"{self.display} cannot be applied to Powers which already affect an area."
         
         # Can only be applied to Powers which are targeted on others
         if target not in ("DCV", "ECV", "OCV", "OMCV", "MCV", "DMCV"):
             if GenericObject.find_object_by_id(
                 generic_object.assigned_modifiers, "AOE") is None:
-                return f"{self._display} can only be applied to Powers which are targeted on others."
+                return f"{self.display} can only be applied to Powers which are targeted on others."
         
         # Cannot be applied with Explosion
         if GenericObject.find_object_by_id(
             generic_object.assigned_modifiers, "EXPLOSION") is not None:
-            return f"{self._display} cannot be applied to abilities which already affect an area."
+            return f"{self.display} cannot be applied to abilities which already affect an area."
         
         return ""
 

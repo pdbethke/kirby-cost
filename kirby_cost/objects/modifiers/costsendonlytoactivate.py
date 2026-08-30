@@ -43,16 +43,16 @@ class CostsENDOnlyToActivate(Modifier, xmlid="COSTSENDONLYTOACTIVATE"):
             return result
         
         if generic_object.duration == "INSTANT":
-            return f"{self._display} can only be applied to abilities which are Constant in duration."
+            return f"{self.display} can only be applied to abilities which are Constant in duration."
         if "MENTAL" in generic_object.types:
-            return f"{self._display} cannot be applied to Mental Powers."
+            return f"{self.display} cannot be applied to Mental Powers."
         if GenericObject.find_object_by_id(generic_object.assigned_modifiers, "REDUCEDEND"):
-            return f"{self._display} cannot be applied to an ability with Reduced END."
+            return f"{self.display} cannot be applied to an ability with Reduced END."
         if GenericObject.find_object_by_id(generic_object.assigned_modifiers, "COSTSEND"):
-            return f"{self._display} cannot be applied to an ability with Costs END."
+            return f"{self.display} cannot be applied to an ability with Costs END."
         if GenericObject.find_object_by_id(generic_object.assigned_modifiers, "COSTSENDTOMAINTAIN"):
-            return f"{self._display} cannot be applied to an ability with Costs END To Maintain (use Costs END instead)."
+            return f"{self.display} cannot be applied to an ability with Costs END To Maintain (use Costs END instead)."
         if generic_object.end_usage == 0:
-            return f"{self._display} cannot be applied to an ability which does not cost END."
+            return f"{self.display} cannot be applied to an ability which does not cost END."
         
         return ""

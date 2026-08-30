@@ -64,4 +64,4 @@ class AVAD(Modifier, xmlid="AVAD"):
             generic_object.xmlid in ("DISPEL", "TELEPATHY")):
             return ""
         
-        return f"{self._display} can only be applied to Attack Powers and Powers which affect others."
+        return f"{self.display} can only be applied to Attack Powers and Powers which affect others."

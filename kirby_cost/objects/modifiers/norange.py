@@ -48,10 +48,10 @@ class NoRange(Modifier, xmlid="NORANGE"):
         if isinstance(generic_object, (Multipower, ElementalControl)):
             return ""
         if isinstance(generic_object, Duplication):
-            return f"{self._display} cannot be applied to Duplication."
+            return f"{self.display} cannot be applied to Duplication."
         if GenericObject.find_object_by_id(generic_object.assigned_modifiers, "RANGED"):
-            return f"{self._display} cannot be applied to Powers that have taken the Ranged Advantage."
+            return f"{self.display} cannot be applied to Powers that have taken the Ranged Advantage."
         if generic_object.range_value == 0:
-            return f"{self._display} can only be applied to Ranged Powers."
+            return f"{self.display} can only be applied to Ranged Powers."
 
         return ""

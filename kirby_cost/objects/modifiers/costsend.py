@@ -175,7 +175,7 @@ class CostsEND(Modifier, xmlid="COSTSEND"):
         from kirby_cost.objects.powers.endurance_reserve_recovery import EnduranceReserveRecovery
         
         if isinstance(generic_object, (EnduranceReserve, EnduranceReserveRecovery)):
-            return f"{self._display} cannot be applied to an Endurance Reserve or its Recovery."
+            return f"{self.display} cannot be applied to an Endurance Reserve or its Recovery."
         
         # Cannot be applied to non-Persistent (5E only)
         # Note: Would need HeroDesigner.getActiveTemplate().is6E() check
@@ -188,20 +188,20 @@ class CostsEND(Modifier, xmlid="COSTSEND"):
         # Cannot be applied with Reduced END
         if GenericObject.find_object_by_id(
             generic_object.assigned_modifiers, "REDUCEDEND") is not None:
-            return f"{self._display} cannot be applied to an ability with Reduced END."
+            return f"{self.display} cannot be applied to an ability with Reduced END."
         
         # Cannot be applied with Costs END Only To Activate
         if GenericObject.find_object_by_id(
             generic_object.assigned_modifiers, "COSTSENDONLYTOACTIVATE") is not None:
-            return f"{self._display} cannot be applied to an ability with Costs END Only To Activate."
+            return f"{self.display} cannot be applied to an ability with Costs END Only To Activate."
         
         # Cannot be applied with Costs END To Maintain
         if GenericObject.find_object_by_id(
             generic_object.assigned_modifiers, "COSTSENDTOMAINTAIN") is not None:
-            return f"{self._display} cannot be applied to an ability with Costs END To Maintain."
+            return f"{self.display} cannot be applied to an ability with Costs END To Maintain."
         
         # Can only be applied if power doesn't already cost END
         if generic_object.end_usage == 0:
             return ""
         
-        return f"{self._display} cannot be applied to an ability which already costs END."
+        return f"{self.display} cannot be applied to an ability which already costs END."

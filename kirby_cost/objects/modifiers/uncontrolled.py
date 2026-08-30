@@ -43,7 +43,7 @@ class Uncontrolled(Modifier, xmlid="UNCONTROLLED"):
             return result
         
         if generic_object.duration == "INSTANT":
-            result = f"{self._display} cannot be applied to Instant abilities."
+            result = f"{self.display} cannot be applied to Instant abilities."
         return result
         
         return ""

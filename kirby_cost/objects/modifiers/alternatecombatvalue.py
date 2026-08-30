@@ -128,4 +128,4 @@ class AlternateCombatValue(Modifier, xmlid="ACV"):
         if target in ("OCV", "ECV", "OMCV", "MCV", "DCV", "DMCV", "HEX"):
             return ""
         
-        return f"{self._display} can only be applied to abilities that are targeted on others."
+        return f"{self.display} can only be applied to abilities that are targeted on others."

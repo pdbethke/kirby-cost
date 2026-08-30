@@ -49,7 +49,7 @@ class SelfOnly(Modifier, xmlid="SELFONLY"):
         
         target = generic_object.target
         if target in ("SELFONLY", "N/A"):
-            return f"{self._display} can only be applied to Powers which are capable of affecting others."
+            return f"{self.display} can only be applied to Powers which are capable of affecting others."
         
         return ""
 

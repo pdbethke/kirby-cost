@@ -98,4 +98,13 @@ def template_modifier(xmlid: str) -> Modifier:
     mod = cls() if (cls is not None and issubclass(cls, Modifier)) else Modifier()
     mod.xmlid = xmlid
     loader._apply_template_to_modifier(mod, xmlid, None)
+    # HD's modifier prototype carries the template's LEVELSTART, the same way
+    # its power prototype does (see template_power). It is what getDisplay()
+    # substitutes into a `[LVL]` placeholder: Main6E declares Expanded Effect
+    # as `DISPLAY="Expanded Effect (x[LVL] ...)" LEVELSTART="2"` and HD prints
+    # "x2". The LOADER is deliberately left alone -- an HDC modifier element
+    # always states its own LEVELS, so only the prototype has none.
+    tmpl = loader._get_template_data(xmlid)
+    if tmpl is not None and not mod.levels and getattr(tmpl, "level_start", 0):
+        mod.levels = tmpl.level_start
     return mod

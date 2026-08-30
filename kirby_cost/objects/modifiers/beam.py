@@ -43,8 +43,8 @@ class Beam(Modifier, xmlid="BEAM"):
             return result
         
         if generic_object.range_value == 0:
-            return f"{self._display} can only be applied to Ranged Attack Powers"
+            return f"{self.display} can only be applied to Ranged Attack Powers"
         if generic_object.target == "HEX":
-            return f"{self._display} cannot be applied to area-affecting Powers"
+            return f"{self.display} cannot be applied to area-affecting Powers"
         
         return ""

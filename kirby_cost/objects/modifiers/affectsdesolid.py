@@ -48,6 +48,6 @@ class AffectsDesolid(Modifier, xmlid="AFFECTSDESOLID"):
         types_list = generic_object.types
         if ("ATTACK" not in types_list and "DEFENSE" not in types_list and 
                 generic_object.target in ("SELFONLY", "N/A")):
-            return f"{self._display} can only be applied to Defense Powers and Powers which affect others."
+            return f"{self.display} can only be applied to Defense Powers and Powers which affect others."
         
         return ""

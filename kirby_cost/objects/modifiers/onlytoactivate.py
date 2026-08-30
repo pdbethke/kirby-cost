@@ -45,6 +45,6 @@ class OnlyToActivate(Modifier, xmlid="ONLYTOACTIVATE"):
         if self.progenitor is not None:
             duration = generic_object.duration
             if duration not in ("CONSTANT", "INHERENT", "PERSISTENT"):
-                return f"{self._display} can only be applied to Constant, Persistent, or Inherent abilitiesF."
+                return f"{self.display} can only be applied to Constant, Persistent, or Inherent abilitiesF."
         
         return ""

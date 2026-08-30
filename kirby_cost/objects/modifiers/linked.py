@@ -313,7 +313,7 @@ class Linked(Modifier, xmlid="LINKED"):
         # Only applies to powers
         from kirby_cost.objects.powers.power import Power
         if not generic_object.is_power and not isinstance(generic_object, Power):
-            return f"{self._display} can only be applied to Powers."
+            return f"{self.display} can only be applied to Powers."
         
         # Must have at least one available power to link to
         options = self.option_vector(generic_object)

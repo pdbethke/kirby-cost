@@ -138,4 +138,4 @@ class CannotEscapeWithTeleport(Modifier, xmlid="NOTELEPORT"):
         if isinstance(generic_object, (DefChar, Entangle, ForceWall, NakedModifier)):
             return ""
         
-        return f"{self._display} can only be applied to Entangles or Powers which are used to create walls or barriers."
+        return f"{self.display} can only be applied to Entangles or Powers which are used to create walls or barriers."

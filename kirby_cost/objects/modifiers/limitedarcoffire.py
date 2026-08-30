@@ -126,6 +126,6 @@ class LimitedArcOfFire(Modifier, xmlid="LIMITEDARCOFFIRE"):
         # Can only be applied to abilities which are targeted on others
         target = generic_object.target
         if target == "SELFONLY" or target == "N/A":
-            return f"{self._display} may only be applied to abilities which are targeted on others."
+            return f"{self.display} may only be applied to abilities which are targeted on others."
         
         return ""

@@ -166,15 +166,15 @@ class Explosion(Modifier, xmlid="EXPLOSION"):
         # Cannot be applied if already affects area
         target = generic_object.target
         if target == "HEX":
-            return f"{self._display} cannot be applied to Powers which already affect an area."
+            return f"{self.display} cannot be applied to Powers which already affect an area."
         
         # Can only be applied to Powers which are targeted on others
         if target not in ("DCV", "ECV"):
-            return f"{self._display} can only be applied to Powers which are targeted on others."
+            return f"{self.display} can only be applied to Powers which are targeted on others."
         
         # Cannot be applied with AreaEffect
         if GenericObject.find_object_by_id(
             generic_object.assigned_modifiers, "AOE") is not None:
-            return f"{self._display} cannot be applied to abilities which already affect an area."
+            return f"{self.display} cannot be applied to abilities which already affect an area."
         
         return ""

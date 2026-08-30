@@ -50,7 +50,7 @@ class DoesKB(Modifier, xmlid="DOESKB"):
         # Must target others
         target = generic_object.target
         if target not in ("DCV", "ECV", "HEX"):
-            return f"{self._display} can only be applied to abilities which are targeted on others."
+            return f"{self.display} can only be applied to abilities which are targeted on others."
         
         return ""
 

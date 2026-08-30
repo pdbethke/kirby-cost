@@ -50,11 +50,11 @@ class Nonpersistent(Modifier, xmlid="NONPERSISTENT"):
             if GenericObject.find_object_by_id(generic_object.assigned_modifiers, "COSTSENDTOMAINTAIN"):
                 return ""
             if not generic_object.duration == "PERSISTENT":
-                return f"{self._display} can only be applied to abilities which are Persistent."
+                return f"{self.display} can only be applied to abilities which are Persistent."
         else:
             if generic_object.duration == "PERSISTENT" and generic_object.end_usage == 0:
                 return ""
             if not generic_object.duration == "PERSISTENT":
-                return f"{self._display} can only be applied to abilities which are Persistent."
+                return f"{self.display} can only be applied to abilities which are Persistent."
 
         return ""

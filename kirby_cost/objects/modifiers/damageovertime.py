@@ -239,4 +239,4 @@ class DamageOverTime(Modifier, xmlid="DAMAGEOVERTIME"):
             target not in ("SELFONLY", "N/A")):
             return ""
         
-        return f"{self._display} can only be applied to Attack Powers and Powers which affect others."
+        return f"{self.display} can only be applied to Attack Powers and Powers which affect others."

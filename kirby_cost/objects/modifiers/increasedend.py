@@ -148,7 +148,7 @@ class IncreasedEND(Modifier, xmlid="INCREASEDEND"):
         # Cannot be applied with Reduced END
         if GenericObject.find_object_by_id(
             generic_object.assigned_modifiers, "REDUCEDEND") is not None:
-            return f"{self._display} cannot be assigned to an ability with Reduced Endurance."
+            return f"{self.display} cannot be assigned to an ability with Reduced Endurance."
         
         # Can be applied to Lists
         from kirby_cost.objects.list import List
@@ -157,6 +157,6 @@ class IncreasedEND(Modifier, xmlid="INCREASEDEND"):
         
         # Cannot be applied if power doesn't cost END
         if generic_object.end_usage == 0:
-            return f"{self._display} cannot be applied to an ability which does not cost END."
+            return f"{self.display} cannot be applied to an ability which does not cost END."
         
         return ""

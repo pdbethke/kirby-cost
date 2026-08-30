@@ -52,6 +52,6 @@ class NoRangeModifier(Modifier, xmlid="NORANGEMODIFIER"):
         if isinstance(generic_object, (Multipower, ElementalControl)):
             return ""
         if generic_object.range_value <= 0:
-            return f"{self._display} can only be applied to Ranged Powers."
+            return f"{self.display} can only be applied to Ranged Powers."
 
         return ""

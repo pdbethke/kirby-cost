@@ -48,17 +48,17 @@ class Persistent(Modifier, xmlid="PERSISTENT"):
         # took its 5E form. `is_6e()` reads the hero, as Template.is6E does.
         from kirby_cost.objects.base import is_6e
         if generic_object.xmlid == "COMBAT_LEVELS":
-            return f"{self._display} cannot be applied to Combat Skill Levels of any form."
+            return f"{self.display} cannot be applied to Combat Skill Levels of any form."
         if GenericObject.find_object_by_id(generic_object.assigned_modifiers, "UOO"):
             return ""
         if generic_object.end_usage > 0:
             if is_6e():
                 if not generic_object.costs_end_to_maintain():
-                    return f"{self._display} cannot be applied to Powers which cost END only to Activate."
+                    return f"{self.display} cannot be applied to Powers which cost END only to Activate."
             else:
-                return f"{self._display} cannot be applied to Powers which cost END."
+                return f"{self.display} cannot be applied to Powers which cost END."
         if is_6e() and generic_object.duration == "INSTANT" and not generic_object.continuing_effect:
-            return f"{self._display} cannot be applied to Instant Powers -- apply Constant first."
+            return f"{self.display} cannot be applied to Instant Powers -- apply Constant first."
         # Persistent.java:68-76 -- the effective duration OR the DURATION field.
         if (generic_object.duration == "PERSISTENT"
                 or generic_object.orig_duration == "PERSISTENT"):

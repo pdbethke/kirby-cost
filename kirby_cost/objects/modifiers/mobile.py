@@ -43,7 +43,7 @@ class Mobile(Modifier, xmlid="MOBILE"):
             return result
         
         if not generic_object.target == "HEX":
-            return f"{self._display} can only be applied to Powers which already affect an area."
+            return f"{self.display} can only be applied to Powers which already affect an area."
         
         return ""
 

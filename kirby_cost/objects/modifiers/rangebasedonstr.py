@@ -49,12 +49,12 @@ class RangeBasedOnSTR(Modifier, xmlid="RANGEBASEDONSTR"):
         if isinstance(generic_object, (Multipower, ElementalControl)):
             return ""
         if isinstance(generic_object, Duplication):
-            return f"{self._display} cannot be applied to Duplication."
+            return f"{self.display} cannot be applied to Duplication."
         if isinstance(generic_object, HandToHandAttack):
-            return f"{self._display} cannot be applied to HTH Attack."
+            return f"{self.display} cannot be applied to HTH Attack."
         if GenericObject.find_object_by_id(generic_object.assigned_modifiers, "RANGED"):
-            return f"{self._display} cannot be applied to Powers that have taken the Ranged Advantage.  Use the options on the Ranged Advantage instead."
+            return f"{self.display} cannot be applied to Powers that have taken the Ranged Advantage.  Use the options on the Ranged Advantage instead."
         if generic_object.range_value == 0:
-            return f"{self._display} can only be applied to Ranged Powers."
+            return f"{self.display} can only be applied to Ranged Powers."
 
         return ""

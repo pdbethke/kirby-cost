@@ -181,6 +181,6 @@ class ExtraTime(Modifier, xmlid="EXTRATIME"):
         # Cannot be applied to Regeneration
         from kirby_cost.objects.powers.regeneration import Regeneration
         if isinstance(generic_object, Regeneration):
-            return f"{self._display} cannot be applied to Regeneration."
+            return f"{self.display} cannot be applied to Regeneration."
         
         return ""
