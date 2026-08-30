@@ -49,11 +49,11 @@ def cells() -> list[dict]:
     return matrix()["cells"]
 
 
-def cell_key(modifier: str, power: str) -> str:
-    return f"{modifier}-on-{power}"
+def cell_key(modifier: str, power: str, node: str = "") -> str:
+    return f"{modifier}-on-{power}" if not node else f"{modifier}-on-{power}[{node}]"
 
 
-def template_power(xmlid: str) -> GenericObject:
+def template_power(xmlid: str, node: str = "") -> GenericObject:
     # HD's power enumeration carries its category nodes, which are
     # com.hero.objects.List instances (Template.java:1627) and so keep
     # GenericObject's default XMLID of GENERIC_OBJECT. Modifier.included()
@@ -63,6 +63,8 @@ def template_power(xmlid: str) -> GenericObject:
         from kirby_cost.objects.list import List as HeroList
         obj = HeroList()
         obj.xmlid = xmlid
+        if node:
+            obj._display = node
         return obj
     loader = _loader()
     # RUNNING, LEAPING and SWIMMING are CHARACTERISTICS in Main6E, not powers,
@@ -106,6 +108,63 @@ def template_power(xmlid: str) -> GenericObject:
         if getattr(tmpl, "continuing_effect", False):
             obj.continuing_effect = True
     return obj
+
+
+STATEFUL_FIXTURE = Path(__file__).parent / "fixtures" / "included_stateful.json"
+
+
+@lru_cache(maxsize=1)
+def stateful_cells() -> list[dict]:
+    return json.loads(STATEFUL_FIXTURE.read_text())["cells"]
+
+
+def stateful_key(cell: dict) -> str:
+    key = f"{cell['tier']}:{cell['object_id']}:{cell['modifier']}"
+    return f"{key}:{cell['option_id']}" if cell.get("option_id") else key
+
+
+def hdc_id(obj) -> str:
+    """The HDC ``ID`` attribute the loader stashed on ``_id`` -- the one
+    accessor for it (controller ruling); nothing else reads ``_id`` directly."""
+    return str(obj._id)
+
+
+def allows_other_modifiers(obj) -> bool:
+    """``GenericObject.allows_other_modifiers`` is a bool attribute on the
+    base class but a METHOD override on a handful of subclasses (martial
+    arts elements, ``Disadvantage``) -- call it if callable, else read it."""
+    val = obj.allows_other_modifiers
+    return val() if callable(val) else val
+
+
+@lru_cache(maxsize=1)
+def sink_hero():
+    """The validation sink, loaded through the REAL loader and installed as
+    the active hero (six overrides read it, exactly as HD's do)."""
+    import tempfile
+    from kirby_cost.core.context import EngineContext
+    from tests.validation_sink import write
+    path = Path(tempfile.gettempdir()) / "kirby-cost-ValidationSink.hdc"
+    write(path)
+    hero = _loader().load_file(str(path))
+    EngineContext.set_active_hero(hero)
+    return hero
+
+
+def object_index(hero) -> dict[str, GenericObject]:
+    """HDC ID attribute -> loaded object, every section, recursing into lists
+    (``List.objects``) and Compound Power constituents (``.powers``)."""
+    out: dict[str, GenericObject] = {}
+
+    def walk(objs):
+        for o in objs:
+            out[hdc_id(o)] = o
+            walk(getattr(o, "objects", None) or [])   # List slots
+            walk(getattr(o, "powers", None) or [])    # CompoundPower children
+
+    for section in ("characteristics", "skills", "perks", "talents", "powers", "equipment"):
+        walk(getattr(hero, section, []) or [])
+    return out
 
 
 def template_modifier(xmlid: str) -> Modifier:

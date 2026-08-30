@@ -25,7 +25,7 @@ def _ledger() -> dict[str, str]:
 
 def _verdict(cell: dict) -> tuple[bool, str]:
     mod = template_modifier(cell["modifier"])
-    power = template_power(cell["power"])
+    power = template_power(cell["power"], cell.get("node", ""))
     reason = mod.included(power) or ""
     return (reason.strip() == ""), reason
 
@@ -35,6 +35,7 @@ def _survey() -> dict[str, str]:
     blank_hero_context()
     wrong: dict[str, str] = {}
     for c in cells():
+        key = cell_key(c["modifier"], c["power"], c.get("node", ""))
         try:
             allowed, reason = _verdict(c)
         except FileNotFoundError:
@@ -43,10 +44,10 @@ def _survey() -> dict[str, str]:
             # template). Swallowing it here counted 7,924 phantom gaps.
             raise
         except Exception as e:  # noqa: BLE001 -- a crash is a gap too
-            wrong[cell_key(c["modifier"], c["power"])] = f"raised {type(e).__name__}: {e}"
+            wrong[key] = f"raised {type(e).__name__}: {e}"
             continue
         if allowed != c["allowed"] or reason != c["reason"]:
-            wrong[cell_key(c["modifier"], c["power"])] = (
+            wrong[key] = (
                 f"engine allowed={allowed} {reason!r}  HD allowed={c['allowed']} {c['reason']!r}")
     return wrong
 
