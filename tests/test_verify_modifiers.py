@@ -152,3 +152,50 @@ def test_verify_restores_everything_when_an_included_raises():
     assert slot.parent is parent_before
     assert slot.list_mod_check == check_before
     assert list(mp.assigned_modifiers) == mods_before
+
+
+def test_the_characteristic_clone_carries_the_heros_value():
+    """GenericObject.java:4600-4614 -- a Characteristic that adds its
+    modifiers to its base is not asked about itself: HD asks a CLONE whose
+    levels include the hero's actual characteristic value, so a level-reading
+    modifier sees the real total rather than the bought-up part alone.
+
+    No fixture row reaches this branch (Task 1's oracle skipped it), so it is
+    proved directly: the modifier's ``included`` records every object it is
+    handed, and the last one -- the clone -- must carry own levels + the
+    hero's value.
+    """
+    from kirby_cost.core.context import EngineContext
+    from kirby_cost.io.hdc_loader import LoadedHero
+    from kirby_cost.objects.characteristics.strength import Strength
+    from kirby_cost.objects.modifier import Modifier
+
+    hero_str = Strength()
+    hero_str.xmlid = "STR"
+    hero_str.levels = 15                      # characteristic_value() -> 15.0
+    hero = LoadedHero()
+    hero.characteristics = [hero_str]
+
+    obj = Strength()
+    obj.xmlid = "STR"
+    obj.levels = 5
+    obj.add_modifiers_to_base = True
+
+    mod = Modifier()
+    mod.xmlid = "TESTMOD"
+    mod.alias = "Test"
+    asked: list[tuple[bool, float]] = []
+    mod.included = lambda o: asked.append((o is obj, o.levels)) or ""
+    obj._assigned_modifiers.append(mod)
+
+    previous = EngineContext.active_hero()
+    EngineContext.set_active_hero(hero)
+    try:
+        assert obj.verify_modifiers() == []
+    finally:
+        EngineContext.set_active_hero(previous)
+
+    assert asked == [(True, 5), (False, 20)], (
+        "HD asks the object itself first (:4599), then a clone carrying the "
+        "hero's value folded into levels (:4610)"
+    )

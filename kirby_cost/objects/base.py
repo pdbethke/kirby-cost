@@ -1406,7 +1406,7 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
                         # actual characteristic value folded into levels, so
                         # a level-reading modifier sees the real total.
                         from kirby_cost.core.context import EngineContext
-                        hero = EngineContext.active_hero
+                        hero = EngineContext.active_hero()
                         clone = copy.copy(self)
                         for c in (getattr(hero, "characteristics", None) or []):
                             if c.xmlid == clone.xmlid:
