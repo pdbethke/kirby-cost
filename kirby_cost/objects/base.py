@@ -642,19 +642,26 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
             self.uses_end = tmpl.uses_end
         elif tmpl.uses_end and "END" not in stated:
             self.uses_end = True
-        if tmpl.duration and not self._duration and "DURATION" not in stated:
+        # HD builds every object FROM the template prototype (GenericObject.java
+        # :3131-3133 reads DURATION off the template element) and only then
+        # overlays what the document states (restoreFromSave). So the template
+        # beats a class constructor's hardcoded duration; a stated DURATION
+        # beats both. The old "only if the constructor left it empty" guard
+        # let ForceWall/Telepathy/26 others keep CONSTANT where Main6E says
+        # INSTANT or PERSISTENT -- the stateful matrix's 106 orig_duration cells.
+        if tmpl.duration and "DURATION" not in stated:
             self._duration = tmpl.duration
         if "TARGET" in forced_xml:
             self.target = tmpl.target
-        elif tmpl.target and self.target in ("", "N/A") and "TARGET" not in stated:
-            self.target = tmpl.target
+        elif tmpl.target and "TARGET" not in stated:
+            self.target = tmpl.target  # template beats the constructor, as DURATION above
         # DEFENSE, on the same terms as TARGET: the template states it, the
         # document rarely does, and the constructor's default is "NONE" --
         # which reads as an answer rather than as an absence.
         if "DEFENSE" in forced_xml:
             self.defense = tmpl.defense
-        elif tmpl.defense and self.defense in ("", "NONE") and "DEFENSE" not in stated:
-            self.defense = tmpl.defense
+        elif tmpl.defense and "DEFENSE" not in stated:
+            self.defense = tmpl.defense  # template beats the constructor, as DURATION above
         # Combat facts stated by the template. These are what let a GM's house
         # rules reach the fight: kirby-cost reads the .hdt, so a campaign that
         # edits KILLING="No" on the killing attacks, or turns knockback off,
