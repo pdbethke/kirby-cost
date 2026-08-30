@@ -202,9 +202,14 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         self.visible: bool = False
         self.uses_end: bool = False
         self._does_damage: bool = False  # Use underscore to avoid conflict with method
-        self.does_body: bool = False
+        #: The FIELDS behind doesBODY() / doesKnockback(). Java reads them
+        #: through methods that the assigned modifiers can overrule; the
+        #: properties below are those methods, and their setters write here, so
+        #: every existing writer (the template loop, power constructors, the
+        #: CustomPower XMLAttr) keeps working unchanged.
+        self._does_body: bool = False
         self.killing: bool = False
-        self.does_knockback: bool = False
+        self._does_knockback: bool = False
         self.display_active_cost: bool = False
         
         # Range, target, duration
@@ -900,6 +905,73 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
                 return False
             return self._costs_end_to_maintain
         return False
+
+    @property
+    def does_body(self) -> bool:
+        """GenericObject.doesBODY (GenericObject.java:868-895).
+
+        The field, unless an assigned modifier overrules it: AVAD, NND, AVLD,
+        Based On ECV and STUN Only all turn it off, and the Does BODY Advantage
+        turns it back on. ``orig_does_body`` is the field.
+        """
+        ret = self._does_body
+        all_mods = self._java_all_assigned_modifiers()
+
+        def has(xmlid: str):
+            return GenericObject.find_object_by_id(all_mods, xmlid) is not None
+
+        if ret:
+            for off in ("AVAD", "NND", "AVLD", "BOECV", "STUNONLY"):
+                if has(off):
+                    ret = False
+        if not ret and has("DOESBODY"):
+            ret = True
+        return ret
+
+    @does_body.setter
+    def does_body(self, value: bool) -> None:
+        self._does_body = value
+
+    @property
+    def orig_does_body(self) -> bool:
+        """The DOESBODY field, before the modifiers overrule it."""
+        return self._does_body
+
+    @property
+    def does_knockback(self) -> bool:
+        """GenericObject.doesKnockback (GenericObject.java:914-942).
+
+        The field, unless an assigned modifier overrules it: STUN Only, NND,
+        AVLD and Based On ECV turn it off; Does BODY and Does Knockback turn it
+        on; No Knockback turns it off last. Note the order -- Java re-checks
+        NOKB after the two turn-ons, so NOKB wins over DOESKB.
+        ``orig_does_knockback`` is the field.
+        """
+        ret = self._does_knockback
+        all_mods = self._java_all_assigned_modifiers()
+
+        def has(xmlid: str):
+            return GenericObject.find_object_by_id(all_mods, xmlid) is not None
+
+        for off in ("STUNONLY", "NND", "AVLD", "BOECV"):
+            if has(off):
+                ret = False
+        if has("DOESBODY"):
+            ret = True
+        if not ret and has("DOESKB"):
+            ret = True
+        if ret and has("NOKB"):
+            ret = False
+        return ret
+
+    @does_knockback.setter
+    def does_knockback(self, value: bool) -> None:
+        self._does_knockback = value
+
+    @property
+    def orig_does_knockback(self) -> bool:
+        """The DOESKNOCKBACK field, before the modifiers overrule it."""
+        return self._does_knockback
 
     @property
     def orig_duration(self) -> str:

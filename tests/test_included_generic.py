@@ -427,3 +427,37 @@ def test_costs_end_to_maintain_asks_both_durations():
     assert mod.included(power) == (
         f"{mod.display} can only be applied to abilities which are Constant "
         "in duration.")
+
+
+# --- doesBODY() / doesKnockback() are methods, not fields ------------------
+
+
+def test_nnd_turns_off_does_body_without_touching_the_field():
+    """GenericObject.doesBODY (GenericObject.java:868-895). AVAD, NND, AVLD,
+    Based On ECV and STUN Only all switch it off; Does BODY switches it back
+    on. 6E1 p.328 (AVAD/NND): such attacks do STUN only unless the Does BODY
+    Advantage is bought -- HD agrees with the book."""
+    power = template_power("ENERGYBLAST")       # DOESBODY="Yes"
+    assert power.does_body is True
+    power.assigned_modifiers.append(template_modifier("NND"))
+    assert power.does_body is False
+    assert power.orig_does_body is True         # the field is untouched
+    power.assigned_modifiers.append(template_modifier("DOESBODY"))
+    assert power.does_body is True
+
+
+def test_nnd_turns_off_does_knockback_and_nokb_wins_over_doeskb():
+    """GenericObject.doesKnockback (GenericObject.java:914-942). STUN Only,
+    NND, AVLD and Based On ECV switch it off; Does BODY and Does Knockback
+    switch it on; No Knockback is re-checked LAST, so it beats Does Knockback.
+    6E1 p.145 (No Knockback) and p.335 (Does Knockback); HD agrees, and the
+    precedence is HD's own ordering, no page."""
+    power = template_power("ENERGYBLAST")       # DOESKNOCKBACK="Yes"
+    assert power.does_knockback is True
+    power.assigned_modifiers.append(template_modifier("NND"))
+    assert power.does_knockback is False
+    assert power.orig_does_knockback is True    # the field is untouched
+    power.assigned_modifiers.append(template_modifier("DOESKB"))
+    assert power.does_knockback is True
+    power.assigned_modifiers.append(template_modifier("NOKB"))
+    assert power.does_knockback is False
