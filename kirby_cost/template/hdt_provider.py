@@ -269,6 +269,15 @@ def _sense_group_options(
     return options
 
 
+def _text_children(entry: dict[str, Any], tag: str) -> tuple[str, ...]:
+    """The stripped, upper-cased text of every child element named *tag*."""
+    out = []
+    for child in entry.get("child_elements") or []:
+        if child.get("tag") == tag and (child.get("text") or "").strip():
+            out.append(child["text"].strip().upper())
+    return tuple(out)
+
+
 def _template_data(entry: dict[str, Any], *, is_power: bool) -> TemplateData:
     a = _attrs(entry)
     xmlid = _identity(entry)
@@ -340,6 +349,9 @@ def _template_data(entry: dict[str, Any], *, is_power: bool) -> TemplateData:
             if op.get("xmlid")
         },
         types=tuple(entry.get("types") or ()),
+        excludes=_text_children(entry, "EXCLUDES"),
+        requires=_text_children(entry, "REQUIRES"),
+        requires_all=(a.get("REQUIRESALL", "No") or "No").upper().startswith("Y"),
         attributes=dict(a),
     )
 

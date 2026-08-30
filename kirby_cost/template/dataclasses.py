@@ -139,6 +139,14 @@ class TemplateData:
     options: dict[str, OptionTemplate] = field(default_factory=dict)
     option_aliases: dict[str, str] = field(default_factory=dict)
     types: tuple[str, ...] = ()
+    #: Applicability, as the template states it. HD's Modifier.included()
+    #: refuses a modifier when the power, or any modifier already on it, is
+    #: one of ``excludes``; and requires one of ``requires`` (all of them when
+    #: ``requires_all``). Both are <EXCLUDES>/<REQUIRES> text children --
+    #: parsed for years, dropped by the provider until 2026-08-29.
+    excludes: tuple[str, ...] = ()
+    requires: tuple[str, ...] = ()
+    requires_all: bool = False
     # The element's raw attributes, for the detail no named field carries. A
     # maneuver is mostly detail — OCV, DCV, PHASE, DC, KILLING, EFFECT — and
     # Java hands the whole Maneuver object to whoever asks, so a consumer that

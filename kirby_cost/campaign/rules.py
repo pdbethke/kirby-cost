@@ -88,6 +88,12 @@ _UNSUPPORTED_FIELDS = {
     # variables in modifier.py and behaviors/registry.py, never a read off a
     # TemplateData. Forcing it can therefore not change any loaded object.
     "class_name": "carried by TemplateData but read by nothing, so forcing it cannot change a loaded object",
+    # Parsed from the template as of 2026-08-29, but apply_template does not
+    # yet copy them onto any object; that wiring is the validation plan's
+    # Task 4, which moves these three to the effective set.
+    "excludes": "not applied by apply_template until validation wires it",
+    "requires": "not applied by apply_template until validation wires it",
+    "requires_all": "not applied by apply_template until validation wires it",
 }
 
 #: Every field of TemplateData, DERIVED rather than listed. Adding a template
