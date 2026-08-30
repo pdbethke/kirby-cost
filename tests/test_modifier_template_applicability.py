@@ -30,8 +30,8 @@ def test_the_template_types_nine_modifiers_as_framework_bound():
     from kirby_cost.template.hdt_provider import HDTTemplateProvider
     p = HDTTemplateProvider()
     framework_typed = sorted(
-        x for (section, x), d in p._by_section.items()
-        if section == "modifiers" and set(d.types) & {"VPP", "MP", "EC", "LIST"})
+        d.xmlid for d in p.modifiers()
+        if set(d.types) & {"VPP", "MP", "EC", "LIST"})
     assert framework_typed == [
         "COSMIC", "HALFPHASE", "LIMITED", "NOCHOICE", "NOCHOICEWHENORHOW",
         "NOSKILLROLL", "ONLYBETWEENADVENTURES", "ONLYINGIVENCIRCUMSTANCE",

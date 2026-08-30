@@ -773,6 +773,22 @@ class HDTTemplateProvider:
         return _with_campaign_overrides(
             mod_xmlid, self._nested_mods.get((owner_xmlid, mod_xmlid)))
 
+    def modifiers(self) -> list[TemplateData]:
+        """Every template modifier, in the order Main6E.hdt states them.
+
+        HD's own equivalent is ``Template.getModifiers()`` -- the list a
+        builder's "add a modifier" dialog enumerates (spec §2c). This is the
+        one sanctioned door onto the modifiers half of ``_by_section``:
+        callers outside this class must not reach into that dict directly
+        (it is also keyed by power/skill/etc. section, which is not this
+        question, and it is named with a leading underscore for exactly this
+        reason).
+        """
+        return [
+            data for (section, _xmlid), data in self._by_section.items()
+            if section == "modifiers"
+        ]
+
     def get_template_data(self, xmlid: str,
                           section: str | None = None) -> Optional[TemplateData]:
         """The template entry for *xmlid*.

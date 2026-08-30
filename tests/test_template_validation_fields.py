@@ -52,11 +52,23 @@ def test_exclusive_true_when_the_attribute_says_yes():
     assert d.exclusive is True
 
 
+def test_modifiers_lists_only_the_modifiers_section_in_template_order():
+    provider = HDTTemplateProvider()
+    mods = provider.modifiers()
+    assert len(mods) == 157
+    assert all(isinstance(d.xmlid, str) and d.xmlid for d in mods)
+    # Every entry actually resolves back to a "modifiers"-section row --
+    # not, say, a skill-section entry such as COMBAT_LEVELS that merely
+    # sounds like one.
+    for d in mods:
+        assert provider.get_template_data(d.xmlid, section="modifiers") is not None
+
+
 def test_the_modifier_exclusive_split_main6e_states():
     # A regression fence: if a regenerated Main6E.hdt ever changes how many
     # modifiers say EXCLUSIVE="Yes" / "No" / say nothing, this notices.
     provider = HDTTemplateProvider()
-    mods = [d for (section, _xmlid), d in provider._by_section.items() if section == "modifiers"]
+    mods = provider.modifiers()
     yes = [d.xmlid for d in mods if d.attributes.get("EXCLUSIVE", "").upper().startswith("Y")]
     no = [d.xmlid for d in mods if d.attributes.get("EXCLUSIVE", "").upper().startswith("N")]
     absent = [d.xmlid for d in mods if "EXCLUSIVE" not in d.attributes]

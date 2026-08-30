@@ -56,12 +56,7 @@ def check(modifier_xmlid: str, obj: GenericObject, *, option_id: str | None = No
 
 def allowed_modifiers(obj: GenericObject) -> list[tuple[TemplateData, Verdict]]:
     """Every template modifier with its verdict for ``obj``, in template order."""
-    out: list[tuple[TemplateData, Verdict]] = []
-    for (section, xmlid), data in _provider()._by_section.items():
-        if section != "modifiers":
-            continue
-        out.append((data, check(xmlid, obj)))
-    return out
+    return [(data, check(data.xmlid, obj)) for data in _provider().modifiers()]
 
 
 def exclusive_conflict(modifier_xmlid: str, obj: GenericObject) -> Verdict:
