@@ -259,7 +259,12 @@ class PartialCoverage(Modifier, xmlid="PARTIALCOVERAGE"):
         
         # Can only be applied to BODY, Clairsentience, and Defense Powers
         from kirby_cost.objects.characteristics.body import Body
-        from kirby_cost.objects.characteristics.def_ import Def
+        # The DEF characteristic's class is DefChar in def_char.py; the
+        # `characteristics.def_` this used to import has never existed, so
+        # every PARTIALCOVERAGE question that got this far raised
+        # ModuleNotFoundError (found by verify_modifiers' walk of the
+        # validation sink).
+        from kirby_cost.objects.characteristics.def_char import DefChar as Def
         from kirby_cost.objects.powers.clairsentience import Clairsentience
         
         types = generic_object.types
