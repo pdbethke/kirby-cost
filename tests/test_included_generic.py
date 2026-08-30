@@ -278,3 +278,26 @@ def test_a_persistent_power_that_costs_end_reports_constant():
     assert power.duration == "CONSTANT"
     power.assigned_modifiers.append(template_modifier("COSTSENDTOMAINTAIN"))
     assert power.duration == "PERSISTENT"
+
+
+def test_time_limit_refuses_a_power_whose_duration_is_neither_persistent_constant_nor_instant():
+    """TimeLimit.java:85-90 -- the port was a `return ""` stub. 6E1 p.348: Time
+    Limit is for inherently Persistent Powers, for Instant Powers that create
+    lingering effects, and (as an Advantage) for Constant Powers. HD agrees."""
+    mod = template_modifier("TIMELIMIT")
+    assert mod.included(template_power("AUTOMATON")) == \
+        f"{mod.display} can only be applied to Persistent, Constant, or Instant Powers"
+
+
+def test_time_limit_refuses_a_non_instant_power_that_costs_end():
+    """TimeLimit.java:91-104. 6E1 p.348 -- HD agrees with the book: as an
+    Advantage, Time Limit is for Constant Powers 'that cost 0 END or that only
+    cost END to activate'. COSTSENDONLYTOACTIVATE, or COSTSEND with option
+    ACTIVATE or ONLYTOCHANGE, clears it."""
+    mod = template_modifier("TIMELIMIT")
+    power = template_power("FLIGHT")            # CONSTANT, uses END
+    assert mod.included(power) == (
+        f"{mod.display} can only be applied to abilities which cost 0 END or "
+        "which cost END only to activate")
+    power.assigned_modifiers.append(template_modifier("COSTSENDONLYTOACTIVATE"))
+    assert mod.included(power) == ""

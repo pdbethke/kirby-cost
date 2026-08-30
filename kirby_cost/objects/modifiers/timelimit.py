@@ -86,10 +86,22 @@ class TimeLimit(Modifier, xmlid="TIMELIMIT"):
         if self.force_allow:
             return result
         
-        # TODO: Implement validation logic from Java source
-        # Should validate:
-        # - Only applies to Persistent, Constant, or Instant powers
-        # - For non-Instant powers that use END, must cost 0 END or cost END only to activate
+        # TimeLimit.java:85-105.
+        if generic_object.duration not in ("PERSISTENT", "CONSTANT", "INSTANT"):
+            return (f"{self._display} can only be applied to Persistent, "
+                    "Constant, or Instant Powers")
+
+        if generic_object.uses_end and generic_object.duration != "INSTANT":
+            mods = generic_object.assigned_modifiers
+            if GenericObject.find_object_by_id(mods, "COSTSENDONLYTOACTIVATE") is not None:
+                return ""
+            go = GenericObject.find_object_by_id(mods, "COSTSEND")
+            if go is not None:
+                option = go.selected_option
+                if option is not None and option.xmlid in ("ACTIVATE", "ONLYTOCHANGE"):
+                    return ""
+            return (f"{self._display} can only be applied to abilities "
+                    "which cost 0 END or which cost END only to activate")
         return ""
     
     # TODO: Implement custom methods from Java source:
