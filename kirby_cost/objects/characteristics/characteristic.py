@@ -709,7 +709,7 @@ class Characteristic(CharAffectingObject):
                 n = active_hero.rules.get_str_ap_per_end(active_hero)
         
         # Check if this uses END
-        if not self.uses_end:
+        if not self.orig_uses_end:
             n = 0
         
         return n

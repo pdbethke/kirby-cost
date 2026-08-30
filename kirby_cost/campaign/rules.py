@@ -95,11 +95,6 @@ _UNSUPPORTED_FIELDS = {
     # change any loaded object. Measured: `grep -rn level_start kirby_cost/`
     # finds the parser, the dataclass and this entry, and no read.
     "level_start": "parsed and carried, but apply_template never assigns it; only the matrix harness reads it",
-    # CONTINUINGEFFECT, on the same terms as level_start: apply_template never
-    # assigns it, so forcing it cannot change a loaded object. Measured:
-    # `grep -rn continuing_effect kirby_cost/` finds base.py's own field and
-    # property and this template field, and no read of the template's copy.
-    "continuing_effect": "parsed and carried, but apply_template never assigns it; only the matrix harness reads it",
     # exclusive, on the same terms as level_start and continuing_effect:
     # apply_template never assigns it to a loaded object. Measured:
     # `grep -rn "\.exclusive\b" kirby_cost/` finds only

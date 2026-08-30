@@ -382,12 +382,16 @@ class CostMixin:
         return n
 
     def orig_ap_per_end(self, active_hero: Optional[object] = None) -> int:
-        """Get original AP per END (before modifiers)."""
+        """Get original AP per END (before modifiers).
+
+        Java reads the FIELD here (GenericObject.java:2208 `if (!usesEND)`),
+        where getAPPerEnd() calls the computed usesEND() (:1351).
+        """
         n = 10
         if active_hero is not None and hasattr(active_hero, 'rules') and active_hero.rules is not None:
             n = active_hero.rules.ap_per_end
             if self.xmlid == "STR":
                 n = active_hero.rules.get_str_ap_per_end(active_hero)
-        if not self.uses_end:
+        if not self.orig_uses_end:
             n = 0
         return n

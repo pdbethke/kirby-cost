@@ -64,7 +64,13 @@ def test_a_reserve_uses_end_when_its_slots_do(hero):
     rifle = _rifle(hero)
     charges = next(m for m in rifle.assigned_modifiers if m.xmlid == "CHARGES")
 
-    assert any(o.uses_end for o in rifle.objects)
+    # A slot beneath this list reports computed uses_end False -- the list's
+    # own CHARGES reaches it through the parent walk, exactly as Java's
+    # usesEND() would say. The question HD actually asks for pricing the
+    # list's Charges is childUsesEND (Charges.java:76-99): strip CHARGES,
+    # detach the slot, then ask -- and THAT is true here.
+    assert not any(o.uses_end for o in rifle.objects)
+    assert any(charges._child_uses_end(o) for o in rifle.objects)
     assert charges._parent_uses_end() is True
 
 

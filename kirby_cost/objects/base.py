@@ -201,7 +201,7 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         
         # Display and behavior
         self.visible: bool = False
-        self.uses_end: bool = False
+        self._uses_end: bool = False  # raw field; `uses_end` computes (Java usesEND())
         self._does_damage: bool = False  # Use underscore to avoid conflict with method
         #: The FIELDS behind doesBODY() / doesKnockback(). Java reads them
         #: through methods that the assigned modifiers can overrule; the
@@ -652,6 +652,14 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
             self.uses_end = tmpl.uses_end
         elif tmpl.uses_end and "END" not in stated:
             self.uses_end = True
+        # CONTINUINGEFFECT is template-only (no HDC element ever states it);
+        # Java's continuingEffect() is a plain field the template seeds
+        # (GenericObject.java:3003-3005). Main6E states it on Telepathy,
+        # Entangle, Barrier and 20 others.
+        if "CONTINUINGEFFECT" in forced_xml:
+            self._continuing_effect = bool(getattr(tmpl, "continuing_effect", False))
+        elif getattr(tmpl, "continuing_effect", False):
+            self._continuing_effect = True
         # HD builds every object FROM the template prototype (GenericObject.java
         # :3131-3133 reads DURATION off the template element) and only then
         # overlays what the document states (restoreFromSave). So the template
@@ -1273,20 +1281,56 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         return 0
     
     @property
+    def uses_end(self) -> bool:
+        """Java's computed usesEND() (GenericObject.java:4295-4328), not the
+        raw field: CHARGES forces False, COSTSEND forces True, REDUCEDEND
+        follows its option (HALFEND keeps END, otherwise none). Reads the
+        object's own modifiers plus its parent List's (via the main power for
+        a compound constituent), as the Java does. The `apperend` override in
+        the Java is a UI field this engine does not carry."""
+        ret = self._uses_end
+        mods = list(self.assigned_modifiers)
+        parent = self.parent
+        main = getattr(self, "main_power", None)
+        if main is not None:
+            parent = main.parent
+        if parent is not None:
+            mods = mods + list(parent.assigned_modifiers)
+        if GenericObject.find_object_by_id(mods, "CHARGES") is not None:
+            ret = False
+        if GenericObject.find_object_by_id(mods, "COSTSEND") is not None:
+            ret = True
+        red = GenericObject.find_object_by_id(mods, "REDUCEDEND")
+        if red is not None:
+            opt = getattr(red, "selected_option", None)
+            opt_id = (getattr(opt, "xmlid", "") or getattr(red, "option_id", "") or "").upper()
+            ret = opt_id == "HALFEND"
+        return ret
+
+    @uses_end.setter
+    def uses_end(self, value: bool) -> None:
+        self._uses_end = bool(value)
+
+    @property
+    def orig_uses_end(self) -> bool:
+        """The raw field -- what the template/document stated, before the
+        modifier-aware computation. The exporter writes THIS (CustomPower.java
+        saves the field, not usesEND())."""
+        return self._uses_end
+
+    @orig_uses_end.setter
+    def orig_uses_end(self, value: bool) -> None:
+        self._uses_end = bool(value)
+
+    @property
     def continuing_effect(self) -> bool:
-        """Check if this power has a continuing effect."""
-        if self._continuing_effect:
-            return True
-        # Check for Continuous, Persistent, or Inherent modifiers
-        if self.find_modifier_by_id("CONTINUOUS"):
-            return True
-        if self.find_modifier_by_id("PERSISTENT"):
-            return True
-        if self.find_modifier_by_id("INHERENT"):
-            return True
-        # Check duration
-        duration = self._duration
-        return duration in ("CONTINUOUS", "PERSISTENT", "INHERENT")
+        """A plain field, as Java's continuingEffect() is (GenericObject.java
+        :3003-3005): seeded from the template's CONTINUINGEFFECT by
+        apply_template, never inferred. The old inference from duration
+        modifiers made CostsENDToMaintain.java:68 unobservable and said True
+        where HD says False for every CONTINUOUS power whose template states
+        nothing."""
+        return self._continuing_effect
 
     @continuing_effect.setter
     def continuing_effect(self, value: bool) -> None:

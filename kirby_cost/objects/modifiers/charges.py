@@ -292,11 +292,53 @@ class Charges(Modifier, xmlid="CHARGES"):
         # tests/test_framework_holds_its_slots.py.
         from kirby_cost.objects.list import List as _List
         if isinstance(parent, _List):
-            return any(o.uses_end for o in parent.objects)
+            return any(self._child_uses_end(o) for o in parent.objects)
+        # Java strips THIS Charges out of the parent's list before asking the
+        # computed usesEND() -- otherwise Charges forces its own answer to
+        # False (Charges.java:466-476: clone, remove by xmlid, ask, restore).
+        # Then: no END under the campaign's rules means no END to save
+        # (:475-477).
+        # Swap in a NEW list via the setter rather than mutating in place --
+        # Charges.total_value runs while the cost aggregation is ITERATING
+        # the parent's modifier list, and Java's clone-assign-restore
+        # (setAssignedModifiers with a clone, original reference restored)
+        # leaves a live iterator untouched. An in-place remove/append here
+        # corrupted that iteration and double-counted Charges.
+        orig = parent.assigned_modifiers
+        me = GenericObject.find_object_by_id(orig, self.xmlid)
+        parent.assigned_modifiers = [m for m in orig if m is not me]
+        try:
+            ret = parent.uses_end
+        finally:
+            parent.assigned_modifiers = orig
+        if ret:
+            from kirby_cost.core.context import EngineContext
+            hero = EngineContext.active_hero()
+            if hero is not None and getattr(hero, "rules", None) is not None:
+                ret = hero.rules.ap_per_end > 0
+        # Charges.java:478-500 re-checks COSTSEND/REDUCEDEND over the parent's
+        # own + parent-list modifiers; the computed usesEND() already folds
+        # both in. Its ElementalControl negative-mods-only carve-out is
+        # 5E-only under Main6E and is not ported.
+        return ret
 
-        # Clone parent and remove Charges to check END usage
-        # For now, simplified check
-        return parent.uses_end if parent else False
+    @staticmethod
+    def _child_uses_end(child) -> bool:
+        """Charges.java:76-99 (childUsesEND): a LINGERING child never uses
+        END; otherwise detach the child from its List, strip CHARGES from its
+        own modifiers, ask the computed usesEND(), restore everything."""
+        if GenericObject.find_object_by_id(
+                child.assigned_modifiers, "LINGERING") is not None:
+            return False
+        orig = child.assigned_modifiers
+        parent = child.parent
+        child.parent = None
+        child.assigned_modifiers = [m for m in orig if m.xmlid != "CHARGES"]
+        try:
+            return child.uses_end
+        finally:
+            child.parent = parent
+            child.assigned_modifiers = orig
     
     def validation_check(self) -> None:
         """Perform validation checks (stub for now)."""

@@ -98,15 +98,9 @@ def template_power(xmlid: str, node: str = "") -> GenericObject:
             obj.base_cost = tmpl.base_cost
         if not obj.levels and getattr(tmpl, "level_start", 0):
             obj.levels = tmpl.level_start
-        # CONTINUINGEFFECT, likewise: Main6E states it on Entangle, Barrier,
-        # Summon and 20 others, the loader never applies it, and two duration
-        # rules branch on it (CostsENDToMaintain.java:63,68). Java's
-        # continuingEffect() is a plain FIELD read (GenericObject.java
-        # :3003-3005); the engine's property ALSO infers it from the duration
-        # modifiers, which is a separate divergence and is left alone -- this
-        # only supplies the field HD's prototype starts with.
-        if getattr(tmpl, "continuing_effect", False):
-            obj.continuing_effect = True
+        # CONTINUINGEFFECT now reaches the object through apply_template itself
+        # (the loader assigns it from the template since 2026-08-30); no manual
+        # prototype override needed.
     return obj
 
 

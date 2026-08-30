@@ -52,7 +52,7 @@ class CustomPower(Power, xmlid="CUSTOMPOWER"):
         XMLAttr("DOESKNOCKBACK", "orig_does_knockback", "yesno"),
         XMLAttr("KILLING", "killing", "yesno"),
         XMLAttr("DEFENSE", "defense"),
-        XMLAttr("END", "uses_end", "yesno"),
+        XMLAttr("END", "orig_uses_end", "yesno"),
         XMLAttr("VISIBLE", "visible", "yesno"),
         XMLAttr("RANGE", "range"),
         XMLAttr("DURATION", "orig_duration"),
