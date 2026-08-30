@@ -131,11 +131,11 @@ def hdc_id(obj) -> str:
 
 
 def allows_other_modifiers(obj) -> bool:
-    """``GenericObject.allows_other_modifiers`` is a bool attribute on the
-    base class but a METHOD override on a handful of subclasses (martial
-    arts elements, ``Disadvantage``) -- call it if callable, else read it."""
-    val = obj.allows_other_modifiers
-    return val() if callable(val) else val
+    """Delegates to the library's own ``GenericObject._allows_other_modifiers``
+    (base.py) -- that is the one accessor for the attribute-vs-method split
+    (a bool attribute on the base class, a METHOD override on a handful of
+    subclasses: martial arts elements, ``Disadvantage``), same as ``hdc_id``."""
+    return GenericObject._allows_other_modifiers(obj)
 
 
 @lru_cache(maxsize=1)

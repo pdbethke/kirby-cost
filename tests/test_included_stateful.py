@@ -65,17 +65,20 @@ def _ask(cell: dict, index: dict) -> tuple[bool, str]:
         with_siblings = list(orig_assigned) + [m for m in missing if m is not mod]
 
         orig_obj_parent = obj.parent
+        orig_check = obj.list_mod_check
         obj.assigned_modifiers = with_siblings
         obj.parent = None
         if compound_id:
             compound.parent = None
-        obj.list_mod_check = True
         try:
             if not allows_other_modifiers(obj):
                 return False, f"{obj.alias} does not allow modifiers with its current configuration."
-            reason = mod.included(obj) or ""
+            obj.list_mod_check = True      # GenericObject._verify_slot: around the ask only
+            try:
+                reason = mod.included(obj) or ""
+            finally:
+                obj.list_mod_check = orig_check
         finally:
-            obj.list_mod_check = False
             obj.assigned_modifiers = orig_assigned
             obj.parent = orig_obj_parent
             if compound_id:
