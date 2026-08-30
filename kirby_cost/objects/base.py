@@ -1246,6 +1246,18 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
     # ------------------------------------------------------------------
     # HD's third validation surface: verifyModifiers()
     # ------------------------------------------------------------------
+    def hdc_id(self) -> str:
+        """The HDC ``ID`` attribute this object was loaded with, as a string.
+
+        The ONE accessor for the ID as an identity string (controller
+        ruling): ``validation.verify`` and ``tests.matrix_support.hdc_id``
+        both come through here rather than reading the loader's ``_id``
+        stash. (Engine internals that compare raw numeric ids to each other
+        -- ``List``'s dedupe, ``LINKED``'s target search -- still use the
+        field directly; this is about naming an object, not comparing two.)
+        """
+        return str(self._id)
+
     @staticmethod
     def _allows_other_modifiers(obj) -> bool:
         """``allows_other_modifiers`` is a bool ATTRIBUTE on this class

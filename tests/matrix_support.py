@@ -124,9 +124,10 @@ def stateful_key(cell: dict) -> str:
 
 
 def hdc_id(obj) -> str:
-    """The HDC ``ID`` attribute the loader stashed on ``_id`` -- the one
-    accessor for it (controller ruling); nothing else reads ``_id`` directly."""
-    return str(obj._id)
+    """The HDC ``ID`` attribute, as a string. Delegates to the library's own
+    ``GenericObject.hdc_id()`` (base.py) -- that is the one accessor for
+    ``_id``, and ``kirby_cost.validation.verify`` uses the same one."""
+    return obj.hdc_id()
 
 
 def allows_other_modifiers(obj) -> bool:

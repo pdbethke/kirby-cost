@@ -74,7 +74,7 @@ def verify(obj: GenericObject) -> list[Finding]:
     """HD's third surface: what verifyModifiers() would complain about on
     ``obj`` -- its own modifiers re-checked and, for a framework, each common
     modifier against each slot. Empty when HD is content. Never mutates."""
-    return [Finding(mod.xmlid, (str(slot._id) if slot is not None else None), Verdict(False, reason))
+    return [Finding(mod.xmlid, (slot.hdc_id() if slot is not None else None), Verdict(False, reason))
             for mod, slot, reason in obj.verify_modifiers()]
 
 
