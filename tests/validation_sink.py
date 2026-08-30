@@ -117,6 +117,10 @@ def _slot(xmlid, alias, levels, pos, parent_id, name="", children=(), extra=""):
     carrying PARENTID + ULTRA_SLOT="Yes" -- the shape every authored .hdc uses (see Bokor's
     Multipower). Not registered with power()'s own ID counter offset trick; slots always get
     a fresh _next() id since nothing else needs to reference them."""
+    # Same 6E Resistant Protection shape rule as power(): without PDLEVELS/EDLEVELS
+    # HD costs the slot 0 and every cost-derived rule answers a different question.
+    if xmlid == "FORCEFIELD" and "PDLEVELS" not in extra:
+        extra += (f' PDLEVELS="{levels}" EDLEVELS="0" MDLEVELS="0" POWDLEVELS="0"')
     body = "\n".join(children)
     return (f'<POWER XMLID="{xmlid}" ID="{_next()}" BASECOST="0.0" LEVELS="{levels}" ALIAS="{alias}" '
             f'{_STD.format(pos=pos)} NAME="{name}" QUANTITY="1" AFFECTS_PRIMARY="No" AFFECTS_TOTAL="Yes" '

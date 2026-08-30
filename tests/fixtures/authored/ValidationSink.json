@@ -1,0 +1,2914 @@
+{
+  "filename": "/tmp/ValidationSink.hdc",
+  "name": "Validation Sink",
+  "characteristics": [
+    {
+      "id": "1674528649148",
+      "xmlid": "STR",
+      "name": "STR Reduced END And Linked",
+      "display": "STR",
+      "class": "Strength",
+      "levels": 5,
+      "base_cost": 0.0,
+      "level_cost": 1.0,
+      "level_value": 1.0,
+      "total_cost": 5.0,
+      "active_cost": 5.0,
+      "real_cost": 5.0,
+      "is_ultra": true,
+      "is_power": false,
+      "modifier_string": ", Reduced Endurance (1/2 END; +1/4); Linked (Blast NND; -1/2)",
+      "adder_string": "",
+      "column2_output": "<i>STR Reduced END And Linked:</i>  +5 STR, Reduced Endurance (1/2 END; +1/4); Linked (Blast NND; -1/2)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "REDUCEDEND",
+          "class": "ReducedEND",
+          "display": "Reduced Endurance",
+          "total_value": 0.25,
+          "base_cost": 0.25,
+          "is_private": false
+        },
+        {
+          "xmlid": "LINKED",
+          "class": "Linked",
+          "display": "Linked",
+          "total_value": -0.5,
+          "base_cost": -0.5,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "1674528648883",
+      "xmlid": "DEX",
+      "name": "",
+      "display": "DEX",
+      "class": "Dexterity",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 2.0,
+      "level_value": 1.0,
+      "total_cost": 16.0,
+      "active_cost": 16.0,
+      "real_cost": 16.0,
+      "is_ultra": true,
+      "is_power": false,
+      "modifier_string": "",
+      "adder_string": "",
+      "column2_output": "+8 DEX",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "1674528648965",
+      "xmlid": "CON",
+      "name": "",
+      "display": "CON",
+      "class": "Constitution",
+      "levels": 5,
+      "base_cost": 0.0,
+      "level_cost": 1.0,
+      "level_value": 1.0,
+      "total_cost": 5.0,
+      "active_cost": 5.0,
+      "real_cost": 5.0,
+      "is_ultra": true,
+      "is_power": false,
+      "modifier_string": "",
+      "adder_string": "",
+      "column2_output": "+5 CON",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "1674528648998",
+      "xmlid": "INT",
+      "name": "",
+      "display": "INT",
+      "class": "Intelligence",
+      "levels": 3,
+      "base_cost": 0.0,
+      "level_cost": 1.0,
+      "level_value": 1.0,
+      "total_cost": 3.0,
+      "active_cost": 3.0,
+      "real_cost": 3.0,
+      "is_ultra": true,
+      "is_power": false,
+      "modifier_string": "",
+      "adder_string": "",
+      "column2_output": "+3 INT",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "1674528648811",
+      "xmlid": "EGO",
+      "name": "",
+      "display": "EGO",
+      "class": "Ego",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 1.0,
+      "level_value": 1.0,
+      "total_cost": 8.0,
+      "active_cost": 8.0,
+      "real_cost": 8.0,
+      "is_ultra": true,
+      "is_power": false,
+      "modifier_string": "",
+      "adder_string": "",
+      "column2_output": "+8 EGO",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "1674528648982",
+      "xmlid": "PRE",
+      "name": "",
+      "display": "PRE",
+      "class": "Presence",
+      "levels": 15,
+      "base_cost": 0.0,
+      "level_cost": 1.0,
+      "level_value": 1.0,
+      "total_cost": 15.0,
+      "active_cost": 15.0,
+      "real_cost": 15.0,
+      "is_ultra": true,
+      "is_power": false,
+      "modifier_string": "",
+      "adder_string": "",
+      "column2_output": "+15 PRE",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "1674528649511",
+      "xmlid": "OCV",
+      "name": "",
+      "display": "OCV",
+      "class": "OCV",
+      "levels": 3,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 15.0,
+      "active_cost": 15.0,
+      "real_cost": 15.0,
+      "is_ultra": true,
+      "is_power": false,
+      "modifier_string": "",
+      "adder_string": "",
+      "column2_output": "+3 OCV",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "1674528648625",
+      "xmlid": "DCV",
+      "name": "",
+      "display": "DCV",
+      "class": "DCV",
+      "levels": 2,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 10.0,
+      "active_cost": 10.0,
+      "real_cost": 10.0,
+      "is_ultra": true,
+      "is_power": false,
+      "modifier_string": "",
+      "adder_string": "",
+      "column2_output": "+2 DCV",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "1674528649055",
+      "xmlid": "OMCV",
+      "name": "",
+      "display": "OMCV",
+      "class": "OMCV",
+      "levels": 5,
+      "base_cost": 0.0,
+      "level_cost": 3.0,
+      "level_value": 1.0,
+      "total_cost": 15.0,
+      "active_cost": 15.0,
+      "real_cost": 15.0,
+      "is_ultra": true,
+      "is_power": false,
+      "modifier_string": "",
+      "adder_string": "",
+      "column2_output": "+5 OMCV",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "1674528648705",
+      "xmlid": "DMCV",
+      "name": "",
+      "display": "DMCV",
+      "class": "DMCV",
+      "levels": 2,
+      "base_cost": 0.0,
+      "level_cost": 3.0,
+      "level_value": 1.0,
+      "total_cost": 6.0,
+      "active_cost": 6.0,
+      "real_cost": 6.0,
+      "is_ultra": true,
+      "is_power": false,
+      "modifier_string": "",
+      "adder_string": "",
+      "column2_output": "+2 DMCV",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "1674528649134",
+      "xmlid": "SPD",
+      "name": "",
+      "display": "SPD",
+      "class": "Speed",
+      "levels": 2,
+      "base_cost": 0.0,
+      "level_cost": 10.0,
+      "level_value": 1.0,
+      "total_cost": 20.0,
+      "active_cost": 20.0,
+      "real_cost": 20.0,
+      "is_ultra": true,
+      "is_power": false,
+      "modifier_string": "",
+      "adder_string": "",
+      "column2_output": "+2 SPD",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "1674528648927",
+      "xmlid": "PD",
+      "name": "",
+      "display": "PD",
+      "class": "PhysicalDefense",
+      "levels": 0,
+      "base_cost": 0.0,
+      "level_cost": 1.0,
+      "level_value": 1.0,
+      "total_cost": 0.0,
+      "active_cost": 0.0,
+      "real_cost": 0.0,
+      "is_ultra": true,
+      "is_power": false,
+      "modifier_string": "",
+      "adder_string": "",
+      "column2_output": "+0 PD",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "1674528649373",
+      "xmlid": "ED",
+      "name": "",
+      "display": "ED",
+      "class": "EnergyDefense",
+      "levels": 0,
+      "base_cost": 0.0,
+      "level_cost": 1.0,
+      "level_value": 1.0,
+      "total_cost": 0.0,
+      "active_cost": 0.0,
+      "real_cost": 0.0,
+      "is_ultra": true,
+      "is_power": false,
+      "modifier_string": "",
+      "adder_string": "",
+      "column2_output": "+0 ED",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "1674528649207",
+      "xmlid": "REC",
+      "name": "",
+      "display": "REC",
+      "class": "Recovery",
+      "levels": 4,
+      "base_cost": 0.0,
+      "level_cost": 1.0,
+      "level_value": 1.0,
+      "total_cost": 4.0,
+      "active_cost": 4.0,
+      "real_cost": 4.0,
+      "is_ultra": true,
+      "is_power": false,
+      "modifier_string": "",
+      "adder_string": "",
+      "column2_output": "+4 REC",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "1674528649022",
+      "xmlid": "END",
+      "name": "",
+      "display": "END",
+      "class": "Endurance",
+      "levels": 20,
+      "base_cost": 0.0,
+      "level_cost": 1.0,
+      "level_value": 5.0,
+      "total_cost": 4.0,
+      "active_cost": 4.0,
+      "real_cost": 4.0,
+      "is_ultra": true,
+      "is_power": false,
+      "modifier_string": "",
+      "adder_string": "",
+      "column2_output": "+20 END",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "1674528649409",
+      "xmlid": "BODY",
+      "name": "",
+      "display": "BODY",
+      "class": "Body",
+      "levels": 5,
+      "base_cost": 0.0,
+      "level_cost": 1.0,
+      "level_value": 1.0,
+      "total_cost": 5.0,
+      "active_cost": 5.0,
+      "real_cost": 5.0,
+      "is_ultra": true,
+      "is_power": false,
+      "modifier_string": "",
+      "adder_string": "",
+      "column2_output": "+5 BODY",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "1674528649021",
+      "xmlid": "STUN",
+      "name": "",
+      "display": "STUN",
+      "class": "Stun",
+      "levels": 14,
+      "base_cost": 0.0,
+      "level_cost": 1.0,
+      "level_value": 2.0,
+      "total_cost": 7.0,
+      "active_cost": 7.0,
+      "real_cost": 7.0,
+      "is_ultra": true,
+      "is_power": false,
+      "modifier_string": "",
+      "adder_string": "",
+      "column2_output": "+14 STUN",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "1674528649464",
+      "xmlid": "RUNNING",
+      "name": "Running Only On Terrain",
+      "display": "Running",
+      "class": "Running",
+      "levels": 0,
+      "base_cost": 0.0,
+      "level_cost": 1.0,
+      "level_value": 1.0,
+      "total_cost": 0.0,
+      "active_cost": 0.0,
+      "real_cost": 0.0,
+      "is_ultra": true,
+      "is_power": false,
+      "modifier_string": "; Only On Appropriate Terrain (-1/2)",
+      "adder_string": "",
+      "column2_output": "<i>Running Only On Terrain:</i>  Running 0m (12m total); Only On Appropriate Terrain (-1/2)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "ONLYONAPPROPRIATETERRAIN",
+          "class": "OnlyOnAppropriateTerrain",
+          "display": "Only On Appropriate Terrain",
+          "total_value": -0.5,
+          "base_cost": -0.5,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "1674528649027",
+      "xmlid": "SWIMMING",
+      "name": "",
+      "display": "Swimming",
+      "class": "Swimming",
+      "levels": 0,
+      "base_cost": 0.0,
+      "level_cost": 1.0,
+      "level_value": 2.0,
+      "total_cost": 0.0,
+      "active_cost": 0.0,
+      "real_cost": 0.0,
+      "is_ultra": true,
+      "is_power": false,
+      "modifier_string": "",
+      "adder_string": "",
+      "column2_output": "Swimming 0m (4m total)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "1674528649234",
+      "xmlid": "LEAPING",
+      "name": "",
+      "display": "Leaping",
+      "class": "Leaping",
+      "levels": 0,
+      "base_cost": 0.0,
+      "level_cost": 1.0,
+      "level_value": 2.0,
+      "total_cost": 0.0,
+      "active_cost": 0.0,
+      "real_cost": 0.0,
+      "is_ultra": true,
+      "is_power": false,
+      "modifier_string": "",
+      "adder_string": "",
+      "column2_output": "Leaping 0m (4m forward, 2m upward)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    }
+  ],
+  "skills": [
+  ],
+  "powers": [
+    {
+      "id": "20260830000001",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast NND",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 40.0,
+      "real_cost": 40.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Attack Versus Alternate Defense (All Or Nothing; +0)",
+      "adder_string": "",
+      "column2_output": "<i>Blast NND:</i>  Blast 8d6, Attack Versus Alternate Defense (All Or Nothing; +0)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "AVAD",
+          "class": "AVAD",
+          "display": "Attack Versus Alternate Defense",
+          "total_value": 0.0,
+          "base_cost": 0.5,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000044",
+      "xmlid": "ENERGYBLAST",
+      "name": "MP Blast Slot",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 40.0,
+      "real_cost": 20.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (40 Active Points); OAF (-1)",
+      "adder_string": "",
+      "column2_output": "<i>MP Blast Slot:</i>  Blast 8d6 (40 Active Points); OAF (-1)",
+      "sub_powers": [],
+      "parent_list_id": 20260830000043,
+      "parent_list_xmlid": "GENERIC_OBJECT",
+      "parent_list_class": "Multipower",
+      "parent_modifiers": [
+        {
+          "xmlid": "FOCUS",
+          "total_value": -1.0,
+          "base_cost": -1.0
+        },
+        {
+          "xmlid": "NND",
+          "total_value": 1.0,
+          "base_cost": 1.0
+        },
+        {
+          "xmlid": "AOE",
+          "total_value": 0.25,
+          "base_cost": 0.0
+        }
+      ],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000055",
+      "xmlid": "ENERGYBLAST",
+      "name": "VPP Blast Slot",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 40.0,
+      "real_cost": 27.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (40 Active Points); Requires A Roll (11-; -1/2)",
+      "adder_string": "",
+      "column2_output": "<i>VPP Blast Slot:</i>  Blast 8d6 (40 Active Points); Requires A Roll (11-; -1/2)",
+      "sub_powers": [],
+      "parent_list_id": 20260830000054,
+      "parent_list_xmlid": "GENERIC_OBJECT",
+      "parent_list_class": "VariablePowerPool",
+      "parent_modifiers": [
+        {
+          "xmlid": "REQUIRESASKILLROLL",
+          "total_value": -0.5,
+          "base_cost": -0.5
+        }
+      ],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000005",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast STUN Only",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 40.0,
+      "real_cost": 40.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", STUN Only (+0)",
+      "adder_string": "",
+      "column2_output": "<i>Blast STUN Only:</i>  Blast 8d6, STUN Only (+0)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "STUNONLY",
+          "class": "Modifier",
+          "display": "STUN Only",
+          "total_value": 0.0,
+          "base_cost": 0.0,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000045",
+      "xmlid": "FORCEFIELD",
+      "name": "MP Force Field Slot",
+      "display": "Resistant Protection",
+      "class": "ForceField",
+      "levels": 6,
+      "base_cost": 0.0,
+      "level_cost": 3.0,
+      "level_value": 2.0,
+      "total_cost": 9.0,
+      "active_cost": 9.0,
+      "real_cost": 4.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (9 Active Points); OAF (-1)",
+      "adder_string": "",
+      "column2_output": "<i>MP Force Field Slot:</i>  Resistant Protection (6 PD) (9 Active Points); OAF (-1)",
+      "sub_powers": [],
+      "parent_list_id": 20260830000043,
+      "parent_list_xmlid": "GENERIC_OBJECT",
+      "parent_list_class": "Multipower",
+      "parent_modifiers": [
+        {
+          "xmlid": "FOCUS",
+          "total_value": -1.0,
+          "base_cost": -1.0
+        },
+        {
+          "xmlid": "NND",
+          "total_value": 1.0,
+          "base_cost": 1.0
+        },
+        {
+          "xmlid": "AOE",
+          "total_value": 0.25,
+          "base_cost": 0.0
+        }
+      ],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000057",
+      "xmlid": "FORCEFIELD",
+      "name": "VPP Force Field Slot",
+      "display": "Resistant Protection",
+      "class": "ForceField",
+      "levels": 6,
+      "base_cost": 0.0,
+      "level_cost": 3.0,
+      "level_value": 2.0,
+      "total_cost": 9.0,
+      "active_cost": 11.0,
+      "real_cost": 7.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Area Of Effect (4m Radius; +1/4) (11 Active Points); Requires A Roll (11-; -1/2)",
+      "adder_string": "",
+      "column2_output": "<i>VPP Force Field Slot:</i>  Resistant Protection (6 PD), Area Of Effect (4m Radius; +1/4) (11 Active Points); Requires A Roll (11-; -1/2)",
+      "sub_powers": [],
+      "parent_list_id": 20260830000054,
+      "parent_list_xmlid": "GENERIC_OBJECT",
+      "parent_list_class": "VariablePowerPool",
+      "parent_modifiers": [
+        {
+          "xmlid": "REQUIRESASKILLROLL",
+          "total_value": -0.5,
+          "base_cost": -0.5
+        }
+      ],
+      "modifiers": [
+        {
+          "xmlid": "AOE",
+          "class": "AreaEffect",
+          "display": "Area Of Effect",
+          "total_value": 0.25,
+          "base_cost": 0.0,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000007",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast Penetrating",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 80.0,
+      "real_cost": 80.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Penetrating (+1) (80 Active Points)",
+      "adder_string": "",
+      "column2_output": "<i>Blast Penetrating:</i>  Blast 8d6, Penetrating (+1) (80 Active Points)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "PENETRATING",
+          "class": "Penetrating",
+          "display": "Penetrating",
+          "total_value": 1.0,
+          "base_cost": 0.5,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000046",
+      "xmlid": "COMPOUNDPOWER",
+      "name": "MP Compound Power Slot",
+      "display": "Compound Power",
+      "class": "CompoundPower",
+      "levels": 0,
+      "base_cost": 0.0,
+      "level_cost": 0.0,
+      "level_value": -1.0,
+      "total_cost": 0.0,
+      "active_cost": 0.0,
+      "real_cost": 2.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (0 Active Points); OAF (-1)",
+      "adder_string": "",
+      "column2_output": "<i>MP Compound Power Slot:</i>  (Total: 0 Active Cost, 2 Real Cost) Life Support  (0 Active Points); OAF (-1) (Real Cost: 1) <b>plus</b> Does Not Bleed (0 Active Points); OAF (-1) (Real Cost: 1)",
+      "sub_powers": [
+    {
+      "id": "20260830000047",
+      "xmlid": "LIFESUPPORT",
+      "name": "",
+      "display": "Life Support",
+      "class": "LifeSupport",
+      "levels": 0,
+      "base_cost": 0.0,
+      "level_cost": 0.0,
+      "level_value": -1.0,
+      "total_cost": 0.0,
+      "active_cost": 0.0,
+      "real_cost": 1.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (0 Active Points)",
+      "adder_string": "",
+      "column2_output": "Life Support  (0 Active Points)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000048",
+      "xmlid": "DOESNOTBLEED",
+      "name": "",
+      "display": "Does Not Bleed",
+      "class": "DoesNotBleed",
+      "levels": 0,
+      "base_cost": 0.0,
+      "level_cost": 0.0,
+      "level_value": -1.0,
+      "total_cost": 0.0,
+      "active_cost": 0.0,
+      "real_cost": 1.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (0 Active Points)",
+      "adder_string": "",
+      "column2_output": "Does Not Bleed (0 Active Points)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    }
+      ],
+      "parent_list_id": 20260830000043,
+      "parent_list_xmlid": "GENERIC_OBJECT",
+      "parent_list_class": "Multipower",
+      "parent_modifiers": [
+        {
+          "xmlid": "FOCUS",
+          "total_value": -1.0,
+          "base_cost": -1.0
+        },
+        {
+          "xmlid": "NND",
+          "total_value": 1.0,
+          "base_cost": 1.0
+        },
+        {
+          "xmlid": "AOE",
+          "total_value": 0.25,
+          "base_cost": 0.0
+        }
+      ],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000009",
+      "xmlid": "FLIGHT",
+      "name": "Flight Charges",
+      "display": "Flight",
+      "class": "Flight",
+      "levels": 10,
+      "base_cost": 0.0,
+      "level_cost": 1.0,
+      "level_value": 1.0,
+      "total_cost": 10.0,
+      "active_cost": 10.0,
+      "real_cost": 7.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (10 Active Points); 8 Charges (-1/2)",
+      "adder_string": "",
+      "column2_output": "<i>Flight Charges:</i>  Flight 10m (10 Active Points); 8 Charges (-1/2)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "CHARGES",
+          "class": "Charges",
+          "display": "Charges",
+          "total_value": -0.5,
+          "base_cost": -0.5,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000011",
+      "xmlid": "FORCEFIELD",
+      "name": "Force Field Costs END",
+      "display": "Resistant Protection",
+      "class": "ForceField",
+      "levels": 6,
+      "base_cost": 0.0,
+      "level_cost": 3.0,
+      "level_value": 2.0,
+      "total_cost": 9.0,
+      "active_cost": 9.0,
+      "real_cost": 6.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (9 Active Points); Costs Endurance (-1/2)",
+      "adder_string": "",
+      "column2_output": "<i>Force Field Costs END:</i>  Resistant Protection (6 PD):  PD (9 Active Points); Costs Endurance (-1/2)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "COSTSEND",
+          "class": "CostsEND",
+          "display": "Costs Endurance",
+          "total_value": -0.5,
+          "base_cost": -0.5,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000013",
+      "xmlid": "FLIGHT",
+      "name": "Flight Reduced END",
+      "display": "Flight",
+      "class": "Flight",
+      "levels": 10,
+      "base_cost": 0.0,
+      "level_cost": 1.0,
+      "level_value": 1.0,
+      "total_cost": 10.0,
+      "active_cost": 12.0,
+      "real_cost": 12.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Reduced Endurance (1/2 END; +1/4) (12 Active Points)",
+      "adder_string": "",
+      "column2_output": "<i>Flight Reduced END:</i>  Flight 10m, Reduced Endurance (1/2 END; +1/4) (12 Active Points)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "REDUCEDEND",
+          "class": "ReducedEND",
+          "display": "Reduced Endurance",
+          "total_value": 0.25,
+          "base_cost": 0.25,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000015",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast Continuous",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 80.0,
+      "real_cost": 80.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Continuous (+1) (80 Active Points)",
+      "adder_string": "",
+      "column2_output": "<i>Blast Continuous:</i>  Blast 8d6, Continuous (+1) (80 Active Points)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "CONTINUOUS",
+          "class": "Continuous",
+          "display": "Constant",
+          "total_value": 1.0,
+          "base_cost": 1.0,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000017",
+      "xmlid": "FORCEFIELD",
+      "name": "Force Field Persistent",
+      "display": "Resistant Protection",
+      "class": "ForceField",
+      "levels": 6,
+      "base_cost": 0.0,
+      "level_cost": 3.0,
+      "level_value": 2.0,
+      "total_cost": 9.0,
+      "active_cost": 11.0,
+      "real_cost": 11.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Persistent (+1/4) (11 Active Points)",
+      "adder_string": "",
+      "column2_output": "<i>Force Field Persistent:</i>  Resistant Protection (6 PD):  PD, Persistent (+1/4) (11 Active Points)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "PERSISTENT",
+          "class": "Persistent",
+          "display": "Persistent",
+          "total_value": 0.25,
+          "base_cost": 0.25,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000020",
+      "xmlid": "TELEPATHY",
+      "name": "Telepathy LOS",
+      "display": "Telepathy",
+      "class": "Telepathy",
+      "levels": 4,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 20.0,
+      "active_cost": 30.0,
+      "real_cost": 24.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Line Of Sight (+1/2) (30 Active Points); Normal Range (-1/4)",
+      "adder_string": "",
+      "column2_output": "<i>Telepathy LOS:</i>  Telepathy 4d6, Line Of Sight (+1/2) (30 Active Points); Normal Range (-1/4)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "LOS",
+          "class": "LineOfSight",
+          "display": "Line Of Sight",
+          "total_value": 0.5,
+          "base_cost": 0.5,
+          "is_private": false
+        },
+        {
+          "xmlid": "NORMALRANGE",
+          "class": "NormalRange",
+          "display": "Normal Range",
+          "total_value": -0.25,
+          "base_cost": -0.25,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000022",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast No Range",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 40.0,
+      "real_cost": 27.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (40 Active Points); No Range (-1/2)",
+      "adder_string": "",
+      "column2_output": "<i>Blast No Range:</i>  Blast 8d6 (40 Active Points); No Range (-1/2)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "NORANGE",
+          "class": "NoRange",
+          "display": "No Range",
+          "total_value": -0.5,
+          "base_cost": -0.5,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000024",
+      "xmlid": "HKA",
+      "name": "HKA Ranged",
+      "display": "Killing Attack - Hand-To-Hand",
+      "class": "KillingAttackHTH",
+      "levels": 1,
+      "base_cost": 0.0,
+      "level_cost": 15.0,
+      "level_value": 1.0,
+      "total_cost": 15.0,
+      "active_cost": 22.0,
+      "real_cost": 22.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Ranged (+1/2) (22 Active Points)",
+      "adder_string": "",
+      "column2_output": "<i>HKA Ranged:</i>  Killing Attack - Hand-To-Hand 1d6 (1 1/2d6 w/STR), Ranged (+1/2) (22 Active Points)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "RANGED",
+          "class": "Ranged",
+          "display": "Ranged",
+          "total_value": 0.5,
+          "base_cost": 0.5,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000027",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast AOE",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 80.0,
+      "real_cost": 80.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Area Of Effect (8m Radius; +1/2), Mobile (+1/2) (80 Active Points)",
+      "adder_string": "",
+      "column2_output": "<i>Blast AOE:</i>  Blast 8d6, Area Of Effect (8m Radius; +1/2), Mobile (+1/2) (80 Active Points)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "AOE",
+          "class": "AreaEffect",
+          "display": "Area Of Effect",
+          "total_value": 0.5,
+          "base_cost": 0.0,
+          "is_private": false
+        },
+        {
+          "xmlid": "MOBILE",
+          "class": "Mobile",
+          "display": "Mobile",
+          "total_value": 0.5,
+          "base_cost": 0.5,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000029",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast Invisible",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 50.0,
+      "real_cost": 50.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Invisible Power Effects (Inobvious, Invisible to One Sense Group; Effects of Power on other characters [default/no change], Effects of Power on target [default/no change]; +1/4) (50 Active Points)",
+      "adder_string": "",
+      "column2_output": "<i>Blast Invisible:</i>  Blast 8d6, Invisible Power Effects (Inobvious, Invisible to One Sense Group; +1/4) (50 Active Points)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "INVISIBLE",
+          "class": "Invisible",
+          "display": "Invisible Power Effects",
+          "total_value": 0.25,
+          "base_cost": 0.25,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000030",
+      "xmlid": "DESOLIDIFICATION",
+      "name": "Desolidification",
+      "display": "Desolidification",
+      "class": "Desolidification",
+      "levels": 0,
+      "base_cost": 0.0,
+      "level_cost": 0.0,
+      "level_value": -1.0,
+      "total_cost": 0.0,
+      "active_cost": 0.0,
+      "real_cost": 1.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (0 Active Points)",
+      "adder_string": "",
+      "column2_output": "<i>Desolidification:</i>  Desolidification  (0 Active Points)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000032",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast Affects Physical World",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 120.0,
+      "real_cost": 120.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Affects Physical World (+2) (120 Active Points)",
+      "adder_string": "",
+      "column2_output": "<i>Blast Affects Physical World:</i>  Blast 8d6, Affects Physical World (+2) (120 Active Points)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "AFFECTSPHYSICALWORLD",
+          "class": "AffectsPhysicalWorld",
+          "display": "Affects Physical World",
+          "total_value": 2.0,
+          "base_cost": 2.0,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000034",
+      "xmlid": "ENDURANCERESERVE",
+      "name": "END Reserve",
+      "display": "Endurance Reserve",
+      "class": "EnduranceReserve",
+      "levels": 40,
+      "base_cost": 0.0,
+      "level_cost": 1.0,
+      "level_value": 4.0,
+      "total_cost": 10.0,
+      "active_cost": 14.0,
+      "real_cost": 14.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (14 Active Points)",
+      "adder_string": "",
+      "column2_output": "<i>END Reserve:</i>  Endurance Reserve  (40 END, 6 REC) (14 Active Points)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000035",
+      "xmlid": "MINDLINK",
+      "name": "Mind Link",
+      "display": "Mind Link",
+      "class": "MindLink",
+      "levels": 0,
+      "base_cost": 5.0,
+      "level_cost": 0.0,
+      "level_value": -1.0,
+      "total_cost": 5.0,
+      "active_cost": 5.0,
+      "real_cost": 5.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": "",
+      "adder_string": "",
+      "column2_output": "<i>Mind Link:</i>  Mind Link , One Specific Mind",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000037",
+      "xmlid": "TELEPATHY",
+      "name": "Telepathy Not Through Mind Link",
+      "display": "Telepathy",
+      "class": "Telepathy",
+      "levels": 4,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 20.0,
+      "active_cost": 20.0,
+      "real_cost": 16.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (20 Active Points); Cannot Be Used Through Mind Link (-1/4)",
+      "adder_string": "",
+      "column2_output": "<i>Telepathy Not Through Mind Link:</i>  Telepathy 4d6 (20 Active Points); Cannot Be Used Through Mind Link (-1/4)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "NOTTHROUGHMINDLINK",
+          "class": "NotThroughMindLink",
+          "display": "Cannot Be Used Through Mind Link",
+          "total_value": -0.25,
+          "base_cost": -0.25,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000039",
+      "xmlid": "FLIGHT",
+      "name": "Linked Flight",
+      "display": "Flight",
+      "class": "Flight",
+      "levels": 10,
+      "base_cost": 0.0,
+      "level_cost": 1.0,
+      "level_value": 1.0,
+      "total_cost": 10.0,
+      "active_cost": 10.0,
+      "real_cost": 7.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (10 Active Points); Linked (Blast NND; -1/2)",
+      "adder_string": "",
+      "column2_output": "<i>Linked Flight:</i>  Flight 10m (10 Active Points); Linked (Blast NND; -1/2)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "LINKED",
+          "class": "Linked",
+          "display": "Linked",
+          "total_value": -0.5,
+          "base_cost": -0.5,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000043",
+      "xmlid": "GENERIC_OBJECT",
+      "name": "Multipower",
+      "display": "",
+      "class": "Multipower",
+      "levels": 0,
+      "base_cost": 0.0,
+      "level_cost": 0.0,
+      "level_value": -1.0,
+      "total_cost": 1.0,
+      "active_cost": 2.0,
+      "real_cost": 1.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", all slots Area Of Effect (4m Radius; +1/4), No Normal Defense (+1) (2 Active Points); all slots OAF (-1)",
+      "adder_string": "",
+      "column2_output": "<i>Multipower:</i>  Multipower, 0-point reserve, all slots Area Of Effect (4m Radius; +1/4), No Normal Defense (+1) (2 Active Points); all slots OAF (-1)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "FOCUS",
+          "class": "Focus",
+          "display": "Focus",
+          "total_value": -1.0,
+          "base_cost": -1.0,
+          "is_private": false
+        },
+        {
+          "xmlid": "NND",
+          "class": "NND",
+          "display": "No Normal Defense",
+          "total_value": 1.0,
+          "base_cost": 1.0,
+          "is_private": false
+        },
+        {
+          "xmlid": "AOE",
+          "class": "AreaEffect",
+          "display": "Area Of Effect",
+          "total_value": 0.25,
+          "base_cost": 0.0,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000050",
+      "xmlid": "ENERGYBLAST",
+      "name": "Unified Power Blast",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 40.0,
+      "real_cost": 32.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (40 Active Points); Unified Power (Unified Power Force Field; -1/4)",
+      "adder_string": "",
+      "column2_output": "<i>Unified Power Blast:</i>  Blast 8d6 (40 Active Points); Unified Power (Unified Power Force Field; -1/4)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "UNIFIEDPOWER",
+          "class": "Modifier",
+          "display": "Unified Power",
+          "total_value": -0.25,
+          "base_cost": -0.25,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000054",
+      "xmlid": "GENERIC_OBJECT",
+      "name": "VPP",
+      "display": "Variable Power Pool",
+      "class": "VariablePowerPool",
+      "levels": 1,
+      "base_cost": 0.0,
+      "level_cost": 1.0,
+      "level_value": 1.0,
+      "total_cost": 1.0,
+      "active_cost": 1.0,
+      "real_cost": 1.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", all slots Requires A Roll (11-; -1/2)",
+      "adder_string": "",
+      "column2_output": "<i>VPP:</i>  Variable Power Pool, 1 base + 0 control cost, all slots Requires A Roll (11-; -1/2)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "REQUIRESASKILLROLL",
+          "class": "RequiresSkillRoll",
+          "display": "Requires A Roll",
+          "total_value": -0.5,
+          "base_cost": -0.5,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000052",
+      "xmlid": "FORCEFIELD",
+      "name": "Unified Power Force Field",
+      "display": "Resistant Protection",
+      "class": "ForceField",
+      "levels": 6,
+      "base_cost": 0.0,
+      "level_cost": 3.0,
+      "level_value": 2.0,
+      "total_cost": 9.0,
+      "active_cost": 9.0,
+      "real_cost": 7.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (9 Active Points); Unified Power (Unified Power Blast; -1/4)",
+      "adder_string": "",
+      "column2_output": "<i>Unified Power Force Field:</i>  Resistant Protection (6 PD) (9 Active Points); Unified Power (Unified Power Blast; -1/4)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "UNIFIEDPOWER",
+          "class": "Modifier",
+          "display": "Unified Power",
+          "total_value": -0.25,
+          "base_cost": -0.25,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000060",
+      "xmlid": "NAKEDMODIFIER",
+      "name": "Naked Advantage",
+      "display": "Naked Advantage",
+      "class": "NakedModifier",
+      "levels": 20,
+      "base_cost": 0.0,
+      "level_cost": 1.0,
+      "level_value": 1.0,
+      "total_cost": 20.0,
+      "active_cost": 15.0,
+      "real_cost": 15.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (15 Active Points)",
+      "adder_string": "",
+      "column2_output": "<i>Naked Advantage:</i>  Cannot Escape With Teleportation (+1/4), Area Of Effect (8m Radius; +1/2) for up to 20 Active Points of Blast (15 Active Points)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "AOE",
+          "class": "AreaEffect",
+          "display": "Area Of Effect",
+          "total_value": 0.5,
+          "base_cost": 0.0,
+          "is_private": false
+        },
+        {
+          "xmlid": "NOTELEPORT",
+          "class": "CannotEscapeWithTeleport",
+          "display": "Cannot Be Escaped With Teleportation",
+          "total_value": 0.25,
+          "base_cost": 0.0,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000061",
+      "xmlid": "CUSTOMPOWER",
+      "name": "Custom Power With END",
+      "display": "Custom Power",
+      "class": "CustomPower",
+      "levels": 0,
+      "base_cost": 0.0,
+      "level_cost": 1.0,
+      "level_value": 1.0,
+      "total_cost": 0.0,
+      "active_cost": 0.0,
+      "real_cost": 0.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": "",
+      "adder_string": "",
+      "column2_output": "<i>Custom Power With END:</i>  Custom Power",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000062",
+      "xmlid": "SHAPESHIFT",
+      "name": "Shape Shift",
+      "display": "Shape Shift",
+      "class": "Shapeshift",
+      "levels": 0,
+      "base_cost": 8.0,
+      "level_cost": 0.0,
+      "level_value": -1.0,
+      "total_cost": 8.0,
+      "active_cost": 8.0,
+      "real_cost": 8.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": "",
+      "adder_string": "",
+      "column2_output": "<i>Shape Shift:</i>  Shape Shift  (Sight Group)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000064",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast Alternate Combat Value",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 40.0,
+      "real_cost": 40.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Alternate Combat Value (Based on OMCV; +0)",
+      "adder_string": "",
+      "column2_output": "<i>Blast Alternate Combat Value:</i>  Blast 8d6, Alternate Combat Value (Based on OMCV; +0)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "ACV",
+          "class": "AlternateCombatValue",
+          "display": "Alternate Combat Value",
+          "total_value": 0.0,
+          "base_cost": 0.0,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000066",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast Autofire",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 50.0,
+      "real_cost": 50.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Autofire (2 shots; +1/4) (50 Active Points)",
+      "adder_string": "",
+      "column2_output": "<i>Blast Autofire:</i>  Blast 8d6, Autofire (2 shots; +1/4) (50 Active Points)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "AUTOFIRE",
+          "class": "Autofire",
+          "display": "Autofire",
+          "total_value": 0.25,
+          "base_cost": 0.25,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000068",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast Beam",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 40.0,
+      "real_cost": 40.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Beam (+0)",
+      "adder_string": "",
+      "column2_output": "<i>Blast Beam:</i>  Blast 8d6, Beam (+0)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "BEAM",
+          "class": "Beam",
+          "display": "Beam",
+          "total_value": 0.0,
+          "base_cost": 0.0,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000070",
+      "xmlid": "TELEPATHY",
+      "name": "Telepathy Can Be Missile Deflected",
+      "display": "Telepathy",
+      "class": "Telepathy",
+      "levels": 4,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 20.0,
+      "active_cost": 25.0,
+      "real_cost": 25.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Can Be Missile Deflected (+1/4) (25 Active Points)",
+      "adder_string": "",
+      "column2_output": "<i>Telepathy Can Be Missile Deflected:</i>  Telepathy 4d6, Can Be Missile Deflected (+1/4) (25 Active Points)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "CANBEMISSILEDEFLECTED",
+          "class": "CanBeMissileDeflected",
+          "display": "Can Be Deflected",
+          "total_value": 0.25,
+          "base_cost": 0.25,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000072",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast Damage Over Time",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 170.0,
+      "real_cost": 170.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Damage Over Time (2 damage increments, damage occurs every Segment, +3 1/4) (170 Active Points)",
+      "adder_string": "",
+      "column2_output": "<i>Blast Damage Over Time:</i>  Blast 8d6, Damage Over Time (2 damage increments, damage occurs every Segment, +3 1/4) (170 Active Points)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "DAMAGEOVERTIME",
+          "class": "DamageOverTime",
+          "display": "Damage Over Time",
+          "total_value": 3.25,
+          "base_cost": 1.0,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000074",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast Delayed Effect",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 60.0,
+      "real_cost": 60.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Delayed Effect (x2 number active; +1/2) (60 Active Points)",
+      "adder_string": "",
+      "column2_output": "<i>Blast Delayed Effect:</i>  Blast 8d6, Delayed Effect (x2 number active; +1/2) (60 Active Points)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "DELAYEDEFFECT",
+          "class": "DelayedEffect",
+          "display": "Delayed Effect",
+          "total_value": 0.5,
+          "base_cost": 0.25,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000077",
+      "xmlid": "DRAIN",
+      "name": "Slow Drain",
+      "display": "Drain",
+      "class": "Drain",
+      "levels": 2,
+      "base_cost": 0.0,
+      "level_cost": 10.0,
+      "level_value": 1.0,
+      "total_cost": 20.0,
+      "active_cost": 55.0,
+      "real_cost": 37.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Delayed Return Rate (1 Hour; +1 3/4) (55 Active Points); Only Restores To Starting Values (-1/2)",
+      "adder_string": "",
+      "column2_output": "<i>Slow Drain:</i>  Drain STR 2d6, Delayed Return Rate (1 Hour; +1 3/4) (55 Active Points); Only Restores To Starting Values (-1/2)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "DELAYEDRETURNRATE",
+          "class": "DelayedReturnRate",
+          "display": "Delayed Return Rate",
+          "total_value": 1.75,
+          "base_cost": 1.75,
+          "is_private": false
+        },
+        {
+          "xmlid": "ONLYTOSTARTING",
+          "class": "OnlyToStarting",
+          "display": "Only Restores To Starting Values",
+          "total_value": -0.5,
+          "base_cost": -0.5,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000079",
+      "xmlid": "FLIGHT",
+      "name": "Flight Extra Time",
+      "display": "Flight",
+      "class": "Flight",
+      "levels": 10,
+      "base_cost": 0.0,
+      "level_cost": 1.0,
+      "level_value": 1.0,
+      "total_cost": 10.0,
+      "active_cost": 10.0,
+      "real_cost": 8.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (10 Active Points); Extra Time (Extra Phase, -1/4)",
+      "adder_string": "",
+      "column2_output": "<i>Flight Extra Time:</i>  Flight 10m (10 Active Points); Extra Time (Extra Phase, -1/4)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "EXTRATIME",
+          "class": "ExtraTime",
+          "display": "Extra Time",
+          "total_value": -0.25,
+          "base_cost": -0.25,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000082",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast Gestures And Incantations",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 40.0,
+      "real_cost": 27.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (40 Active Points); Gestures (-1/4), Incantations (-1/4)",
+      "adder_string": "",
+      "column2_output": "<i>Blast Gestures And Incantations:</i>  Blast 8d6 (40 Active Points); Gestures (-1/4), Incantations (-1/4)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "GESTURES",
+          "class": "Gestures",
+          "display": "Gestures",
+          "total_value": -0.25,
+          "base_cost": -0.25,
+          "is_private": false
+        },
+        {
+          "xmlid": "INCANTATIONS",
+          "class": "Incantations",
+          "display": "Incantations",
+          "total_value": -0.25,
+          "base_cost": -0.25,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000085",
+      "xmlid": "FORCEFIELD",
+      "name": "Force Field Hardened",
+      "display": "Resistant Protection",
+      "class": "ForceField",
+      "levels": 6,
+      "base_cost": 0.0,
+      "level_cost": 3.0,
+      "level_value": 2.0,
+      "total_cost": 9.0,
+      "active_cost": 13.0,
+      "real_cost": 10.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Hardened (+1/2) (13 Active Points); Physical Manifestation (-1/4)",
+      "adder_string": "",
+      "column2_output": "<i>Force Field Hardened:</i>  Resistant Protection (6 ED):  ED, Hardened (+1/2) (13 Active Points); Physical Manifestation (-1/4)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "HARDENED",
+          "class": "Hardened",
+          "display": "Hardened",
+          "total_value": 0.5,
+          "base_cost": 0.25,
+          "is_private": false
+        },
+        {
+          "xmlid": "PHYSICALMANIFESTATION",
+          "class": "PhysicalManifestation",
+          "display": "Physical Manifestation",
+          "total_value": -0.25,
+          "base_cost": -0.25,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000087",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast Increased Max Range",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 50.0,
+      "real_cost": 50.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Increased Maximum Range (800m; +1/4) (50 Active Points)",
+      "adder_string": "",
+      "column2_output": "<i>Blast Increased Max Range:</i>  Blast 8d6, Increased Maximum Range (800m; +1/4) (50 Active Points)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "INCREASEDMAXRANGE",
+          "class": "IncreasedMaxRange",
+          "display": "Increased Maximum Range",
+          "total_value": 0.25,
+          "base_cost": 0.1,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000089",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast Limited Range",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 40.0,
+      "real_cost": 32.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (40 Active Points); Limited Range (-1/4)",
+      "adder_string": "",
+      "column2_output": "<i>Blast Limited Range:</i>  Blast 8d6 (40 Active Points); Limited Range (-1/4)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "LIMITEDRANGE",
+          "class": "LimitedRange",
+          "display": "Limited Range",
+          "total_value": -0.25,
+          "base_cost": -0.25,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000091",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast NND Standalone",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 80.0,
+      "real_cost": 80.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", No Normal Defense (+1) (80 Active Points)",
+      "adder_string": "",
+      "column2_output": "<i>Blast NND Standalone:</i>  Blast 8d6, No Normal Defense (+1) (80 Active Points)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "NND",
+          "class": "NND",
+          "display": "No Normal Defense",
+          "total_value": 1.0,
+          "base_cost": 1.0,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000093",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast Personal Immunity",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 50.0,
+      "real_cost": 50.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Personal Immunity (+1/4) (50 Active Points)",
+      "adder_string": "",
+      "column2_output": "<i>Blast Personal Immunity:</i>  Blast 8d6, Personal Immunity (+1/4) (50 Active Points)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "PERSONALIMMUNITY",
+          "class": "PersonalImmunity",
+          "display": "Personal Immunity",
+          "total_value": 0.25,
+          "base_cost": 0.25,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000096",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast Range Based On STR",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 50.0,
+      "real_cost": 33.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Reduced By Range (+1/4) (50 Active Points); Range Based On Strength (-1/2)",
+      "adder_string": "",
+      "column2_output": "<i>Blast Range Based On STR:</i>  Blast 8d6, Reduced By Range (+1/4) (50 Active Points); Range Based On Strength (-1/2)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "RANGEBASEDONSTR",
+          "class": "RangeBasedOnSTR",
+          "display": "Range Based On Strength",
+          "total_value": -0.5,
+          "base_cost": -0.5,
+          "is_private": false
+        },
+        {
+          "xmlid": "REDUCEDBYRANGE",
+          "class": "ReducedByRange",
+          "display": "Reduced By Range",
+          "total_value": 0.25,
+          "base_cost": 0.25,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000098",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast Restrainable",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 40.0,
+      "real_cost": 27.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (40 Active Points); Restrainable (-1/2)",
+      "adder_string": "",
+      "column2_output": "<i>Blast Restrainable:</i>  Blast 8d6 (40 Active Points); Restrainable (-1/2)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "RESTRAINABLE",
+          "class": "Restrainable",
+          "display": "Restrainable",
+          "total_value": -0.5,
+          "base_cost": -0.5,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000101",
+      "xmlid": "DRAIN",
+      "name": "Adjustable Drain",
+      "display": "Drain",
+      "class": "Drain",
+      "levels": 2,
+      "base_cost": 0.0,
+      "level_cost": 10.0,
+      "level_value": 1.0,
+      "total_cost": 20.0,
+      "active_cost": 30.0,
+      "real_cost": 20.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ",  (+1/2) (30 Active Points); Self Only (-1/2)",
+      "adder_string": "",
+      "column2_output": "<i>Adjustable Drain:</i>  Drain CON 2d6,  (+1/2) (30 Active Points); Self Only (-1/2)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "SELFONLY",
+          "class": "SelfOnly",
+          "display": "Self Only",
+          "total_value": -0.5,
+          "base_cost": -0.5,
+          "is_private": false
+        },
+        {
+          "xmlid": "VARIABLEEFFECT",
+          "class": "VariableEffect",
+          "display": "Variable Effect",
+          "total_value": 0.5,
+          "base_cost": 0.5,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000103",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast Side Effects",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 40.0,
+      "real_cost": 32.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (40 Active Points); Side Effects (-1/4)",
+      "adder_string": "",
+      "column2_output": "<i>Blast Side Effects:</i>  Blast 8d6 (40 Active Points); Side Effects (-1/4)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "SIDEEFFECTS",
+          "class": "SideEffects",
+          "display": "Side Effects",
+          "total_value": -0.25,
+          "base_cost": -0.25,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000105",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast Sticky",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 60.0,
+      "real_cost": 60.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Sticky (+1/2) (60 Active Points)",
+      "adder_string": "",
+      "column2_output": "<i>Blast Sticky:</i>  Blast 8d6, Sticky (+1/2) (60 Active Points)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "STICKY",
+          "class": "Sticky",
+          "display": "Sticky",
+          "total_value": 0.5,
+          "base_cost": 0.5,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000107",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast Subject To Range Modifier",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 40.0,
+      "real_cost": 32.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (40 Active Points); Subject To Range Modifier (-1/4)",
+      "adder_string": "",
+      "column2_output": "<i>Blast Subject To Range Modifier:</i>  Blast 8d6 (40 Active Points); Subject To Range Modifier (-1/4)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "SUBJECTTORANGEMODIFIER",
+          "class": "SubjectToRangeModifier",
+          "display": "Subject To Range Modifier",
+          "total_value": -0.25,
+          "base_cost": -0.25,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000109",
+      "xmlid": "FLIGHT",
+      "name": "Flight Turn Mode",
+      "display": "Flight",
+      "class": "Flight",
+      "levels": 10,
+      "base_cost": 0.0,
+      "level_cost": 1.0,
+      "level_value": 1.0,
+      "total_cost": 10.0,
+      "active_cost": 10.0,
+      "real_cost": 8.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (10 Active Points); Turn Mode (-1/4)",
+      "adder_string": "",
+      "column2_output": "<i>Flight Turn Mode:</i>  Flight 10m (10 Active Points); Turn Mode (-1/4)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "TURNMODE",
+          "class": "TurnMode",
+          "display": "Turn Mode",
+          "total_value": -0.25,
+          "base_cost": -0.25,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000111",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast Usable On Others",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 50.0,
+      "real_cost": 50.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Usable By Other (+1/4) (50 Active Points)",
+      "adder_string": "",
+      "column2_output": "<i>Blast Usable On Others:</i>  Blast 8d6, Usable By Other (+1/4) (50 Active Points)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "UOO",
+          "class": "UsableOnOthers",
+          "display": "Usable On Others",
+          "total_value": 0.25,
+          "base_cost": 0.25,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000114",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast Variable Advantage And Limitations",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 60.0,
+      "real_cost": 48.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Variable Advantage (+1/4 Advantages; +1/2) (60 Active Points); Variable Limitations (requires -1/2 worth of Limitations; -1/4)",
+      "adder_string": "",
+      "column2_output": "<i>Blast Variable Advantage And Limitations:</i>  Blast 8d6, Variable Advantage (+1/4 Advantages; +1/2) (60 Active Points); Variable Limitations (requires -1/2 worth of Limitations; -1/4)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "VARIABLEADVANTAGE",
+          "class": "VariableAdvantage",
+          "display": "Variable Advantage",
+          "total_value": 0.5,
+          "base_cost": 0.5,
+          "is_private": false
+        },
+        {
+          "xmlid": "VARIABLELIMITATIONS",
+          "class": "VariableLimitations",
+          "display": "Variable Limitations",
+          "total_value": -0.25,
+          "base_cost": 0.0,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000116",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast Limited Arc Of Fire",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 40.0,
+      "real_cost": 32.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (40 Active Points); Limited Arc Of Fire (-1/4)",
+      "adder_string": "",
+      "column2_output": "<i>Blast Limited Arc Of Fire:</i>  Blast 8d6 (40 Active Points); Limited Arc Of Fire (-1/4)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "LIMITEDARCOFFIRE",
+          "class": "LimitedArcOfFire",
+          "display": "Limited Arc Of Fire",
+          "total_value": -0.25,
+          "base_cost": -0.25,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000118",
+      "xmlid": "FORCEFIELD",
+      "name": "Force Field Partial Coverage",
+      "display": "Resistant Protection",
+      "class": "ForceField",
+      "levels": 6,
+      "base_cost": 0.0,
+      "level_cost": 3.0,
+      "level_value": 2.0,
+      "total_cost": 9.0,
+      "active_cost": 9.0,
+      "real_cost": 7.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (9 Active Points); Partial Coverage (covers 1 m^3; -1/4)",
+      "adder_string": "",
+      "column2_output": "<i>Force Field Partial Coverage:</i>  Resistant Protection (6 PD):  PD (9 Active Points); Partial Coverage (covers 1 m^3; -1/4)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "PARTIALCOVERAGE",
+          "class": "PartialCoverage",
+          "display": "Partial Coverage",
+          "total_value": -0.25,
+          "base_cost": -0.25,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000120",
+      "xmlid": "POSSESSION",
+      "name": "Possession",
+      "display": "Possession",
+      "class": "Possession",
+      "levels": 10,
+      "base_cost": 0.0,
+      "level_cost": 0.0,
+      "level_value": -1.0,
+      "total_cost": 0.0,
+      "active_cost": 0.0,
+      "real_cost": 1.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Area Of Effect (4m Radius; +1/4) (0 Active Points)",
+      "adder_string": "+0 Points of Mind Control effect, +0 Points of Telepathy effect",
+      "column2_output": "<i>Possession:</i>  Possession (Mind Control Effect Roll 40; Telepathy Effect Roll 30), Area Of Effect (4m Radius; +1/4) (0 Active Points)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "AOE",
+          "class": "AreaEffect",
+          "display": "Area Of Effect",
+          "total_value": 0.25,
+          "base_cost": 0.0,
+          "is_private": false
+        }
+      ],
+      "adders": [
+        {
+          "xmlid": "MINDCONTROLEFFECT",
+          "display": "+0 Points of Mind Control effect",
+          "base_cost": 0.0,
+          "real_cost": 0.0,
+          "total_cost": 0.0,
+          "levels": 0,
+          "level_cost": 1.0,
+          "level_value": 2.0,
+          "required": true,
+          "selected": true
+        },
+        {
+          "xmlid": "TELEPATHYEFFECT",
+          "display": "+0 Points of Telepathy effect",
+          "base_cost": 0.0,
+          "real_cost": 0.0,
+          "total_cost": 0.0,
+          "levels": 0,
+          "level_cost": 1.0,
+          "level_value": 2.0,
+          "required": true,
+          "selected": true
+        }
+      ]
+    },
+    {
+      "id": "20260830000122",
+      "xmlid": "IMAGES",
+      "name": "Images",
+      "display": "Images",
+      "class": "Images",
+      "levels": 6,
+      "base_cost": 10.0,
+      "level_cost": 0.0,
+      "level_value": -1.0,
+      "total_cost": 10.0,
+      "active_cost": 12.0,
+      "real_cost": 12.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Area Of Effect (4m Radius; +1/4) (12 Active Points)",
+      "adder_string": "",
+      "column2_output": "<i>Images:</i>  Sight Group Images, Area Of Effect (4m Radius; +1/4) (12 Active Points)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "AOE",
+          "class": "AreaEffect",
+          "display": "Area Of Effect",
+          "total_value": 0.25,
+          "base_cost": 0.0,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000126",
+      "xmlid": "ENERGYBLAST",
+      "name": "End Only To Activate Marker",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 50.0,
+      "real_cost": 50.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Costs Endurance Only To Activate (+1/4) (50 Active Points)",
+      "adder_string": "",
+      "column2_output": "<i>End Only To Activate Marker:</i>  Blast 8d6, Costs Endurance Only To Activate (+1/4) (50 Active Points)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "COSTSENDONLYTOACTIVATE",
+          "class": "CostsENDOnlyToActivate",
+          "display": "Costs Endurance Only To Activate",
+          "total_value": 0.25,
+          "base_cost": 0.25,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000128",
+      "xmlid": "ENERGYBLAST",
+      "name": "End Costs To Maintain Marker",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 50.0,
+      "real_cost": 50.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (50 Active Points); Costs Endurance To Maintain (Full END Cost; +1/4)",
+      "adder_string": "",
+      "column2_output": "<i>End Costs To Maintain Marker:</i>  Blast 8d6 (50 Active Points); Costs Endurance To Maintain (Full END Cost; +1/4)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "COSTSENDTOMAINTAIN",
+          "class": "CostsENDToMaintain",
+          "display": "Costs END To Maintain",
+          "total_value": 0.25,
+          "base_cost": 0.25,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000130",
+      "xmlid": "ENERGYBLAST",
+      "name": "Stops When Stunned Marker",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 40.0,
+      "real_cost": 27.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (40 Active Points); Stops Working If Character Is Stunned (-1/2)",
+      "adder_string": "",
+      "column2_output": "<i>Stops When Stunned Marker:</i>  Blast 8d6 (40 Active Points); Stops Working If Character Is Stunned (-1/2)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "STOPSWHENSTUNNED",
+          "class": "Modifier",
+          "display": "Stops Working If Mentalist Is Stunned",
+          "total_value": -0.5,
+          "base_cost": -0.5,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000132",
+      "xmlid": "ENERGYBLAST",
+      "name": "Stops When KOd Marker",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 40.0,
+      "real_cost": 32.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": " (40 Active Points); Stops Working If Character Is Knocked Out (-1/4)",
+      "adder_string": "",
+      "column2_output": "<i>Stops When KOd Marker:</i>  Blast 8d6 (40 Active Points); Stops Working If Character Is Knocked Out (-1/4)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "STOPSWHENKOD",
+          "class": "Modifier",
+          "display": "Stops Working If Mentalist Is Knocked Out",
+          "total_value": -0.25,
+          "base_cost": -0.25,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000124",
+      "xmlid": "ABSORPTION",
+      "name": "Absorption",
+      "display": "Absorption",
+      "class": "Absorption",
+      "levels": 3,
+      "base_cost": 0.0,
+      "level_cost": 1.0,
+      "level_value": 1.0,
+      "total_cost": 3.0,
+      "active_cost": 4.0,
+      "real_cost": 4.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Area Of Effect (4m Radius; +1/4) (4 Active Points)",
+      "adder_string": "",
+      "column2_output": "<i>Absorption:</i>  Absorption 3 BODY  (Energy, STR), Area Of Effect (4m Radius; +1/4) (4 Active Points)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "AOE",
+          "class": "AreaEffect",
+          "display": "Area Of Effect",
+          "total_value": 0.25,
+          "base_cost": 0.0,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000135",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast With End Reserve Modifiers",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 50.0,
+      "real_cost": 33.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", END Reserve Or END (+1/4) (50 Active Points); Double Endurance Cost (-1/2)",
+      "adder_string": "",
+      "column2_output": "<i>Blast With End Reserve Modifiers:</i>  Blast 8d6, END Reserve Or END (+1/4) (50 Active Points); Double Endurance Cost (-1/2)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "ENDRESERVEOREND",
+          "class": "ENDReserveOrEND",
+          "display": "END Reserve Or END",
+          "total_value": 0.25,
+          "base_cost": 0.25,
+          "is_private": false
+        },
+        {
+          "xmlid": "DOUBLEENDCOST",
+          "class": "DoubleEnduranceCost",
+          "display": "Double Endurance Cost",
+          "total_value": -0.5,
+          "base_cost": -0.5,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    }
+  ],
+  "perks": [
+  ],
+  "talents": [
+  ],
+  "complications": [
+  ],
+  "martial_arts": [
+  ],
+  "total_points": 2085.0,
+  "available_points": -1685.0,
+  "unparsed_sections": [
+    "EQUIPMENT"
+  ]
+}
