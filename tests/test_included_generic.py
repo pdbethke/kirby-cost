@@ -172,8 +172,10 @@ def test_an_advantage_may_not_go_on_an_elemental_control():
 
 
 def test_does_knockback_refuses_a_power_that_already_does_knockback():
-    """DoesKB.java:37-54. `doesKnockback` is a field on GenericObject, not a
-    method; the port called it. 6E1 p.335 -- HD agrees with the book, which
+    """DoesKB.java:37-54. `o.doesKnockback()` (:43) IS a method call in Java --
+    this branch made GenericObject.does_knockback a computed property, so the
+    port calling it as one is now correct, not a mismatch. 6E1 p.335 -- HD
+    agrees with the book, which
     describes Does Knockback as enabling Knockback on an Attack Power that
     normally does not do it, so a power that already does it has nothing to buy."""
     mod = template_modifier("DOESKB")

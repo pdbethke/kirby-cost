@@ -58,12 +58,12 @@ class NoRangeModifier(Modifier, xmlid="NORANGEMODIFIER"):
         if result and result.strip():
             return result
 
+        if isinstance(generic_object, (Multipower, ElementalControl)):
+            return ""
         # Java's third alternative is `o instanceof FindWeakness`, a 5E power:
         # Main6E declares no FINDWEAKNESS element and the engine has no class
         # for it, so the xmlid stands in rather than an import that cannot
         # resolve. Unreachable under Main6E; kept so the rule is complete.
-        if isinstance(generic_object, (Multipower, ElementalControl)):
-            return ""
         if (generic_object.xmlid or "").upper() == "FINDWEAKNESS":
             return ""
 

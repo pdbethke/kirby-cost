@@ -58,13 +58,8 @@ class Modifier(GenericObject):
         self._template_option_costs: list = []
         self.available_check: bool = False
         self.is_multiplier: bool = False
-        self.excludes: List[str] = []
-        self.requires: List[str] = []
         self._duration: str = ""
-        self.requires_all: bool = False
-        # Applicability, from the template (apply_template). Distinct from
-        # the excludes/requires/requires_all above, which are declared but
-        # never set or read anywhere in this module.
+        # Applicability, from the template (apply_template).
         self._excludes: tuple = ()
         self._requires: tuple = ()
         self._requires_all: bool = False
