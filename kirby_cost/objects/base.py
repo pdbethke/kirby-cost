@@ -845,6 +845,10 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
             if duration in ("PERSISTENT", "INHERENT"):
                 if has("NONPERSISTENT") is not None:
                     return "CONSTANT"
+                # TODO(validation follow-up): Java computes usesEND()
+                # (GenericObject.java:4295-4328); uses_end is a cost input
+                # here, so a PERSISTENT power bought with Charges reports
+                # CONSTANT where HD says PERSISTENT.
                 if self.uses_end:
                     return duration if has_own("COSTSENDTOMAINTAIN") is not None else "CONSTANT"
                 return duration
