@@ -115,8 +115,10 @@ def test_excludes_refuses_the_power_itself_by_xmlid():
 
 
 def test_requires_any_of_lists_the_options_and_is_met_by_one():
-    """Modifier.java:900-960 -- MULTIPLESFX is Main6E's only REQUIRES, and it
-    narrows on an option (XMLID.OPTIONID)."""
+    """Modifier.java:900-960 -- MULTIPLESFX's REQUIRES is 5E-fallback-sourced
+    (Main6E.hdt has no REQUIRES of its own; 0 HD rows in either fixture back
+    this one as real), kept as the engine's current behaviour pending anatomy
+    note Follow-up (2). It narrows on an option (XMLID.OPTIONID)."""
     mod = template_modifier("MULTIPLESFX")
     mod._types = []                             # TYPE=ADJUSTMENT, not the point here
     assert mod._requires == ("VARIABLEEFFECT.TWO", "VARIABLEEFFECT.FOUR",

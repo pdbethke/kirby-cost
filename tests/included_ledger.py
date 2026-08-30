@@ -26,9 +26,12 @@ What it does (default, no ``--seed``):
 ``--seed`` writes the ledger from scratch: every currently-disagreeing cell,
 as a raw survey line, with no comparison against an existing file (there may
 not be one, or a fixture re-key may have moved every key at once -- neither is
-a regression of the engine). This is the one-time baseline write the task's
-Global Constraints permit; every write after it must go through the normal
-(non-seed) path, which can only shrink the file.
+a regression of the engine). This is the baseline write: used once to start a
+ledger, and used again only when the fixture itself is regenerated (a re-key,
+a new state added to the sink) -- never as a shortcut around the shrink-only
+path. Every other write goes through the normal (non-seed) path, which can
+only shrink the file; curated values in that file are hand-written reasons a
+person typed in, and the tool preserves them verbatim (see below).
 
 Prints what fell (or was seeded), what remains, and the remaining cells by
 kind and by modifier.
@@ -111,11 +114,11 @@ def main(argv: list[str]) -> int:
         for key in old
         if key in survey
     }
-    doc["_baseline"] = re.sub(
-        r"now \d+ remain \([^)]*\)",
-        f"now {len(survey)} remain ({stamp})",
-        doc["_baseline"],
-    )
+    clause = f"now {len(survey)} remain ({stamp})"
+    if re.search(r"now \d+ remain \([^)]*\)", doc["_baseline"]):
+        doc["_baseline"] = re.sub(r"now \d+ remain \([^)]*\)", clause, doc["_baseline"])
+    else:
+        doc["_baseline"] = f"{doc['_baseline']}; {clause}"
     ledger_path.write_text(json.dumps(doc, indent=2) + "\n")
 
     print(f"fixed {len(fixed)}; {len(survey)} remain")
