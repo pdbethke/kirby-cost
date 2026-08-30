@@ -65,7 +65,14 @@ def template_power(xmlid: str) -> GenericObject:
         obj.xmlid = xmlid
         return obj
     loader = _loader()
-    cls = loader._get_power_cls(xmlid) or _FallbackObject
+    # RUNNING, LEAPING and SWIMMING are CHARACTERISTICS in Main6E, not powers,
+    # so the loader's power dispatch does not find them and they fell to
+    # _FallbackObject with TARGET "N/A". HD's object is the Characteristic,
+    # whose init sets TARGET="SELFONLY" and DURATION="PERSISTENT"
+    # (Characteristic.java:1826-1844), and three self-only rules branch on it.
+    # The engine has the classes -- they are just in the general registry
+    # rather than the power one.
+    cls = loader._get_power_cls(xmlid) or GenericObject._registry.get(xmlid) or _FallbackObject
     obj = cls()
     obj.xmlid = xmlid
     loader._apply_template_defaults(obj, xmlid, None)

@@ -1,6 +1,6 @@
 {
   "_comment": "SHRINK-ONLY. Cells where the engine's included() disagrees with Hero Designer's, with what each side said. Written once as the 2026-08-29 baseline before any fix; every later commit may only remove entries. The target is empty.",
-  "_baseline": "3770 of 8395 cells disagree (2026-08-29); now 26 remain (2026-08-29)",
+  "_baseline": "3770 of 8395 cells disagree (2026-08-29); now 17 remain (2026-08-29)",
   "gaps": {
     "COSTSEND-on-CUSTOMPOWER": "engine allowed=True ''  HD allowed=False 'Costs Endurance cannot be applied to an ability which already costs END.'",
     "COSTSENDTOMAINTAIN-on-CUSTOMPOWER": "engine allowed=False 'Costs END To Maintain cannot be applied to an ability which does not cost END.'  HD allowed=False 'Costs END To Maintain can only be applied to abilities which are Constant in duration.'",
@@ -9,9 +9,6 @@
     "DIFFICULTTODISPEL-on-AUTOMATON": "engine allowed=False 'Difficult To Dispel cannot be applied to an Inherent ability. Inherent abilities cannot be Dispelled.'  HD allowed=False 'Difficult To Dispel cannot be applied to an Inherent ability.  Inherent abilities cannot be Dispelled.'",
     "DOESBODY-on-ENTANGLE": "engine allowed=False 'Entangle already does BODY Damage.'  HD allowed=False 'Does BODY can only be applied to abilities which damage the target.'",
     "INCREASEDEND-on-CUSTOMPOWER": "engine allowed=False 'Increased Endurance Cost cannot be applied to an ability which does not cost END.'  HD allowed=True ''",
-    "INDIRECT-on-LEAPING": "engine allowed=True ''  HD allowed=False 'Indirect can only be applied to abilities which require an Attack Roll.'",
-    "INDIRECT-on-RUNNING": "engine allowed=True ''  HD allowed=False 'Indirect can only be applied to abilities which require an Attack Roll.'",
-    "INDIRECT-on-SWIMMING": "engine allowed=True ''  HD allowed=False 'Indirect can only be applied to abilities which require an Attack Roll.'",
     "INHERENT-on-CUSTOMPOWER": "engine allowed=False 'Inherent can only be applied to abilities which are Persistent.'  HD allowed=False 'Inherent cannot be applied to abilities which cost END.'",
     "INSTANT-on-GENERIC_OBJECT": "engine allowed=False ' is already Instant.'  HD allowed=False 'Talents is already Instant.'",
     "LINKED-on-LEAPING": "engine allowed=False 'Linked can only be applied to Powers.'  HD allowed=False 'There are no other abilities on the character that can be Linked to.'",
@@ -20,12 +17,6 @@
     "NONPERSISTENT-on-AUTOMATON": "engine allowed=False 'Nonpersistent can only be applied to abilities which are Persistent.'  HD allowed=True ''",
     "NORANGEMODIFIER-on-TELEPORTATION": "engine allowed=False 'No Range Modifier can only be applied to Ranged Powers.'  HD allowed=True ''",
     "PERSISTENT-on-CUSTOMPOWER": "engine allowed=False 'Persistent cannot be applied to Instant Powers -- apply Constant first.'  HD allowed=False 'Persistent cannot be applied to Powers which cost END only to Activate.'",
-    "PERSONALIMMUNITY-on-LEAPING": "engine allowed=True ''  HD allowed=False 'Personal Immunity cannot be applied to self-only Powers.'",
-    "PERSONALIMMUNITY-on-RUNNING": "engine allowed=True ''  HD allowed=False 'Personal Immunity cannot be applied to self-only Powers.'",
-    "PERSONALIMMUNITY-on-SWIMMING": "engine allowed=True ''  HD allowed=False 'Personal Immunity cannot be applied to self-only Powers.'",
-    "RANGED-on-LEAPING": "engine allowed=True ''  HD allowed=False 'Ranged cannot be applied to Self-Only Powers.'",
-    "RANGED-on-RUNNING": "engine allowed=True ''  HD allowed=False 'Ranged cannot be applied to Self-Only Powers.'",
-    "RANGED-on-SWIMMING": "engine allowed=True ''  HD allowed=False 'Ranged cannot be applied to Self-Only Powers.'",
     "REDUCEDEND-on-GENERIC_OBJECT": "engine allowed=False ' does not cost END.'  HD allowed=False 'Talents does not cost END.'",
     "REDUCEDEND-on-SHAPESHIFT": "engine allowed=False 'Shape Shift does not cost END.'  HD allowed=True ''"
   }

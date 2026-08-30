@@ -517,3 +517,19 @@ def test_costs_end_to_maintain_accepts_a_continuing_effect_instant_power():
     assert power.orig_duration == "INSTANT"
     assert power.continuing_effect is True
     assert template_modifier("COSTSENDTOMAINTAIN").included(power) == ""
+
+
+def test_the_movement_characteristics_are_self_only():
+    """RUNNING, LEAPING and SWIMMING are CHARACTERISTICS in Main6E, not powers,
+    so the loader's power dispatch missed them and the matrix built a
+    _FallbackObject with TARGET "N/A". HD's object is the Characteristic, whose
+    init sets TARGET="SELFONLY" (Characteristic.java:1826-1844). 6E1 p.344
+    (Ranged): the Advantage gives a power range, and a character's own Running
+    is not something he aims at anybody -- HD agrees, and TARGET is its proxy.
+    """
+    for xmlid in ("RUNNING", "LEAPING", "SWIMMING"):
+        power = template_power(xmlid)
+        assert power.target == "SELFONLY", xmlid
+        mod = template_modifier("RANGED")
+        assert mod.included(power) == \
+            f"{mod.display} cannot be applied to Self-Only Powers.", xmlid
