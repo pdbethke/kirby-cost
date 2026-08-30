@@ -294,16 +294,25 @@ STATES = (
     # the oracle's "framework" tier never produces an Elemental-Control row at all (see
     # Multipower's own comment on this). AreaEffect's SELFONLY-refused branch moved to
     # Multipower instead, which the framework tier does walk.
-    _s("Elemental Control", ("Modifier", "HalfRangeModifier"),
-       framework("ELEMENTALCONTROL", "Elemental Control", "Elemental Control", 20,
-                 common=[modifier("FOCUS", "Focus", "-1.0", option="OAF", option_alias="OAF")],
-                 slots=[
-                     lambda pid: _slot("ENERGYBLAST", "Blast", 8, 0, pid, name="EC Blast Slot"),
-                     lambda pid: _slot("FORCEFIELD", "Resistant Protection", 6, 1, pid,
-                                       name="EC Force Field Slot",
-                                       children=[modifier("AOE", "Area Of Effect", "0.5", levels=4,
-                                                          option="RADIUS", option_alias="Radius")]),
-                 ])),
+    #
+    # Controller ruling (Task 3 fix round 1): Elemental Control was DROPPED from this
+    # generator entirely, not just from the framework tier's blind spot -- Main6E.hdt (this
+    # character's template) has no ELEMENTALCONTROL entry at all; 6E replaced the framework
+    # with UNIFIEDPOWER, a plain Limitation (grep of Main6E.hdt: one hit, BASECOST="-.25",
+    # OTHERINPUT="Yes" INPUTLABEL="Powers", no OPTION). HD under this template emits no row
+    # for an "Elemental Control" element regardless of the oracle's framework-walk gap --
+    # authoring one was itself the mismatch, not just under-exercising it. No engine class
+    # reads UNIFIEDPOWER (`grep -rl UNIFIEDPOWER kirby_cost/objects/modifiers/` -- nothing),
+    # so its `included()` question exercises the base `Modifier` class only, same as every
+    # other Advantage/Limitation with no dedicated override.
+    _s("Unified Power", ("Modifier",),
+       power("ENERGYBLAST", "Blast", 8, 20, name="Unified Power Blast",
+             children=[modifier("UNIFIEDPOWER", "Unified Power", "-0.25",
+                                input_="Unified Power Force Field")])
+       + "\n" +
+       power("FORCEFIELD", "Resistant Protection", 6, 22, name="Unified Power Force Field",
+             children=[modifier("UNIFIEDPOWER", "Unified Power", "-0.25",
+                                input_="Unified Power Blast")])),
     _s("VPP", ("Modifier", "RequiresSkillRoll"),
        framework("VPP", "Variable Power Pool", "VPP", 21,
                  common=[modifier("REQUIRESASKILLROLL", "Requires A Roll", "-0.5", option="11", option_alias="11-")],
