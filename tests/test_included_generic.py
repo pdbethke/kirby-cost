@@ -271,7 +271,14 @@ def test_continuous_makes_an_instant_power_constant():
 def test_a_persistent_power_that_costs_end_reports_constant():
     """GenericObject.java:1685-1698. 6E1 p.336: a Persistent Power must be 0
     END; HD enforces that by reporting a Persistent power that still costs END
-    as Constant unless it takes Costs END To Maintain."""
+    as Constant unless it takes Costs END To Maintain.
+
+    This asserts the TEMPLATE PROTOTYPE's state -- HD's own, built from the
+    template entry (Hero.java:2803-2807, GenericObject.java:3131-3133), which
+    is what the harness reproduces; the engine's loader instead lets a
+    constructor-hardcoded duration stand (force_field.py:38), a loader defect
+    filed as a follow-up outside this plan.
+    """
     power = template_power("FORCEFIELD")        # PERSISTENT in Main6E
     power.uses_end = True
     assert power.orig_duration == "PERSISTENT"
