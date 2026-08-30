@@ -381,3 +381,49 @@ def test_the_matrix_prototype_carries_the_templates_cost():
     assert blast.range_value > 0
     deflection = template_power("MISSILEDEFLECTION")    # BASECOST=20
     assert deflection.base_cost == 20
+
+
+# --- getOrigDuration vs getDuration at the call sites ----------------------
+
+
+def test_continuous_reads_the_duration_field_not_the_effective_duration():
+    """Continuous.java:47,51,54,61,64 all read getOrigDuration(). A Persistent
+    power that still costs END reports CONSTANT for getDuration()
+    (GenericObject.java:1685-1698) and PERSISTENT for the field, so reading the
+    wrong one calls it "already Constant". 6E1 p.336 (Duration Advantages):
+    Constant cannot be applied to a power that is already Persistent -- HD
+    agrees with the book, and judges it on what the power was written as."""
+    power = template_power("FORCEFIELD")        # DURATION="PERSISTENT"
+    power.uses_end = True                       # ... but bought costing END
+    assert power.orig_duration == "PERSISTENT"
+    assert power.duration == "CONSTANT"
+    mod = template_modifier("CONTINUOUS")
+    assert mod.included(power) == \
+        f"{power.display} is already Persistent in duration."
+
+
+def test_costs_end_to_maintain_asks_both_durations():
+    """CostsENDToMaintain.java:63 reads getDuration(), :68 reads
+    getOrigDuration(); the port read getDuration() for both, so :68 was a dead
+    duplicate of :63. HD rule, no page.
+
+    Pinned here on a Constant power made Instant: :63 sees INSTANT and refuses,
+    which it could not do if it read the DURATION field (still CONSTANT).
+
+    :68 stays unobservable on this engine, and not because of this fix -- it
+    needs `duration != INSTANT` while `orig_duration == INSTANT` and
+    `continuing_effect` False, and every modifier that rewrites the effective
+    duration also turns `continuing_effect` on. Java's `continuingEffect()` is
+    a plain FIELD read (GenericObject.java:3003-3005) where this engine infers
+    it from the duration modifiers (base.py:1097-1110); porting that is a
+    separate follow-up.
+    """
+    power = template_power("FLIGHT")            # DURATION="CONSTANT", costs END
+    power.assigned_modifiers.append(template_modifier("INSTANT"))
+    assert power.orig_duration == "CONSTANT"
+    assert power.duration == "INSTANT"
+    assert power.continuing_effect is False
+    mod = template_modifier("COSTSENDTOMAINTAIN")
+    assert mod.included(power) == (
+        f"{mod.display} can only be applied to abilities which are Constant "
+        "in duration.")

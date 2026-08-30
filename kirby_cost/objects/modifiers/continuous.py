@@ -42,25 +42,31 @@ class Continuous(Modifier, xmlid="CONTINUOUS"):
         if self.force_allow:
             return result
         
-        from kirby_cost.core.context import EngineContext
-        from kirby_cost.core.template import Template
+        # Java asks HeroDesigner.getActiveTemplate().is6E() (Continuous.java:49).
+        # EngineContext.active_template() is None everywhere, so this took its
+        # 5E branch under every 6E template and emitted the 5E literal
+        # ("is a Persistent ability.") where HD writes "is already Persistent
+        # in duration." Same defect, same fix as Invisible and Persistent.
+        from kirby_cost.objects.base import is_6e
         
         if generic_object.xmlid in ("SUPPRESS", "SUCCOR"):
             return ""
         
-        if generic_object.duration == "CONSTANT":
+        # Continuous.java:47,51,54,61,64 all read getOrigDuration(), never
+        # getDuration(): the rule asks what the power's DURATION field says,
+        # not what the duration modifiers have already made of it.
+        if generic_object.orig_duration == "CONSTANT":
             return f"{generic_object.display} is already Constant in duration."
         
-        template = EngineContext.active_template()
-        if template and template.is_6e():
-            if generic_object.duration == "INHERENT":
+        if is_6e():
+            if generic_object.orig_duration == "INHERENT":
                 return f"{generic_object.display} is an Inherent ability."
-            if generic_object.duration == "PERSISTENT":
+            if generic_object.orig_duration == "PERSISTENT":
                 return f"{generic_object.display} is already Persistent in duration."
             return ""
         else:
-            if generic_object.duration == "INHERENT":
+            if generic_object.orig_duration == "INHERENT":
                 return f"{generic_object.display} is an Inherent ability."
-            if generic_object.duration == "PERSISTENT":
+            if generic_object.orig_duration == "PERSISTENT":
                 return f"{generic_object.display} is a Persistent ability."
             return ""

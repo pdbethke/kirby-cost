@@ -50,9 +50,13 @@ class CostsENDToMaintain(Modifier, xmlid="COSTSENDTOMAINTAIN"):
             return f"{self._display} cannot be applied to an ability with Costs END Only To Activate (use Costs END instead)."
         if generic_object.end_usage == 0 and generic_object.xmlid.upper() != "DISPEL":
             return f"{self._display} cannot be applied to an ability which does not cost END."
+        # CostsENDToMaintain.java:63 asks getDuration(), :68 asks
+        # getOrigDuration() -- the effective duration first, then the DURATION
+        # field. The port read getDuration() for both, which made the second
+        # branch a dead duplicate of the first.
         if generic_object.duration == "INSTANT" and not generic_object.continuing_effect:
             return f"{self._display} can only be applied to abilities which are Constant in duration."
-        if generic_object.duration == "INSTANT" and not generic_object.continuing_effect:
+        if generic_object.orig_duration == "INSTANT" and not generic_object.continuing_effect:
             return f"{self._display} can only be applied to abilities which do not already cost END to maintain."
         
         return ""
