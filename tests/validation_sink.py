@@ -31,6 +31,10 @@ copied without verification. A few survey names could not be authored at
 all; see the module-level ``NOT_AUTHORED`` note near the bottom of this
 docstring's companion report for why.
 
+**Add new states at the END of STATES.** ``_ID`` is sequential, so a
+mid-list insertion renumbers every later object and orphans both shrink-only
+ledgers' keys (it cost two curated reasons on 2026-08-30).
+
 **Why a generator and not a committed .hdc.** Same reasoning as
 ``tests/kitchen_sink.py``: this is nobody's real build, so it lives as code
 that writes it rather than a redistributed file. ``build()`` is
@@ -344,6 +348,15 @@ STATES = (
     _s("Custom Power With END", ("CostsEND", "CostsENDToMaintain", "IncreasedEND", "Inherent", "Persistent"),
        power("CUSTOMPOWER", "Custom Power", 5, 31, name="Custom Power With END",
              extra=' DURATION="CONSTANT" TARGET="DCV" RANGE="STANDARD" ENDCOLUMNOUTPUT="" DOESBODY="No" DOESDAMAGE="No" DOESKNOCKBACK="No" KILLING="No" DEFENSE="NONE" COSTPERLEVEL="1.0" LEVELVALUE="1.0" DESCRIPTION="A custom power that costs END" USESEND="Yes"')),
+    # PeterB ruling 2026-08-30: the 5E fallback supplies definitions, not
+    # rules. MULTIPLESFX is 5E-fallback-sourced with REQUIRES VARIABLEEFFECT.*
+    # that Main6E never states; this state lets HD adjudicate -- if HD refuses
+    # MULTIPLESFX without a Variable Effect, the definitions-only ruling is
+    # wrong for REQUIRES and the fixture will say so.
+    _s("Blast Multiple SFX", ("Modifier",),
+       power("ENERGYBLAST", "Blast", 8, 70, name="Blast Multiple SFX", children=[
+           modifier("MULTIPLESFX", "Multiple Special Effects", "0.25", option="TWOSINGLE",
+                    option_alias="Two special effects, one effect at a time")])),
     _s("Shape Shift", ("ReducedEND",),
        power("SHAPESHIFT", "Shape Shift", 0, 32, name="Shape Shift", option="SIGHTGROUP", option_alias="Sight Group")),
     # --- everything the survey missed and the fixed states above didn't already cover ---

@@ -432,7 +432,14 @@ class HDTTemplateProvider:
             extras = [s for p in chain for s in self._siblings(p)]
         for extra in extras:
             if extra.is_file():
-                self._load(extra)
+                # kirby-cost is 6E-only (the 2026-08 purge); the earlier-edition
+                # sibling supplies DEFINITIONS HD itself resolves through it
+                # (ARMOR, SUPPRESS, TRANSFER, SUCCOR, DAMAGERESISTANCE,
+                # ENDURANCERESERVEREC) -- never 5E applicability RULES. HD's
+                # own verdicts prove the line: it allows DOUBLEENDCOST +
+                # ENDRESERVEOREND together on a Main6E character even though
+                # Main.hdt declares them mutually exclusive.
+                self._load(extra, fallback=True)
 
     @staticmethod
     def _resolve_builtin(name: str, beside: Path) -> Optional[Path]:
@@ -502,8 +509,35 @@ class HDTTemplateProvider:
         """
         return frozenset(self._sense_xmlids)
 
-    def _load(self, path: Path) -> None:
+    def _strip_5e_rules(self, data: "TemplateData") -> "TemplateData":
+        """Definitions-only fallback (PeterB ruling 2026-08-30): an entry
+        loaded from an earlier-edition sibling keeps its costs, options and
+        adders but drops EXCLUDES/REQUIRES -- 5E applicability rules a 6E
+        engine must not enforce. TYPE is kept: it feeds oracle-gated cost
+        propagation and HD gave no verdict against it."""
+        if not getattr(self, "_loading_fallback", False):
+            return data
+        strip = {}
+        if getattr(data, "excludes", ()) or getattr(data, "requires", ()):
+            strip.update(excludes=(), requires=(), requires_all=False)
+        # TYPE too, for MODIFIER entries: HD allows a bare 5E-fallback
+        # MULTIPLESFX on a plain Blast (the stateful fixture's verdict), so
+        # the type gate is an applicability rule the fallback must not carry.
+        # Power entries keep their types -- those feed type-matching and
+        # oracle-gated cost paths for definitions HD genuinely resolves
+        # through the sibling (ARMOR, SUPPRESS, TRANSFER...).
+        # ...but FRAMEWORK-binding types (VPP/MP/EC/LIST) survive: they
+        # classify a modifier as private-vs-common, which feeds cost
+        # propagation -- a cost fact, not an applicability rule.
+        if not getattr(data, "is_power", False) and getattr(data, "types", ()):
+            kept = tuple(t for t in data.types if t in ("VPP", "MP", "EC", "LIST"))
+            if kept != tuple(data.types):
+                strip["types"] = kept
+        return replace(data, **strip) if strip else data
+
+    def _load(self, path: Path, *, fallback: bool = False) -> None:
         parsed = _parse_cached(path)
+        self._loading_fallback = fallback
         nested_later: list = []
         groups = _sense_groups(parsed)
         self._index_maneuvers(parsed.get("martial_arts") or [])
@@ -527,9 +561,10 @@ class HDTTemplateProvider:
                         # section's own definition is still the right one for
                         # a caller that knows which kind of object it holds.
                         self._by_section.setdefault(
-                            (section, xmlid), _template_data(entry, is_power=is_power))
+                            (section, xmlid),
+                            self._strip_5e_rules(_template_data(entry, is_power=is_power)))
                         continue
-                    data = _template_data(entry, is_power=is_power)
+                    data = self._strip_5e_rules(_template_data(entry, is_power=is_power))
                     synthetic = _sense_group_options(xmlid, entry, groups)
                     if synthetic:
                         data = replace(data, options=synthetic)

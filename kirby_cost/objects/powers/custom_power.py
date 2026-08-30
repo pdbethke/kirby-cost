@@ -82,6 +82,7 @@ class CustomPower(Power, xmlid="CUSTOMPOWER"):
         self.use_custom_column3: bool = False
     
     @property
+
     def levels(self) -> int:
         """CustomPower levels = roundUp(baseCost)."""
         return round_up(self._base_cost)
@@ -89,6 +90,17 @@ class CustomPower(Power, xmlid="CUSTOMPOWER"):
     @levels.setter
     def levels(self, value) -> None:
         self._levels = value
+
+    def apply_template(self, tmpl, option_id: str = None) -> None:
+        """CustomPower.java:315-328 (template init): after the template is
+        read, `if (baseCost == 0) baseCost = 1` -- HD's prototype floors a
+        zero base cost at 1 point, which is why its prototype reports
+        active_cost 1 and END 1. The document restore runs AFTER init in HD
+        and overwrites the floor, so a stated BASECOST (even an explicit 0)
+        wins -- mirrored here with the _base_cost_from_xml guard."""
+        super().apply_template(tmpl, option_id)
+        if self.base_cost == 0 and not self._base_cost_from_xml:
+            self.base_cost = 1.0
 
     @property
     def active_cost(self) -> float:

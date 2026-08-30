@@ -1670,7 +1670,7 @@
       ]
     },
     {
-      "id": "20260830000062",
+      "id": "20260830000064",
       "xmlid": "SHAPESHIFT",
       "name": "Shape Shift",
       "display": "Shape Shift",
@@ -1696,7 +1696,7 @@
       ]
     },
     {
-      "id": "20260830000064",
+      "id": "20260830000066",
       "xmlid": "ENERGYBLAST",
       "name": "Blast Alternate Combat Value",
       "display": "Blast",
@@ -1730,7 +1730,7 @@
       ]
     },
     {
-      "id": "20260830000066",
+      "id": "20260830000068",
       "xmlid": "ENERGYBLAST",
       "name": "Blast Autofire",
       "display": "Blast",
@@ -1764,7 +1764,7 @@
       ]
     },
     {
-      "id": "20260830000068",
+      "id": "20260830000070",
       "xmlid": "ENERGYBLAST",
       "name": "Blast Beam",
       "display": "Blast",
@@ -1798,7 +1798,7 @@
       ]
     },
     {
-      "id": "20260830000070",
+      "id": "20260830000072",
       "xmlid": "TELEPATHY",
       "name": "Telepathy Can Be Missile Deflected",
       "display": "Telepathy",
@@ -1832,7 +1832,7 @@
       ]
     },
     {
-      "id": "20260830000072",
+      "id": "20260830000074",
       "xmlid": "ENERGYBLAST",
       "name": "Blast Damage Over Time",
       "display": "Blast",
@@ -1866,7 +1866,7 @@
       ]
     },
     {
-      "id": "20260830000074",
+      "id": "20260830000076",
       "xmlid": "ENERGYBLAST",
       "name": "Blast Delayed Effect",
       "display": "Blast",
@@ -1900,7 +1900,7 @@
       ]
     },
     {
-      "id": "20260830000077",
+      "id": "20260830000079",
       "xmlid": "DRAIN",
       "name": "Slow Drain",
       "display": "Drain",
@@ -1942,7 +1942,7 @@
       ]
     },
     {
-      "id": "20260830000079",
+      "id": "20260830000081",
       "xmlid": "FLIGHT",
       "name": "Flight Extra Time",
       "display": "Flight",
@@ -1976,7 +1976,7 @@
       ]
     },
     {
-      "id": "20260830000082",
+      "id": "20260830000084",
       "xmlid": "ENERGYBLAST",
       "name": "Blast Gestures And Incantations",
       "display": "Blast",
@@ -2018,7 +2018,7 @@
       ]
     },
     {
-      "id": "20260830000085",
+      "id": "20260830000087",
       "xmlid": "FORCEFIELD",
       "name": "Force Field Hardened",
       "display": "Resistant Protection",
@@ -2060,7 +2060,7 @@
       ]
     },
     {
-      "id": "20260830000087",
+      "id": "20260830000089",
       "xmlid": "ENERGYBLAST",
       "name": "Blast Increased Max Range",
       "display": "Blast",
@@ -2094,7 +2094,7 @@
       ]
     },
     {
-      "id": "20260830000089",
+      "id": "20260830000091",
       "xmlid": "ENERGYBLAST",
       "name": "Blast Limited Range",
       "display": "Blast",
@@ -2128,7 +2128,7 @@
       ]
     },
     {
-      "id": "20260830000091",
+      "id": "20260830000093",
       "xmlid": "ENERGYBLAST",
       "name": "Blast NND Standalone",
       "display": "Blast",
@@ -2162,7 +2162,7 @@
       ]
     },
     {
-      "id": "20260830000093",
+      "id": "20260830000095",
       "xmlid": "ENERGYBLAST",
       "name": "Blast Personal Immunity",
       "display": "Blast",
@@ -2196,7 +2196,7 @@
       ]
     },
     {
-      "id": "20260830000096",
+      "id": "20260830000098",
       "xmlid": "ENERGYBLAST",
       "name": "Blast Range Based On STR",
       "display": "Blast",
@@ -2238,7 +2238,7 @@
       ]
     },
     {
-      "id": "20260830000098",
+      "id": "20260830000100",
       "xmlid": "ENERGYBLAST",
       "name": "Blast Restrainable",
       "display": "Blast",
@@ -2272,7 +2272,7 @@
       ]
     },
     {
-      "id": "20260830000101",
+      "id": "20260830000103",
       "xmlid": "DRAIN",
       "name": "Adjustable Drain",
       "display": "Drain",
@@ -2314,7 +2314,7 @@
       ]
     },
     {
-      "id": "20260830000103",
+      "id": "20260830000105",
       "xmlid": "ENERGYBLAST",
       "name": "Blast Side Effects",
       "display": "Blast",
@@ -2348,7 +2348,7 @@
       ]
     },
     {
-      "id": "20260830000105",
+      "id": "20260830000107",
       "xmlid": "ENERGYBLAST",
       "name": "Blast Sticky",
       "display": "Blast",
@@ -2382,7 +2382,7 @@
       ]
     },
     {
-      "id": "20260830000107",
+      "id": "20260830000109",
       "xmlid": "ENERGYBLAST",
       "name": "Blast Subject To Range Modifier",
       "display": "Blast",
@@ -2416,7 +2416,7 @@
       ]
     },
     {
-      "id": "20260830000109",
+      "id": "20260830000111",
       "xmlid": "FLIGHT",
       "name": "Flight Turn Mode",
       "display": "Flight",
@@ -2450,7 +2450,7 @@
       ]
     },
     {
-      "id": "20260830000111",
+      "id": "20260830000113",
       "xmlid": "ENERGYBLAST",
       "name": "Blast Usable On Others",
       "display": "Blast",
@@ -2484,7 +2484,7 @@
       ]
     },
     {
-      "id": "20260830000114",
+      "id": "20260830000116",
       "xmlid": "ENERGYBLAST",
       "name": "Blast Variable Advantage And Limitations",
       "display": "Blast",
@@ -2526,7 +2526,7 @@
       ]
     },
     {
-      "id": "20260830000116",
+      "id": "20260830000118",
       "xmlid": "ENERGYBLAST",
       "name": "Blast Limited Arc Of Fire",
       "display": "Blast",
@@ -2560,7 +2560,7 @@
       ]
     },
     {
-      "id": "20260830000118",
+      "id": "20260830000120",
       "xmlid": "FORCEFIELD",
       "name": "Force Field Partial Coverage",
       "display": "Resistant Protection",
@@ -2594,7 +2594,7 @@
       ]
     },
     {
-      "id": "20260830000120",
+      "id": "20260830000122",
       "xmlid": "POSSESSION",
       "name": "Possession",
       "display": "Possession",
@@ -2652,7 +2652,7 @@
       ]
     },
     {
-      "id": "20260830000122",
+      "id": "20260830000124",
       "xmlid": "IMAGES",
       "name": "Images",
       "display": "Images",
@@ -2686,7 +2686,7 @@
       ]
     },
     {
-      "id": "20260830000126",
+      "id": "20260830000128",
       "xmlid": "ENERGYBLAST",
       "name": "End Only To Activate Marker",
       "display": "Blast",
@@ -2720,7 +2720,7 @@
       ]
     },
     {
-      "id": "20260830000128",
+      "id": "20260830000130",
       "xmlid": "ENERGYBLAST",
       "name": "End Costs To Maintain Marker",
       "display": "Blast",
@@ -2754,7 +2754,7 @@
       ]
     },
     {
-      "id": "20260830000130",
+      "id": "20260830000132",
       "xmlid": "ENERGYBLAST",
       "name": "Stops When Stunned Marker",
       "display": "Blast",
@@ -2788,7 +2788,7 @@
       ]
     },
     {
-      "id": "20260830000132",
+      "id": "20260830000134",
       "xmlid": "ENERGYBLAST",
       "name": "Stops When KOd Marker",
       "display": "Blast",
@@ -2822,7 +2822,7 @@
       ]
     },
     {
-      "id": "20260830000124",
+      "id": "20260830000126",
       "xmlid": "ABSORPTION",
       "name": "Absorption",
       "display": "Absorption",
@@ -2856,7 +2856,41 @@
       ]
     },
     {
-      "id": "20260830000135",
+      "id": "20260830000063",
+      "xmlid": "ENERGYBLAST",
+      "name": "Blast Multiple SFX",
+      "display": "Blast",
+      "class": "EnergyBlast",
+      "levels": 8,
+      "base_cost": 0.0,
+      "level_cost": 5.0,
+      "level_value": 1.0,
+      "total_cost": 40.0,
+      "active_cost": 50.0,
+      "real_cost": 50.0,
+      "is_ultra": true,
+      "is_power": true,
+      "modifier_string": ", Multiple Special Effects (+1/4) (50 Active Points)",
+      "adder_string": "",
+      "column2_output": "<i>Blast Multiple SFX:</i>  Blast 8d6, Multiple Special Effects (+1/4) (50 Active Points)",
+      "sub_powers": [],
+      "parent_list_id": null,
+      "parent_modifiers": [],
+      "modifiers": [
+        {
+          "xmlid": "MULTIPLESFX",
+          "class": "Modifier",
+          "display": "Multiple Special Effects",
+          "total_value": 0.25,
+          "base_cost": 0.25,
+          "is_private": false
+        }
+      ],
+      "adders": [
+      ]
+    },
+    {
+      "id": "20260830000137",
       "xmlid": "ENERGYBLAST",
       "name": "Blast With End Reserve Modifiers",
       "display": "Blast",
@@ -2906,8 +2940,8 @@
   ],
   "martial_arts": [
   ],
-  "total_points": 2085.0,
-  "available_points": -1685.0,
+  "total_points": 2135.0,
+  "available_points": -1735.0,
   "unparsed_sections": [
     "EQUIPMENT"
   ]

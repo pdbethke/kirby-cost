@@ -114,15 +114,30 @@ def test_excludes_refuses_the_power_itself_by_xmlid():
     assert mod.included(power) == f"{mod.display} cannot be applied to {power.display}"
 
 
+def test_the_5e_fallback_supplies_definitions_not_rules():
+    """PeterB ruling 2026-08-30 (kirby-cost is 6E-only): an entry resolved
+    from the earlier-edition sibling template keeps costs/options but drops
+    its EXCLUDES/REQUIRES -- HD itself allows DOUBLEENDCOST + ENDRESERVEOREND
+    together on a Main6E character despite Main.hdt's mutual EXCLUDES (the
+    stateful fixture's verdicts). MULTIPLESFX is 5E-fallback-sourced, so its
+    REQUIRES must not reach the modifier; an ACTIVE-template rule
+    (SUBJECTTORANGEMODIFIER's EXCLUDES) must."""
+    assert template_modifier("MULTIPLESFX")._requires == ()
+    assert template_modifier("DOUBLEENDCOST")._excludes == ()
+    assert template_modifier("SUBJECTTORANGEMODIFIER")._excludes == (
+        "NORANGE", "LIMITEDRANGE", "REDUCEDBYRANGE", "RANGEBASEDONSTR")
+
+
 def test_requires_any_of_lists_the_options_and_is_met_by_one():
-    """Modifier.java:900-960 -- MULTIPLESFX's REQUIRES is 5E-fallback-sourced
-    (Main6E.hdt has no REQUIRES of its own; 0 HD rows in either fixture back
-    this one as real), kept as the engine's current behaviour pending anatomy
-    note Follow-up (2). It narrows on an option (XMLID.OPTIONID)."""
+    """Modifier.java:900-960 -- the requires-any message and the
+    XMLID.OPTIONID narrowing. Main6E declares no REQUIRES of its own (the 5E
+    fallback's are dropped by ruling), so the rule is exercised with the
+    tuple set directly -- the mechanism, not a template datum."""
     mod = template_modifier("MULTIPLESFX")
     mod._types = []                             # TYPE=ADJUSTMENT, not the point here
-    assert mod._requires == ("VARIABLEEFFECT.TWO", "VARIABLEEFFECT.FOUR",
-                             "VARIABLEEFFECT.ALL")
+    mod._requires = ("VARIABLEEFFECT.TWO", "VARIABLEEFFECT.FOUR",
+                     "VARIABLEEFFECT.ALL")
+    mod._requires_all = False
     power = template_power("ENERGYBLAST")
     assert mod.included(power) == (
         f"{mod.display} requires at least one of the following: "
