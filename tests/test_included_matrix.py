@@ -37,6 +37,11 @@ def _survey() -> dict[str, str]:
     for c in cells():
         try:
             allowed, reason = _verdict(c)
+        except FileNotFoundError:
+            # "No HERO Designer template configured" is not a verdict; let it
+            # reach conftest's hook, which turns it into a skip (CI has no
+            # template). Swallowing it here counted 7,924 phantom gaps.
+            raise
         except Exception as e:  # noqa: BLE001 -- a crash is a gap too
             wrong[cell_key(c["modifier"], c["power"])] = f"raised {type(e).__name__}: {e}"
             continue
