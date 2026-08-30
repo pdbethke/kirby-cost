@@ -354,6 +354,10 @@ def _template_data(entry: dict[str, Any], *, is_power: bool) -> TemplateData:
         excludes=_text_children(entry, "EXCLUDES"),
         requires=_text_children(entry, "REQUIRES"),
         requires_all=(a.get("REQUIRESALL", "No") or "No").upper().startswith("Y"),
+        # GenericObject.java:3054/:3106-3111: exclusive defaults true and is
+        # cleared ONLY when EXCLUSIVE starts with "N" -- absent means
+        # exclusive, not the reverse.
+        exclusive=not (a.get("EXCLUSIVE") or "").upper().startswith("N"),
         attributes=dict(a),
     )
 

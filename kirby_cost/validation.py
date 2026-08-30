@@ -70,7 +70,7 @@ def exclusive_conflict(modifier_xmlid: str, obj: GenericObject) -> Verdict:
     data = _provider().get_template_data(xmlid, section="modifiers")
     if data is None:
         return Verdict(False, f"unknown modifier: {modifier_xmlid!r}")
-    if (data.attributes.get("EXCLUSIVE", "No") or "No").upper().startswith("Y"):
+    if data.exclusive:
         for mod in getattr(obj, "assigned_modifiers", None) or []:
             if (mod.xmlid or "").upper() == xmlid:
                 return Verdict(False, f"{data.display} is already on {obj.display}; it may be applied only once.")

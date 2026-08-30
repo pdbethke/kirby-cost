@@ -100,6 +100,12 @@ _UNSUPPORTED_FIELDS = {
     # `grep -rn continuing_effect kirby_cost/` finds base.py's own field and
     # property and this template field, and no read of the template's copy.
     "continuing_effect": "parsed and carried, but apply_template never assigns it; only the matrix harness reads it",
+    # exclusive, on the same terms as level_start and continuing_effect:
+    # apply_template never assigns it to a loaded object. Measured:
+    # `grep -rn "\.exclusive\b" kirby_cost/` finds only
+    # `validation.exclusive_conflict`, which reads it straight off the
+    # template, and no read off a loaded GenericObject.
+    "exclusive": "read by validation.exclusive_conflict; never applied to a loaded object",
 }
 
 #: Every field of TemplateData, DERIVED rather than listed. Adding a template

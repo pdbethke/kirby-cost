@@ -159,6 +159,14 @@ class TemplateData:
     excludes: tuple[str, ...] = ()
     requires: tuple[str, ...] = ()
     requires_all: bool = False
+    #: Whether a second instance of this modifier may be added to the same
+    #: object. `GenericObject.java:3054` initialises `exclusive = true`
+    #: before the element is even read; `:3106-3111` clears it ONLY when
+    #: EXCLUSIVE starts with "N" -- an ABSENT attribute means exclusive, the
+    #: opposite of the naive `attributes.get("EXCLUSIVE", "No")` reading.
+    #: `validation.exclusive_conflict` is the only reader; `apply_template`
+    #: never assigns it to a loaded object (see campaign/rules.py).
+    exclusive: bool = True
     # The element's raw attributes, for the detail no named field carries. A
     # maneuver is mostly detail — OCV, DCV, PHASE, DC, KILLING, EFFECT — and
     # Java hands the whole Maneuver object to whoever asks, so a consumer that

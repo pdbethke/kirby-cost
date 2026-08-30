@@ -42,8 +42,21 @@ def test_exclusive_conflict_refuses_a_second_instance():
 
 def test_a_non_exclusive_modifier_may_repeat():
     # ARMORPIERCING is itself EXCLUSIVE="Yes" in Main6E, so it can't stand in
-    # for "non-exclusive" -- NOKB (No Knockback) is not EXCLUSIVE and is
-    # allowed on ENERGYBLAST per the matrix fixture.
+    # for "non-exclusive". LIMITEDPOWER is one of Main6E's 8 MODIFIER
+    # elements that state EXCLUSIVE="No" outright, and the matrix fixture
+    # allows it on ENERGYBLAST.
     power = template_power("ENERGYBLAST")
-    power._assigned_modifiers.append(template_modifier("NOKB"))
+    power._assigned_modifiers.append(template_modifier("LIMITEDPOWER"))
+    assert exclusive_conflict("LIMITEDPOWER", power).allowed is True
+
+
+def test_an_absent_exclusive_attribute_means_exclusive():
+    # GenericObject.java:3054 initialises `exclusive = true` before reading
+    # the element, and :3106-3111 clears it ONLY when EXCLUSIVE starts with
+    # "N" -- an absent attribute (NOKB carries none) means exclusive, not
+    # the reverse.
+    power = template_power("ENERGYBLAST")
     assert exclusive_conflict("NOKB", power).allowed is True
+    power._assigned_modifiers.append(template_modifier("NOKB"))
+    v = exclusive_conflict("NOKB", power)
+    assert v.allowed is False and "already" in v.reason
