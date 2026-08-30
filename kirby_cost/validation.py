@@ -1,9 +1,11 @@
 """Validation -- the three questions a character builder asks before adding
 a modifier, answered the way Hero Designer answers them.
 
-    >>> from kirby_cost import check, allowed_modifiers, exclusive_conflict
+    >>> from kirby_cost import check
+    >>> from tests.matrix_support import template_power
+    >>> blast = template_power("ENERGYBLAST")  # a builder's in-progress power
     >>> check("ZEROPHASE", blast).reason
-    'Zero Phase ... can only be applied to a Variable Power Pool.'
+    'Powers Can Be Changed As A Zero-Phase Action can only be applied to abilities of type vpp'
 
 HD keeps three separate surfaces and so does this module:
 
