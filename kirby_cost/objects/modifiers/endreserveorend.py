@@ -3,13 +3,14 @@ ENDReserveOrEND modifier for kirby-cost.
 
 Converted from com.hero.objects.modifiers.ENDReserveOrEND.java
 
-Not present in Main6E.hdt as a registered class before this port -- the
-xmlid ``ENDRESERVEOREND`` IS a template modifier (it appears in
-Main6E.hdt), but with no Python class for it the loader's generic
-``Modifier`` fallback answered every ``included()`` question with "" (no
-restriction), silently dropping this rule -- HD refuses it on anything
-that doesn't cost END, and on any character with no Endurance Reserve to
-draw from.
+Had no engine class before this port. ``ENDRESERVEOREND`` is NOT a
+Main6E.hdt template modifier (0 hits; only the 5E ``Main.hdt`` shipped
+alongside it declares this xmlid) -- Main6E never exercises this class
+through the survey. With no Python class registered for the xmlid, the
+loader's generic ``Modifier`` fallback answered every ``included()``
+question with "" (no restriction), silently dropping this rule rather
+than refusing it -- HD refuses it on anything that doesn't cost END, and
+on any character with no Endurance Reserve to draw from.
 """
 
 from kirby_cost.objects.modifier import Modifier
@@ -36,7 +37,19 @@ class ENDReserveOrEND(Modifier, xmlid="ENDRESERVEOREND"):
         """
         Check if this modifier can be applied to the given object.
 
-        Ported from ``ENDReserveOrEND.included`` (ENDReserveOrEND.java:40-72).
+        Ported from ``ENDReserveOrEND.included`` (ENDReserveOrEND.java:40-72), with one
+        acknowledged deviation: Java runs the EnduranceReserve/
+        EnduranceReserveRecovery/end_usage checks unconditionally and only
+        gates the FINAL hero-scan block on ``ret.trim().length() == 0``, so a
+        super().included() refusal can still be overwritten by a more
+        specific message from those checks. This port returns immediately on
+        any non-empty super().included() instead, short-circuiting all four
+        checks together -- same ALLOWED/REFUSED verdict in every case (none
+        of the four branches below ever returns ""), but a different REASON
+        STRING than Java's when super() already refused for an unrelated
+        cause. Untested against the oracle either way (neither xmlid is a
+        Main6E.hdt template modifier -- see the module docstring), so left
+        as the simpler shape rather than chasing an unverifiable match.
         """
         result = super().included(generic_object)
         if result and result.strip():

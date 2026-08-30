@@ -37,8 +37,19 @@ class DoubleEnduranceCost(Modifier, xmlid="DOUBLEENDCOST"):
         Check if this modifier can be applied to the given object.
 
         Ported from ``DoubleEnduranceCost.included``
-        (DoubleEnduranceCost.java:40-72) -- identical in shape to
-        ``ENDReserveOrEND.included``.
+        (DoubleEnduranceCost.java:40-72). Same acknowledged deviation as
+        ``ENDReserveOrEND.included``: Java runs the EnduranceReserve/
+        EnduranceReserveRecovery/end_usage checks unconditionally and only
+        gates the FINAL hero-scan block on ``ret.trim().length() == 0``, so a
+        super().included() refusal can still be overwritten by a more
+        specific message from those checks. This port returns immediately on
+        any non-empty super().included() instead, short-circuiting all four
+        checks together -- same ALLOWED/REFUSED verdict in every case (none
+        of the four branches below ever returns ""), but a different REASON
+        STRING than Java's when super() already refused for an unrelated
+        cause. Untested against the oracle either way (neither xmlid is a
+        Main6E.hdt template modifier -- see the module docstring), so left
+        as the simpler shape rather than chasing an unverifiable match.
         """
         result = super().included(generic_object)
         if result and result.strip():

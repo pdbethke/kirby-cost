@@ -637,9 +637,9 @@ def test_end_reserve_or_end_needs_an_end_reserve_on_the_hero():
     assert ENDReserveOrEND().included(template_power("FLIGHT")) != ""
 
     hero = sink_hero()
-    nnd = next(o for o in hero.powers if o.name == "Blast NND")
-    assert nnd.end_usage > 0
-    assert ENDReserveOrEND().included(nnd) == ""
+    blast = next(o for o in hero.powers if o.name == "Blast With End Reserve Modifiers")
+    assert blast.end_usage > 0
+    assert ENDReserveOrEND().included(blast) == ""
 
 
 def test_double_endurance_cost_needs_an_end_reserve_on_the_hero():
@@ -656,8 +656,8 @@ def test_double_endurance_cost_needs_an_end_reserve_on_the_hero():
 
     hero = sink_hero()
     EngineContext.set_active_hero(hero)
-    nnd = next(o for o in hero.powers if o.name == "Blast NND")
-    assert DoubleEnduranceCost().included(nnd) == ""
+    blast = next(o for o in hero.powers if o.name == "Blast With End Reserve Modifiers")
+    assert DoubleEnduranceCost().included(blast) == ""
 
 
 def test_affects_physical_world_needs_desolidification_on_the_hero():
