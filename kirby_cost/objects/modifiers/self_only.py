@@ -47,7 +47,7 @@ class SelfOnly(Modifier, xmlid="SELFONLY"):
         if generic_object.xmlid.upper() == "CONCEALMENT":
             return ""
         
-        target = generic_object.target
+        target = generic_object.effective_target()
         if target in ("SELFONLY", "N/A"):
             return f"{self.display} can only be applied to Powers which are capable of affecting others."
         

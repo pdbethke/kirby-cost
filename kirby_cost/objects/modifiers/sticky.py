@@ -123,7 +123,7 @@ class Sticky(Modifier, xmlid="STICKY"):
             return result
         
         # Can only be applied to Powers which affect/are targeted on others
-        target = generic_object.target
+        target = generic_object.effective_target()
         if target not in ("DCV", "ECV", "HEX"):
             return f"{self.display} can only be applied to Powers which affect/are targeted on others."
         

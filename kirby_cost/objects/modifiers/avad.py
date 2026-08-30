@@ -58,7 +58,7 @@ class AVAD(Modifier, xmlid="AVAD"):
         if generic_object.does_damage:
             return ""
         
-        target = generic_object.target
+        target = generic_object.effective_target()
         if (target not in ("SELFONLY", "N/A") or 
             (types and "MENTAL" in types) or 
             generic_object.xmlid in ("DISPEL", "TELEPATHY")):

@@ -120,7 +120,7 @@ class Indirect(Modifier, xmlid="INDIRECT"):
         
         # Can only be applied to abilities which require an Attack Roll
         # Exception: Stretching
-        target = generic_object.target
+        target = generic_object.effective_target()
         if target == "SELFONLY":
             from kirby_cost.objects.powers.stretching import Stretching
             if not isinstance(generic_object, Stretching):

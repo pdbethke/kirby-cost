@@ -759,3 +759,49 @@ def test_affects_physical_world_uses_the_modifier_aware_target():
     reason = template_modifier("AFFECTSPHYSICALWORLD").included(drain)
     assert reason == stateful_cell["reason"]
     assert reason != ""
+
+
+def test_the_raw_target_batch_reads_the_modifier_aware_target():
+    """Task 4's fix round 1 found 23 ``included()`` overrides that read the
+    raw ``generic_object.target`` field instead of the modifier-aware
+    ``effective_target()`` -- the same defect AffectsPhysicalWorld had,
+    repeated across every override whose Java calls ``o.getTarget()``:
+
+    avad.py (AVAD.java:55-56), affectsdesolid.py (AffectsDesolid.java:49),
+    alternatecombatvalue.py (AlternateCombatValue.java:103-106),
+    areaeffect.py (AreaEffect.java:63,67-69),
+    armorpiercing.py (ArmorPiercing.java:134), autofire.py
+    (Autofire.java:89,201), beam.py (Beam.java:46),
+    canbemissiledeflected.py (CanBeMissileDeflected.java:45,47-49),
+    cumulative.py (Cumulative.java:126),
+    damageovertime.py (DamageOverTime.java:52-53,56-57),
+    does_kb.py (DoesKB.java:47-48), explosion.py (Explosion.java:159,162),
+    holeinthemiddle.py (HoleInTheMiddle.java:84),
+    indirect.py (Indirect.java:115),
+    limitedarcoffire.py (LimitedArcOfFire.java:117),
+    megascale.py (Megascale.java:191), mobile.py (Mobile.java:44),
+    nnd.py (NND.java:84), penetrating.py (Penetrating.java:96),
+    personalimmunity.py (PersonalImmunity.java:43),
+    ranged.py (Ranged.java:124), self_only.py (SelfOnly.java:47),
+    sticky.py (Sticky.java:117-118),
+    transdimensional.py (Transdimensional.java:121-122).
+
+    The sink's "Adjustable Drain" pins it for RANGED: its raw ``target`` is
+    DCV, a SELFONLY modifier forces ``effective_target()`` to SELFONLY, and
+    HD refuses Ranged on it for exactly that reason -- "Ranged cannot be
+    applied to Self-Only Powers." -- which the raw-target read could never
+    produce (DCV is not SELFONLY, so the old code let it through)."""
+    from tests.matrix_support import sink_hero, stateful_cells, template_modifier
+
+    hero = sink_hero()
+    drain = next(o for o in hero.powers if o.name == "Adjustable Drain")
+    assert drain.target == "DCV"
+    assert drain.effective_target() == "SELFONLY"
+    stateful_cell = next(c for c in stateful_cells()
+                          if c["object_id"] == drain.hdc_id() and c["modifier"] == "RANGED"
+                          and c["tier"] == "template")
+    assert stateful_cell["state"]["target"] == "SELFONLY"
+    assert stateful_cell["allowed"] is False
+    reason = template_modifier("RANGED").included(drain)
+    assert reason == stateful_cell["reason"]
+    assert reason == "Ranged cannot be applied to Self-Only Powers."

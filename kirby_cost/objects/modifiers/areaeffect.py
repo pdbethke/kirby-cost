@@ -200,7 +200,7 @@ class AreaEffect(Modifier, xmlid="AOE"):
             return ""
         
         # Cannot be applied if already affects area (unless it's this modifier)
-        target = generic_object.target
+        target = generic_object.effective_target()
         if target == "HEX":
             if GenericObject.find_object_by_id(
                 generic_object.assigned_modifiers, "AOE") is None:

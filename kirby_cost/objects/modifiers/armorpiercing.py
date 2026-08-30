@@ -56,7 +56,7 @@ class ArmorPiercing(Modifier, xmlid="ARMORPIERCING"):
         if isinstance(generic_object, (Strength, Teleportation, Maneuver, NakedModifier)):
             return ""
         
-        target = generic_object.target
+        target = generic_object.effective_target()
         if target in ("SELFONLY", "N/A"):
             return f"{self.display} can only be applied to abilities which affect/are targeted on others."
         

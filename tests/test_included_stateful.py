@@ -81,6 +81,23 @@ def _ask(cell: dict, index: dict) -> tuple[bool, str]:
             if compound_id:
                 compound.parent = parent
         return reason.strip() == "", reason
+    if cell["tier"] == "assigned":
+        # GenericObject.java:4584-4661 (the same plain-object loop the
+        # oracle's own `assigned` tier now mirrors -- Task 6 item 0) removes
+        # the modifier under test from the object's OWN list before asking,
+        # then restores it. A modifier whose included() reads a property
+        # ITS OWN presence feeds (effective_target(), duration, ...) answers
+        # a different question if it is left attached while being asked
+        # about itself -- e.g. SelfOnly.java:47 (SELFONLY on a power that is
+        # SELFONLY only because SELFONLY is attached). Mirrored here.
+        working = [m for m in obj.assigned_modifiers if m is not mod]
+        orig_assigned = obj.assigned_modifiers
+        obj.assigned_modifiers = working
+        try:
+            reason = mod.included(obj) or ""
+        finally:
+            obj.assigned_modifiers = orig_assigned
+        return reason.strip() == "", reason
     reason = mod.included(obj) or ""
     return reason.strip() == "", reason
 

@@ -140,7 +140,7 @@ class Ranged(Modifier, xmlid="RANGED"):
             return ""
         
         # Cannot be applied to Self-Only Powers
-        target = generic_object.target
+        target = generic_object.effective_target()
         if target.upper() == "SELFONLY":
             return f"{self.display} cannot be applied to Self-Only Powers."
         

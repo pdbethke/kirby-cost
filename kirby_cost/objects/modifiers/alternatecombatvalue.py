@@ -124,7 +124,7 @@ class AlternateCombatValue(Modifier, xmlid="ACV"):
             return result
         
         # Can only be applied to abilities that are targeted on others
-        target = generic_object.target
+        target = generic_object.effective_target()
         if target in ("OCV", "ECV", "OMCV", "MCV", "DCV", "DMCV", "HEX"):
             return ""
         

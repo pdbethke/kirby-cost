@@ -222,7 +222,7 @@ class DamageOverTime(Modifier, xmlid="DAMAGEOVERTIME"):
             return ""
         
         types = generic_object.types
-        target = generic_object.target
+        target = generic_object.effective_target()
         
         # Can be applied to Attack Powers that affect others and do damage
         if (types and "ATTACK" in types and 

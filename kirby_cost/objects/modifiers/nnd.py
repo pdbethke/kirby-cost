@@ -93,7 +93,7 @@ class NND(Modifier, xmlid="NND"):
             return result
         
         # Can only be applied to abilities which affect others
-        target = generic_object.target
+        target = generic_object.effective_target()
         if target == "SELFONLY" or target == "N/A":
             return f"{self.display} can only be applied to abilities which affect others."
         

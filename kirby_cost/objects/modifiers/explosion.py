@@ -164,7 +164,7 @@ class Explosion(Modifier, xmlid="EXPLOSION"):
             return ""
         
         # Cannot be applied if already affects area
-        target = generic_object.target
+        target = generic_object.effective_target()
         if target == "HEX":
             return f"{self.display} cannot be applied to Powers which already affect an area."
         

@@ -253,7 +253,7 @@ class Autofire(Modifier, xmlid="AUTOFIRE"):
             return ""
         
         # Can only be applied to abilities which require an Attack Roll
-        target = generic_object.target
+        target = generic_object.effective_target()
         if target == "SELFONLY" or target == "N/A":
             return f"{self.display} can only be applied to abilities which require an Attack Roll"
         

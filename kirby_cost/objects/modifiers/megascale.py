@@ -73,7 +73,7 @@ class Megascale(Modifier, xmlid="MEGASCALE"):
             return result
         
         # Megascale.java:191-209.
-        if generic_object.target == "HEX":
+        if generic_object.effective_target() == "HEX":
             return ""
         if ("MOVEMENT" in (generic_object.types or ())
                 and generic_object.xmlid not in ("FTL", "EXTRADIMENSIONALMOVEMENT")):

@@ -41,6 +41,10 @@ modifier attached the loaded field is masked (the modifier-presence branch of
 ``duration`` returns ``"PERSISTENT"`` either way), so ``test_included_stateful``
 sees no gap; only ``verify_modifiers``'s real removal exposes the field
 underneath.
+
+A second, unrelated exception, ``ID_COLLISION_DIVERGENCE``, holds two more
+cells open for the pre-existing Multipower/VPP id-collision documented in
+``task-4-report.md`` -- see it for the full account.
 """
 from __future__ import annotations
 
@@ -65,6 +69,23 @@ LOADER_DIVERGENCE = {
         "loader: orig_duration HD=PERSISTENT engine=CONSTANT; follow-up "
         "2026-08-30 anatomy note Follow-ups (1)"
     ),
+}
+
+# (object id, modifier xmlid) `assigned`-tier cells at a Multipower/VPP id HD's
+# fixture carries as bare xmlid GENERIC_OBJECT (Task 4's "2 LINKED id-collision
+# cells", ``task-4-report.md`` "Residual cells, corrected"). HD's fixture row
+# asks the LIST itself and expects a flat (modifier, None) answer; the
+# engine's ``object_index`` resolves this id to the real framework object
+# (a Multipower here), whose ``verify_modifiers()`` correctly takes the List
+# branch and returns one per-SLOT finding for each slot the modifier is
+# refused on -- (modifier, slot_id) tuples, never (modifier, None). Same root
+# cause as the two ledgered `template`-tier LINKED cells at this and the
+# sibling VPP id; AOE/NND only started asserting it here once
+# ``effective_target()`` (this round's item 2) made their answers agree with
+# HD's, surfacing the shape mismatch this walk was already going to hit.
+ID_COLLISION_DIVERGENCE = {
+    ("20260830000043", "AOE"),
+    ("20260830000043", "NND"),
 }
 
 
@@ -94,6 +115,9 @@ def _hd_refusals() -> tuple[dict, dict]:
             continue
         if c["tier"] == "assigned" and (c["object_id"], c["modifier"]) in LOADER_DIVERGENCE:
             ignored[owner].add(cell)          # loader follow-up, not a rule defect
+            continue
+        if c["tier"] == "assigned" and (c["object_id"], c["modifier"]) in ID_COLLISION_DIVERGENCE:
+            ignored[owner].add(cell)          # harness id-collision, not a rule defect
             continue
         if not c["allowed"]:
             expected[owner].add(cell)

@@ -53,7 +53,7 @@ class Transdimensional(Modifier, xmlid="TRANSDIMENSIONAL"):
         from kirby_cost.objects.powers.stretching import Stretching
         if isinstance(generic_object, Stretching):
             return ""
-        if generic_object.target not in ("DCV", "ECV", "HEX"):
+        if generic_object.effective_target() not in ("DCV", "ECV", "HEX"):
             return (f"{self.display} can only be applied to Powers which "
                     "affect/are targeted on others.")
         return ""

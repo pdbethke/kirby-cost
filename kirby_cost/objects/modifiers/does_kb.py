@@ -48,7 +48,7 @@ class DoesKB(Modifier, xmlid="DOESKB"):
             return f"{generic_object.display} already does Knockback."
         
         # Must target others
-        target = generic_object.target
+        target = generic_object.effective_target()
         if target not in ("DCV", "ECV", "HEX"):
             return f"{self.display} can only be applied to abilities which are targeted on others."
         
