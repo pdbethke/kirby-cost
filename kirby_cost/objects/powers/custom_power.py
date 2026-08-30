@@ -33,16 +33,29 @@ class CustomPower(Power, xmlid="CUSTOMPOWER"):
     #: (``CustomPower.getSaveXML``) and reads them back in
     #: ``restoreFromSave`` — including DEFENSE falling back to "NONE" when the
     #: document leaves it blank, which is why the field defaults there too.
+    #:
+    #: DOESBODY/DOESKNOCKBACK/DURATION name ``orig_does_body``/
+    #: ``orig_does_knockback``/``orig_duration`` rather than ``does_body``/
+    #: ``does_knockback``/``duration``: this branch turned the latter three
+    #: into COMPUTED properties (GenericObject's ``doesBODY()``/
+    #: ``doesKnockback()``/``getDuration()``, which NND, AVAD, STUN Only and
+    #: the duration Advantages rewrite), where CustomPower.java:280-289
+    #: (``getSaveXML``) writes the plain FIELDS -- ``doesBODY``,
+    #: ``doesKnockback``, ``duration`` -- unconditionally, never those
+    #: methods. ``orig_*`` reads the same underlying field the computed
+    #: property derives from, and its setter (added alongside this) writes
+    #: to that same field, so both directions of XML_ATTRS land in the
+    #: field CustomPower.java actually persists.
     XML_ATTRS = (
-        XMLAttr("DOESBODY", "does_body", "yesno"),
+        XMLAttr("DOESBODY", "orig_does_body", "yesno"),
         XMLAttr("DOESDAMAGE", "does_damage", "yesno"),
-        XMLAttr("DOESKNOCKBACK", "does_knockback", "yesno"),
+        XMLAttr("DOESKNOCKBACK", "orig_does_knockback", "yesno"),
         XMLAttr("KILLING", "killing", "yesno"),
         XMLAttr("DEFENSE", "defense"),
         XMLAttr("END", "uses_end", "yesno"),
         XMLAttr("VISIBLE", "visible", "yesno"),
         XMLAttr("RANGE", "range"),
-        XMLAttr("DURATION", "duration"),
+        XMLAttr("DURATION", "orig_duration"),
         XMLAttr("TARGET", "target"),
         # Java holds col3Output as null until set and writes "" for null or
         # blank, so the empty string IS the value HD states — the field starts

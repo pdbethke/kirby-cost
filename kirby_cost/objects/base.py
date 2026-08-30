@@ -941,6 +941,14 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         """The DOESBODY field, before the modifiers overrule it."""
         return self._does_body
 
+    @orig_does_body.setter
+    def orig_does_body(self, value: bool) -> None:
+        # Same storage as the does_body setter -- named separately so a
+        # caller that means "the field HD writes back out" (CustomPower's
+        # exporter) can say so, distinct from does_body's meaning
+        # ("what an object of this class currently reports").
+        self._does_body = value
+
     @property
     def does_knockback(self) -> bool:
         """GenericObject.doesKnockback (GenericObject.java:914-942).
@@ -977,11 +985,19 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         """The DOESKNOCKBACK field, before the modifiers overrule it."""
         return self._does_knockback
 
+    @orig_does_knockback.setter
+    def orig_does_knockback(self, value: bool) -> None:
+        self._does_knockback = value
+
     @property
     def orig_duration(self) -> str:
         """The duration FIELD, before the duration modifiers rewrite it --
         Java getOrigDuration(), GenericObject.java:1763-1765."""
         return self._duration
+
+    @orig_duration.setter
+    def orig_duration(self, value: str) -> None:
+        self._duration = value
 
     @property
     def defense(self) -> str:
