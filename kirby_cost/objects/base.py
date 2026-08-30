@@ -251,7 +251,9 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         self.text_output: str = ""
         
         # END cost related
-        self.costs_end_to_maintain: bool = True
+        #: Java's field behind costsENDToMaintain() (GenericObject.java:3011).
+        #: The METHOD is the property below; this is what it falls through to.
+        self._costs_end_to_maintain: bool = True
         self._continuing_effect: bool = False
         self._use_end_reserve: bool = False
         
@@ -876,6 +878,28 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
     @duration.setter
     def duration(self, value: str) -> None:
         self._duration = value
+
+    def costs_end_to_maintain(self) -> bool:
+        """GenericObject.costsENDToMaintain (GenericObject.java:3011-3036).
+
+        A METHOD in Java, and the engine had only the field, so the one caller
+        (Persistent.included) called a bool and raised TypeError.
+        """
+        mods = self.assigned_modifiers
+        if GenericObject.find_object_by_id(mods, "COSTSENDTOMAINTAIN") is not None:
+            return True
+        if self.duration != "INSTANT":
+            costs_end = GenericObject.find_object_by_id(mods, "COSTSEND")
+            if costs_end is not None:
+                option = costs_end.selected_option
+                if option is not None and option.xmlid == "ACTIVATE":
+                    return False
+            if GenericObject.find_object_by_id(mods, "COSTSENDONLYTOACTIVATE") is not None:
+                return False
+            if self.end_usage <= 0:
+                return False
+            return self._costs_end_to_maintain
+        return False
 
     @property
     def orig_duration(self) -> str:

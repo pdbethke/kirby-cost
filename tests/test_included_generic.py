@@ -340,3 +340,44 @@ def test_ranged_refuses_reflection_and_allows_missile_deflection():
     assert mod.included(template_power("REFLECTION")) == \
         f"{mod.display} cannot be applied to Reflection."
     assert mod.included(template_power("MISSILEDEFLECTION")) == ""
+
+
+def test_megascale_needs_an_area_movement_or_ranged_power():
+    """Megascale.java:184-210 -- the port returned "" with a comment claiming
+    Java has no override; it has one. 6E1 p.342 lists the powers MegaScale may
+    be bought for; HD's proxy for that list is TARGET=HEX, a MOVEMENT type that
+    is not FTL or Extradimensional Movement, a positive range value, Mind Scan,
+    or a Sense with a built-in RANGE adder. HD deviates in reach -- it derives
+    "works at Range" from getRangeValue(), which is a function of the power's
+    cost, not from the book's list."""
+    mod = template_modifier("MEGASCALE")
+    assert mod.included(template_power("FLIGHT")) == ""          # MOVEMENT
+    assert mod.included(template_power("ENERGYBLAST")) == ""      # ranged
+    assert mod.included(template_power("FTL")) == (
+        f"{mod.display} can only be applied to Powers which already affect an "
+        "area, Movement Powers (except Extradimensional Movement and FTL "
+        "Travel), and Powers which work at Range.")
+
+
+def test_costs_end_to_maintain_is_a_method_not_a_field():
+    """GenericObject.java:3011-3036 -- the engine had only the field, so
+    Persistent.included() raised TypeError calling it. HD rule, no page: it is
+    a bookkeeping predicate, not a rule from the book."""
+    power = template_power("FLIGHT")                    # CONSTANT, costs END
+    assert power.costs_end_to_maintain() is True
+    power.assigned_modifiers.append(template_modifier("COSTSENDONLYTOACTIVATE"))
+    assert power.costs_end_to_maintain() is False
+    assert template_power("ENERGYBLAST").costs_end_to_maintain() is False  # INSTANT
+
+
+def test_the_matrix_prototype_carries_the_templates_cost():
+    """HD computes the matrix against prototypes built FROM the template, so
+    they carry its BASECOST and LEVELSTART and therefore have a cost --
+    getRangeValue() derives a ranged power's reach from it (GenericObject.java
+    :2389-2398). The engine's loader leaves both at zero for an object no .hdc
+    stated, so every ranged prototype used to read as reaching 0m."""
+    blast = template_power("ENERGYBLAST")               # LEVELSTART=1, LVLCOST=5
+    assert blast.levels == 1
+    assert blast.range_value > 0
+    deflection = template_power("MISSILEDEFLECTION")    # BASECOST=20
+    assert deflection.base_cost == 20

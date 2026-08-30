@@ -88,6 +88,13 @@ _UNSUPPORTED_FIELDS = {
     # variables in modifier.py and behaviors/registry.py, never a read off a
     # TemplateData. Forcing it can therefore not change any loaded object.
     "class_name": "carried by TemplateData but read by nothing, so forcing it cannot change a loaded object",
+    # LEVELSTART is the prototype's level count. apply_template never assigns
+    # it -- a .hdc always states LEVELS, so the load path has no use for it --
+    # and the only reader is tests/matrix_support.py, which builds HD's own
+    # prototypes for the applicability matrix. Forcing it therefore cannot
+    # change any loaded object. Measured: `grep -rn level_start kirby_cost/`
+    # finds the parser, the dataclass and this entry, and no read.
+    "level_start": "parsed and carried, but apply_template never assigns it; only the matrix harness reads it",
 }
 
 #: Every field of TemplateData, DERIVED rather than listed. Adding a template

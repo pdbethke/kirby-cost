@@ -80,6 +80,15 @@ def template_power(xmlid: str) -> GenericObject:
     tmpl = loader._get_template_data(xmlid, obj)
     if tmpl is not None and getattr(tmpl, "duration", None):
         obj._duration = tmpl.duration
+    # HD's prototype also carries the template's BASECOST and LEVELSTART, so it
+    # has a cost, and getRangeValue() derives a ranged power's reach from that
+    # cost. The engine's loader leaves both at zero for an object no .hdc ever
+    # stated, so every ranged prototype read as reaching 0m.
+    if tmpl is not None:
+        if not obj.base_cost and tmpl.base_cost:
+            obj.base_cost = tmpl.base_cost
+        if not obj.levels and getattr(tmpl, "level_start", 0):
+            obj.levels = tmpl.level_start
     return obj
 
 

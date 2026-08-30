@@ -72,9 +72,24 @@ class Megascale(Modifier, xmlid="MEGASCALE"):
         if self.force_allow:
             return result
         
-        # No additional validation needed - uses base class validation
-        # Megascale modifier doesn't override included() in Java source
-        return ""
+        # Megascale.java:191-209.
+        if generic_object.target == "HEX":
+            return ""
+        if ("MOVEMENT" in (generic_object.types or ())
+                and generic_object.xmlid not in ("FTL", "EXTRADIMENSIONALMOVEMENT")):
+            return ""
+        if generic_object.range_value > 0:
+            return ""
+        from kirby_cost.objects.powers.mind_scan import MindScan
+        from kirby_cost.objects.powers.sense import Sense
+        if isinstance(generic_object, MindScan):
+            return ""
+        if isinstance(generic_object, Sense):
+            if "RANGE" in generic_object.built_in_sense_adders():
+                return ""
+        return (f"{self._display} can only be applied to Powers which already "
+                "affect an area, Movement Powers (except Extradimensional "
+                "Movement and FTL Travel), and Powers which work at Range.")
     
     # Still unported, and not needed to cost an imported build:
     # - getColumn2Output() - formats scale and subtracts adder costs

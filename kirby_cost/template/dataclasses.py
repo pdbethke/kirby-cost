@@ -86,6 +86,11 @@ class TemplateData:
     level_value: float = 0.0
     level_power: int = 1
     level_multiplier: int = 1
+    #: The element's LEVELSTART -- the level count HD's own prototype object
+    #: carries before a character buys anything. A .hdc always states LEVELS,
+    #: so nothing on the load path reads this; the applicability matrix does,
+    #: because HD computes it against those prototypes.
+    level_start: int = 0
     minimum_cost: float = 0.0
     min_set: bool = False
     max_cost: float = 0.0
