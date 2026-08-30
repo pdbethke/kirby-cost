@@ -309,61 +309,187 @@ class Modifier(GenericObject):
         return type_name in self._types
     
     def included(self, obj: Optional[GenericObject]) -> str:
+        """May this modifier go on ``obj``? ``""`` if so, else HD's reason.
+
+        A line-by-line port of ``Modifier.java:763`` (``included``), in the
+        Java's order, messages verbatim -- ``tests/test_included_matrix.py``
+        compares every template modifier against every template power with
+        what HD itself returns, so the text is part of the contract (HD's
+        typo "abilties" included).  The book pages behind the generic rules
+        are cited per block; where HD's code and the book differ, HD wins
+        (PeterB, 2026-08-29: "if Steve Long says so, it's canon").
+
+        Note the martial-arts "10 point style" rule is NOT here: it is
+        commented out in the Java (``Modifier.java:807-825``, "removed per
+        phone conversation with Steve Long -- 04/28/2010").
         """
-        Check if this modifier can be included with the given object.
-        
-        Returns:
-            Empty string if allowed, error message if not allowed
-        """
+        # Modifier.java:764-769 -- a null power is always allowed.
         if obj is None:
             return ""
-        
+
+        # Modifier.java:770-778 -- a modifier on a modifier is judged against
+        # the progenitor: the first non-Modifier ancestor.
+        modifier_parent = False
+        if isinstance(obj, Modifier):
+            modifier_parent = True
+            node = obj.parent
+            while isinstance(node, Modifier):
+                node = node.parent
+            if node is None:
+                return ""
+            obj = node
+
+        # Modifier.java:779-781 -- forceAllow() outranks every rule below.
         if self.force_allow:
             return ""
-        
-        # Check duration restrictions
+
+        # Modifier.java:782-806 -- 6E1 p.129: every Power has one of three
+        # durations (Instant, Constant, Persistent) and may be made Inherent;
+        # a modifier declaring DURATION needs at least that much.
         if self._duration and self._duration.strip():
-            obj_duration = obj.duration if hasattr(obj, 'duration') else ""
-            if self._duration.upper() == "INSTANT":
-                if obj_duration != "INSTANT":
+            d = getattr(obj, "duration", "") or ""
+            mine = self._duration.upper()
+            if mine == "INSTANT":
+                if d != "INSTANT":
                     return f"{self._display} can only be applied to Instant Powers."
-            elif self._duration.upper() == "CONSTANT":
-                if obj_duration == "INSTANT":
+            elif mine == "CONSTANT":
+                if d == "INSTANT":
                     return f"{self._display} can only be applied to Constant Powers."
-            elif self._duration.upper() == "PERSISTENT":
-                if obj_duration in ("INSTANT", "CONSTANT"):
+            elif mine == "PERSISTENT":
+                if d in ("INSTANT", "CONSTANT"):
                     return f"{self._display} can only be applied to Persistent Powers."
-            elif self._duration.upper() == "INHERENT":
-                if obj_duration in ("INSTANT", "CONSTANT", "PERSISTENT"):
+            elif mine == "INHERENT":
+                if d in ("INSTANT", "CONSTANT", "PERSISTENT"):
                     return f"{self._display} can only be applied to Inherent Powers."
-        
-        # Check type restrictions
-        if self._types and len(self._types) > 0:
-            obj_types = obj.types if hasattr(obj, 'types') else []
-            
-            # Check for framework-specific types
-            if "VPP" in self._types:
-                # Would check if obj is VariablePowerPool
-                pass
-            if "MP" in self._types:
-                # Would check if obj is Multipower
-                pass
-            if "EC" in self._types:
-                # Would check if obj is ElementalControl
-                pass
-            if "LIST" in self._types:
-                # Would check if obj is List
-                pass
-            
-            # Check if object types match modifier types
-            if obj_types:
-                type_match = any(t in obj_types for t in self._types)
-                if not type_match:
-                    type_list = ", ".join(t.lower() for t in self._types)
-                    return f"{self._display} can only be applied to abilities of type {type_list}."
-        
-        return ""
-    
+
+        from kirby_cost.objects.list import List as HeroList
+        from kirby_cost.objects.frameworks.elemental_control import ElementalControl
+        from kirby_cost.objects.frameworks.multipower import Multipower
+        from kirby_cost.objects.frameworks.vpp import VariablePowerPool
+
+        # Modifier.java:826-831 -- Advantages go on the slots, not the pool.
+        # 6E1 p.23 records that 6E removed Elemental Controls outright; the
+        # rule lives on in HD for 5E-era builds, so it is an HD rule now.
+        if (isinstance(obj, ElementalControl) and not self.is_limitation
+                and not modifier_parent):
+            return (f"{self._display} cannot be applied to an Elemental Control.  "
+                    "Advantages should be applied to each slot individually.")
+
+        # Modifier.java:832-874 -- framework typing, then type matching.
+        # TYPE=VPP/MP/EC/LIST names a Power Framework (6E1 p.398) rather than
+        # an ability type; anything else is matched against the power's own
+        # TYPE list.  Both lists come from the HD template, not the book.
+        ret = ""
+        types = list(self._types or [])
+        if not types or isinstance(obj, HeroList):
+            if not types:
+                ret = ""
+            elif not isinstance(obj, VariablePowerPool) and "VPP" in types:
+                ret = f"{self._display} can only be applied to a Variable Power Pool."
+            elif not isinstance(obj, Multipower) and "MP" in types:
+                ret = f"{self._display} can only be applied to a Multipower."
+            elif not isinstance(obj, ElementalControl) and "EC" in types:
+                ret = f"{self._display} can only be applied to an Elemental Control."
+            elif not isinstance(obj, HeroList) and "LIST" in types:
+                ret = f"{self._display} can only be applied to a List."
+            else:
+                ret = ""
+        else:
+            # Modifier.java:854-865: ", " between, "or " before the last, and
+            # nothing appended after -- the message has NO trailing period.
+            ret = f"{self._display} can only be applied to abilities of type "
+            for i, t in enumerate(types):
+                if i > 0:
+                    ret += ", "
+                if i == len(types) - 1 and i > 0:
+                    ret += "or "
+                ret += str(t).lower()
+            # Modifier.java:866-873: only a MATCHING power type clears the
+            # message, so a power with no types at all stays refused.
+            for s in (getattr(obj, "types", None) or []):
+                if self.contains_type(s):
+                    ret = ""
+
+        if ret.strip():
+            return ret
+
+        # Modifier.java:875-899 -- EXCLUDES, checked against the modifiers
+        # already on the power, the power's own xmlid, and its selected
+        # adders.  HD template rule, no page.
+        assigned = list(getattr(obj, "assigned_modifiers", None) or [])
+        adders = list(getattr(obj, "assigned_adders", None) or [])
+        for xmlid in (self._excludes or ()):
+            xmlid = xmlid.upper().strip()
+            for mod in assigned:
+                if (mod.xmlid or "").upper().strip() == xmlid:
+                    return (f"{self._display} cannot be applied to abilties "
+                            f"which have {mod.display}")
+            if (obj.xmlid or "").upper().strip() == xmlid:
+                return f"{self._display} cannot be applied to {obj.display}"
+            for add in adders:
+                if ((add.xmlid or "").upper().strip() == xmlid
+                        and getattr(add, "is_selected", False)):
+                    return (f"{self._display} cannot be applied to abilties "
+                            f"which have {add.display}")
+
+        # Modifier.java:900-965 -- REQUIRES, any-of or (REQUIRESALL) all-of.
+        # Each entry is an xmlid, optionally narrowed to a chosen option as
+        # XMLID.OPTIONID, matched against the power, its modifiers or its
+        # adders.  HD template rule, no page.
+        requires = list(self._requires or ())
+        if not requires:
+            return ""
+
+        # The message is built BEFORE the check (Java:903-925) and cleared if
+        # the requirement turns out to be met.  For a single requirement the
+        # Java names it once in the prefix and again in the loop; that
+        # duplication is HD's output and the matrix holds us to it.
+        if len(requires) > 1:
+            ret = (f"{self._display} requires the following modifiers:  "
+                   if self._requires_all
+                   else f"{self._display} requires at least one of the following: ")
+        else:
+            ret = f"{self._display} requires {requires[0]}"
+        for i, r in enumerate(requires):
+            if i > 0:
+                ret += ", "
+            if i == len(requires) - 1:
+                ret += "and " if self._requires_all else "or "
+            ret += r
+
+        def _has(entry: str, option: Optional[str]) -> bool:
+            candidates = [obj] + assigned + adders
+            for o in candidates:
+                if (getattr(o, "xmlid", "") or "").upper().strip() != entry:
+                    continue
+                if option is None:
+                    return True
+                sel = getattr(o, "selected_option", None)
+                if sel is not None and (sel.xmlid or "").upper() == option:
+                    return True
+            return False
+
+        missed_one = False
+        for entry in requires:
+            entry = entry.upper().strip()
+            option = None
+            dot = entry.find(".")
+            if 0 < dot < len(entry) - 1:
+                option = entry[dot + 1:].strip() or None
+                entry = entry[:dot]
+            if _has(entry, option):
+                if self._requires_all:
+                    continue
+                ret = ""
+                break
+            missed_one = True
+            if self._requires_all:
+                break
+        if not missed_one:
+            ret = ""
+        return ret
+
+
     def __str__(self) -> str:
         """String representation."""
         if self.full_display:

@@ -54,6 +54,16 @@ def cell_key(modifier: str, power: str) -> str:
 
 
 def template_power(xmlid: str) -> GenericObject:
+    # HD's power enumeration carries its category nodes, which are
+    # com.hero.objects.List instances (Template.java:1627) and so keep
+    # GenericObject's default XMLID of GENERIC_OBJECT. Modifier.included()
+    # branches on `power instanceof List`, so the prototype has to be a List
+    # or every typed modifier answers the wrong question.
+    if xmlid == "GENERIC_OBJECT":
+        from kirby_cost.objects.list import List as HeroList
+        obj = HeroList()
+        obj.xmlid = xmlid
+        return obj
     loader = _loader()
     cls = loader._get_power_cls(xmlid) or _FallbackObject
     obj = cls()
