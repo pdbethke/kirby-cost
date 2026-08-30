@@ -44,7 +44,7 @@ class DoesKB(Modifier, xmlid="DOESKB"):
             return result
         
         # Already does knockback
-        if generic_object.does_knockback():
+        if generic_object.does_knockback:
             return f"{generic_object.display} already does Knockback."
         
         # Must target others

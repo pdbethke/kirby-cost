@@ -43,7 +43,7 @@ class NoKB(Modifier, xmlid="NOKB"):
         if self.force_allow:
             return result
         
-        if not generic_object.does_knockback():
+        if not generic_object.does_knockback:
             return f"{self._display} can only be applied to abilities which do Knockback."
         
         return ""

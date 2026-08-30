@@ -166,3 +166,51 @@ def test_an_advantage_may_not_go_on_an_elemental_control():
     assert mod.included(ec) == (
         f"{mod.display} cannot be applied to an Elemental Control.  "
         "Advantages should be applied to each slot individually.")
+
+
+# --- subclass included() overrides (Task 6) --------------------------------
+
+
+def test_does_knockback_refuses_a_power_that_already_does_knockback():
+    """DoesKB.java:37-54. `doesKnockback` is a field on GenericObject, not a
+    method; the port called it. 6E1 p.335 -- HD agrees with the book, which
+    describes Does Knockback as enabling Knockback on an Attack Power that
+    normally does not do it, so a power that already does it has nothing to buy."""
+    mod = template_modifier("DOESKB")
+    assert mod.included(template_power("ENERGYBLAST")) == \
+        f"{template_power('ENERGYBLAST').display} already does Knockback."
+
+
+def test_does_knockback_requires_a_power_targeted_on_others():
+    """DoesKB.java:47-51 -- target must be DCV, ECV or HEX. HD rule, no page."""
+    mod = template_modifier("DOESKB")
+    assert mod.included(template_power("FLASH")) == ""
+
+
+def test_no_knockback_requires_a_power_that_does_knockback():
+    """NoKB.java:37-50. 6E1 p.145 (No Knockback, Limitation) -- HD agrees with
+    the book: the Limitation removes Knockback, so there must be some to remove."""
+    mod = template_modifier("NOKB")
+    assert mod.included(template_power("FLASH")) == \
+        f"{mod.display} can only be applied to abilities which do Knockback."
+    assert mod.included(template_power("ENERGYBLAST")) == ""
+
+
+def test_double_knockback_requires_a_power_that_does_knockback():
+    """DoubleKB.java:75-88. 6E1 p.336 -- HD agrees with the book, which frames
+    Double Knockback as multiplying the Knockback a power already does."""
+    mod = template_modifier("DOUBLEKB")
+    assert mod.included(template_power("FLASH")) == \
+        f"{mod.display} can only be applied to abilities which do Knockback."
+    assert mod.included(template_power("ENERGYBLAST")) == ""
+
+
+def test_does_body_refuses_a_flash_and_a_power_that_already_does_body():
+    """DoesBODY.java:37-56. 6E1 p.335 -- HD agrees with the book (the Advantage
+    lets STUN-only attacks such as Mental Blast and AVAD also do BODY); the
+    Flash exclusion is HD's own, no page."""
+    mod = template_modifier("DOESBODY")
+    assert mod.included(template_power("FLASH")) == \
+        f"{mod.display} cannot be applied to a Flash Attack."
+    assert mod.included(template_power("ENERGYBLAST")) == \
+        f"{template_power('ENERGYBLAST').display} already does BODY Damage."

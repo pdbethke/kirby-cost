@@ -48,7 +48,7 @@ class DoesBODY(Modifier, xmlid="DOESBODY"):
             return f"{self._display} cannot be applied to a Flash Attack."
         
         # Already does BODY
-        if generic_object.does_body():
+        if generic_object.does_body:
             return f"{generic_object.display} already does BODY Damage."
         
         # Must do damage
