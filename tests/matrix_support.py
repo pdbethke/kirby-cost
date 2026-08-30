@@ -109,18 +109,12 @@ def template_power(xmlid: str) -> GenericObject:
 
 
 def template_modifier(xmlid: str) -> Modifier:
-    loader = _loader()
-    cls = GenericObject._registry.get(xmlid)
-    mod = cls() if (cls is not None and issubclass(cls, Modifier)) else Modifier()
-    mod.xmlid = xmlid
-    loader._apply_template_to_modifier(mod, xmlid, None)
-    # HD's modifier prototype carries the template's LEVELSTART, the same way
-    # its power prototype does (see template_power). It is what getDisplay()
-    # substitutes into a `[LVL]` placeholder: Main6E declares Expanded Effect
-    # as `DISPLAY="Expanded Effect (x[LVL] ...)" LEVELSTART="2"` and HD prints
-    # "x2". The LOADER is deliberately left alone -- an HDC modifier element
-    # always states its own LEVELS, so only the prototype has none.
-    tmpl = loader._get_template_data(xmlid)
-    if tmpl is not None and not mod.levels and getattr(tmpl, "level_start", 0):
-        mod.levels = tmpl.level_start
+    # Built by kirby_cost.template.prototypes.modifier_prototype -- the SAME
+    # prototype kirby_cost.validation.check() hands out, so this matrix test
+    # proves the object the validation door actually uses. See that module
+    # for how LEVELSTART and the template are applied.
+    from kirby_cost.template.prototypes import modifier_prototype
+    mod = modifier_prototype(xmlid)
+    if mod is None:
+        raise KeyError(f"no template modifier: {xmlid!r}")
     return mod
