@@ -436,6 +436,20 @@ STATES = (
     _s("Images", ("AreaEffect",),
        power("IMAGES", "Images", 6, 59, name="Images", option="SIGHTGROUP", option_alias="Sight Group", children=[
            modifier("AOE", "Area Of Effect", "0.5", levels=4, option="RADIUS", option_alias="Radius")])),
+    # Fix round 2 (coordinator re-review): the third instanceof branch in
+    # AreaEffect.included()'s NakedModifier/LifeSupport/Absorption three-way (areaeffect.py's
+    # port of AreaEffect.java:45-80) had no object at all -- LIFESUPPORT (nested in the
+    # Multipower's CompoundPower slot) exercises the LifeSupport half for free, Naked
+    # Advantage exercises the NakedModifier half, but nothing was Absorption. XMLID/OPTION/
+    # INPUT verified against the template (get_template_data("ABSORPTION", section="powers"):
+    # target=SELFONLY, types=(ADJUSTMENT,), options=['ENERGY','PHYSICAL'], INPUTLABEL
+    # "Absorbed Points Go Into" -- no authored .hdc in KIRBY_COST_AUTHORED uses ABSORPTION to
+    # copy the shape from, so OPTION="ENERGY" (Energy Type) and INPUT="STR" (absorbed points
+    # go into STR) are the template's own plain defaults.
+    _s("Absorption", ("AreaEffect",),
+       power("ABSORPTION", "Absorption", 3, 64, name="Absorption", option="ENERGY", option_alias="Energy",
+             input_="STR", children=[
+           modifier("AOE", "Area Of Effect", "0.5", levels=4, option="RADIUS", option_alias="Radius")])),
     # --- fix round 1: cross-modifier-conflict markers. Several overrides read
     # find_object_by_id(assigned_modifiers, "COSTSENDONLYTOACTIVATE"/"COSTSENDTOMAINTAIN")
     # -- CostsEND's own conflict branches (reviewer finding #3) needed an object that
