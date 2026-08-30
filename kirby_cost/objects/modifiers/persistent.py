@@ -43,25 +43,28 @@ class Persistent(Modifier, xmlid="PERSISTENT"):
         if self.force_allow:
             return result
         
-        from kirby_cost.core.context import EngineContext
-        template = EngineContext.active_template()
+        # Java asks HeroDesigner.getActiveTemplate().is6E(); EngineContext's
+        # active_template is None everywhere, so every 6E branch below silently
+        # took its 5E form. `is_6e()` reads the hero, as Template.is6E does.
+        from kirby_cost.objects.base import is_6e
         if generic_object.xmlid == "COMBAT_LEVELS":
             return f"{self._display} cannot be applied to Combat Skill Levels of any form."
         if GenericObject.find_object_by_id(generic_object.assigned_modifiers, "UOO"):
             return ""
         if generic_object.end_usage > 0:
-            if template and template.is_6e():
+            if is_6e():
                 if not generic_object.costs_end_to_maintain():
                     return f"{self._display} cannot be applied to Powers which cost END only to Activate."
             else:
                 return f"{self._display} cannot be applied to Powers which cost END."
-        if template and template.is_6e() and generic_object.duration == "INSTANT" and not generic_object.continuing_effect:
+        if is_6e() and generic_object.duration == "INSTANT" and not generic_object.continuing_effect:
             return f"{self._display} cannot be applied to Instant Powers -- apply Constant first."
-        if generic_object.duration in ("PERSISTENT", "INHERENT") or generic_object.duration == "PERSISTENT":
-            if generic_object.duration == "PERSISTENT" or generic_object.duration == "PERSISTENT":
-                return f"{generic_object.display} is already Persistent."
-            if generic_object.duration == "INHERENT" and not GenericObject.find_object_by_id(generic_object.assigned_modifiers, "INHERENT"):
-                return f"{generic_object.display} is already Inherent."
+        # Persistent.java:68-76 -- the effective duration OR the DURATION field.
+        if (generic_object.duration == "PERSISTENT"
+                or generic_object.orig_duration == "PERSISTENT"):
+            return f"{generic_object.display} is already Persistent."
+        if (generic_object.duration == "INHERENT"
+                and GenericObject.find_object_by_id(
+                    generic_object.assigned_modifiers, "INHERENT") is None):
+            return f"{generic_object.display} is already Inherent."
         return result
-        
-        return ""

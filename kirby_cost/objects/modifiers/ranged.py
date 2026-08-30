@@ -123,9 +123,15 @@ class Ranged(Modifier, xmlid="RANGED"):
         if isinstance(generic_object, HandToHandAttack):
             return f"{self._display} cannot be applied to HTH Attack."
         
-        # Can be applied to Reflection
+        # Ranged.java:115-120: Reflection is REFUSED; Missile Deflection is
+        # the one that is allowed. The port had the first inverted and omitted
+        # the second.
         from kirby_cost.objects.powers.reflection import Reflection
         if isinstance(generic_object, Reflection):
+            return f"{self._display} cannot be applied to Reflection."
+
+        from kirby_cost.objects.powers.missile_deflection import MissileDeflection
+        if isinstance(generic_object, MissileDeflection):
             return ""
         
         # Can be applied if UOO is present

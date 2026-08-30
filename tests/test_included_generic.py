@@ -317,3 +317,26 @@ def test_invisible_power_effects_does_not_refuse_a_6e_power_as_already_invisible
     assert mod.included(power) == (
         f"{mod.display} cannot be applied to a Power/ability with the Visible "
         "Limitation on it.")
+
+
+def test_persistent_asks_the_template_edition_and_the_duration_field():
+    """Persistent.java:37-77. The port read EngineContext.active_template(),
+    which is None everywhere, so every 6E branch took its 5E form and refused
+    any power costing END outright. It also collapsed the last two checks into
+    an unreachable tangle; Java tests the effective duration OR the DURATION
+    field (getOrigDuration). 6E1 p.334 (Persistent): a Persistent Power must
+    not cost END to activate; HD agrees, and in 6E allows Costs END To
+    Maintain."""
+    mod = template_modifier("PERSISTENT")
+    power = template_power("FORCEFIELD")            # PERSISTENT field
+    assert mod.included(power) == f"{power.display} is already Persistent."
+
+
+def test_ranged_refuses_reflection_and_allows_missile_deflection():
+    """Ranged.java:102-132 -- the port had these two inverted: it returned ""
+    for Reflection and had no Missile Deflection branch at all. 6E1 p.344
+    (Ranged): HD rule, no page, for which powers are excluded."""
+    mod = template_modifier("RANGED")
+    assert mod.included(template_power("REFLECTION")) == \
+        f"{mod.display} cannot be applied to Reflection."
+    assert mod.included(template_power("MISSILEDEFLECTION")) == ""
