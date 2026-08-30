@@ -444,7 +444,17 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
                 self.level_power = opt.level_power
                 self.level_multiplier = opt.level_multiplier
                 option_set_lm = True
-                if opt.base_cost != 0 and self.orig_base_cost == 0:
+                # HD assigns the option's cost UNCONDITIONALLY for modifiers:
+                # restoreFromSave reads the stated BASECOST (GenericObject.java
+                # :3665) and then the OPTIONID restore (:3747) ends in
+                # setSelectedOption() -> setBaseCost(option.getBaseCost()) --
+                # mutation-proved 2026-08-30 (a lying AOE BASECOST=9.75 moved
+                # HD's answer not at all). Powers keep the guarded rule the
+                # corpus fought for (32 characters broke without it).
+                from kirby_cost.objects.modifier import Modifier as _Modifier
+                if isinstance(self, _Modifier):
+                    self._base_cost = opt.base_cost
+                elif opt.base_cost != 0 and self.orig_base_cost == 0:
                     self._base_cost = opt.base_cost
 
                 # Record the option as an object, not just its numbers. Java
