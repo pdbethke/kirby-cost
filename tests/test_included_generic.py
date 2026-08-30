@@ -575,3 +575,25 @@ def test_no_range_modifier_allows_teleportation_in_6e_before_the_generic_guard()
     assert mod.included(template_power("TELEPORTATION")) == ""
     assert mod.included(template_power("FLIGHT")) == \
         f"{mod.display} can only be applied to Ranged Powers."
+
+
+def test_an_entangle_neither_damages_nor_does_body():
+    """entangle.py hardcoded does_damage=True and does_body=True in __init__.
+    Java's Entangle sets neither and Main6E's <ENTANGLE> states neither
+    attribute, so HD's object has both false -- doesDamage() and doesBODY()
+    are field reads (GenericObject.java:903-905, :868-869) with nothing but the
+    default to read. The two hardcodes made an Entangle answer three rules the
+    opposite way from HD: DamageOverTime.java:54, Cumulative.java:122 (reached
+    once :118 is skipped) and DoesBODY.java:50 (once :47 is skipped).
+
+    6E1 p.218: an Entangle's BODY is what the web can take, not damage to the
+    target -- attacks made to break free "cause no damage to the Entangled
+    character unless the Entangle has the Backlash Advantage". HD agrees with
+    the book."""
+    power = template_power("ENTANGLE")
+    assert power.does_damage is False
+    assert power.does_body is False
+    mod = template_modifier("DAMAGEOVERTIME")
+    assert mod.included(power) == (
+        f"{mod.display} can only be applied to Attack Powers and Powers which "
+        "affect others.")

@@ -22,8 +22,12 @@ class Entangle(Power, xmlid="ENTANGLE"):
         """Initialize an Entangle power."""
         super().__init__()
         self.xmlid = Entangle.XMLID
-        self.does_damage = True
-        self.does_body = True
+        # Java's Entangle sets NEITHER doesDamage nor doesBODY, and
+        # Main6E.hdt's <ENTANGLE> states neither attribute, so HD's object has
+        # both false -- doesDamage() and doesBODY() are field reads
+        # (GenericObject.java:903-905, :868-869) with nothing to read but the
+        # default. The port hardcoded both True, which made an Entangle answer
+        # three applicability rules the opposite way from HD.
     
     @property
     def damage_display(self) -> str:
