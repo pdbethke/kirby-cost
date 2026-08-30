@@ -36,34 +36,39 @@ def _ask(cell: dict, index: dict) -> tuple[bool, str]:
         mod = template_modifier(cell["modifier"])
     elif cell["tier"] == "assigned":
         mod = next(m for m in obj.assigned_modifiers if m.xmlid == cell["modifier"])
-    else:  # framework: the common modifier asked of the slot, slot detached, as the Java does
-        # A via_compound row's slot is a Compound Power constituent: its
-        # own .parent is never set at load time (only .main_power is --
-        # CompoundPower's cost methods reparent transiently and restore
-        # None), so the framework common modifiers live on the COMPOUND's
-        # parent, not the constituent's. Java detaches both the constituent
-        # and its compound from the List before asking.
+    else:  # framework: verifyModifiers' List branch (GenericObject.java:4364-4459 /
+        # CostCalculatorCLI.java:~956-1050). The Java does not ask in isolation: it first
+        # adds EVERY framework-common modifier the slot lacks (by xmlid) to the slot's own
+        # assigned list, THEN for the one under test removes just that one and asks
+        # `included(slot)` with the slot detached (parent null) and listModCheck true -- so
+        # the ask sees the slot's own modifiers PLUS every sibling missing-common still
+        # attached, never the one being tested. Mirrored exactly, including restoring the
+        # exact original assigned_modifiers list (object identity, not a rebuilt copy)
+        # afterward.
+        #
+        # A via_compound row's slot is a Compound Power constituent: its own .parent is
+        # never set at load time (only .main_power is -- CompoundPower's cost methods
+        # reparent transiently and restore None), so the framework's common modifiers live
+        # on the COMPOUND's parent, not the constituent's. Java detaches both the
+        # constituent and its compound from the List before asking.
         compound_id = cell.get("via_compound")
         if compound_id:
             compound = index[compound_id]
             parent = compound.parent
-            mod = next(m for m in parent.assigned_modifiers if m.xmlid == cell["modifier"])
-            orig_obj_parent = obj.parent
-            obj.parent = None
-            compound.parent = None
-            obj.list_mod_check = True
-            try:
-                if not allows_other_modifiers(obj):
-                    return False, f"{obj.alias} does not allow modifiers with its current configuration."
-                reason = mod.included(obj) or ""
-            finally:
-                obj.list_mod_check = False
-                obj.parent = orig_obj_parent
-                compound.parent = parent
-            return reason.strip() == "", reason
-        parent = obj.parent
+        else:
+            parent = obj.parent
         mod = next(m for m in parent.assigned_modifiers if m.xmlid == cell["modifier"])
+
+        orig_assigned = obj.assigned_modifiers
+        have = {m.xmlid for m in orig_assigned}
+        missing = [m for m in parent.assigned_modifiers if m.xmlid not in have]
+        with_siblings = list(orig_assigned) + [m for m in missing if m is not mod]
+
+        orig_obj_parent = obj.parent
+        obj.assigned_modifiers = with_siblings
         obj.parent = None
+        if compound_id:
+            compound.parent = None
         obj.list_mod_check = True
         try:
             if not allows_other_modifiers(obj):
@@ -71,7 +76,10 @@ def _ask(cell: dict, index: dict) -> tuple[bool, str]:
             reason = mod.included(obj) or ""
         finally:
             obj.list_mod_check = False
-            obj.parent = parent
+            obj.assigned_modifiers = orig_assigned
+            obj.parent = orig_obj_parent
+            if compound_id:
+                compound.parent = parent
         return reason.strip() == "", reason
     reason = mod.included(obj) or ""
     return reason.strip() == "", reason
