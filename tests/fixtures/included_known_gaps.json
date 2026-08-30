@@ -1,6 +1,6 @@
 {
   "_comment": "SHRINK-ONLY. Cells where the engine's included() disagrees with Hero Designer's, with what each side said. Written once as the 2026-08-29 baseline before any fix; every later commit may only remove entries. The target is empty.",
-  "_baseline": "3770 of 8395 cells disagree (2026-08-29); now 16 remain (2026-08-30)",
+  "_baseline": "3770 of 8395 cells disagree (2026-08-29); now 14 remain (2026-08-30)",
   "gaps": {
     "COSTSEND-on-CUSTOMPOWER": "HD's CustomPower prototype reports getEndUsage() > 0 where the engine's reports 0; CustomPower.getActiveCost() (CustomPower.java:53-79) is baseCost plus adders and Main6E states BASECOST=0, so the source of HD's END is not yet identified; follow-up",
     "COSTSENDTOMAINTAIN-on-CUSTOMPOWER": "HD's CustomPower prototype reports getEndUsage() > 0 where the engine's reports 0; CustomPower.getActiveCost() (CustomPower.java:53-79) is baseCost plus adders and Main6E states BASECOST=0, so the source of HD's END is not yet identified; follow-up",
@@ -13,8 +13,6 @@
     "LINKED-on-LEAPING": "state-dependent; needs the authored-power matrix, spec \u00a78",
     "LINKED-on-RUNNING": "state-dependent; needs the authored-power matrix, spec \u00a78",
     "LINKED-on-SWIMMING": "state-dependent; needs the authored-power matrix, spec \u00a78",
-    "NONPERSISTENT-on-AUTOMATON": "engine allowed=False 'Nonpersistent can only be applied to abilities which are Persistent.'  HD allowed=True ''",
-    "NORANGEMODIFIER-on-TELEPORTATION": "engine allowed=False 'No Range Modifier can only be applied to Ranged Powers.'  HD allowed=True ''",
     "PERSISTENT-on-CUSTOMPOWER": "HD's CustomPower prototype reports getEndUsage() > 0 where the engine's reports 0; CustomPower.getActiveCost() (CustomPower.java:53-79) is baseCost plus adders and Main6E states BASECOST=0, so the source of HD's END is not yet identified; follow-up",
     "REDUCEDEND-on-GENERIC_OBJECT": "fixture keying: GENERIC_OBJECT is five distinct HD category nodes (Characteristics, Enhanced Senses, Perks, Skills, Talents) collapsed under one modifier-on-power key, so only one of the five names can ever match; not an engine defect",
     "REDUCEDEND-on-SHAPESHIFT": "engine allowed=False 'Shape Shift does not cost END.'  HD allowed=True ''"

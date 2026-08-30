@@ -545,3 +545,33 @@ def test_difficult_to_dispel_reproduces_hds_double_space():
     assert mod.included(power) == (
         f"{mod.display} cannot be applied to an Inherent ability.  "
         "Inherent abilities cannot be Dispelled.")
+
+
+def test_nonpersistent_accepts_an_inherent_zero_end_ability_in_6e():
+    """Nonpersistent.java:44-54. The port read
+    EngineContext.active_template(), which is None everywhere, so it took its
+    5E form -- and the 5E arm allows only PERSISTENT, refusing an INHERENT
+    ability HD accepts. The 6E arm also reads getOrigDuration(), not the
+    effective duration. 6E1 p.130: "The Nonpersistent Limitation (6E1 373)
+    converts a Persistent Power into a Constant one" -- HD agrees with the
+    book, and in 6E it takes an Inherent one too."""
+    mod = template_modifier("NONPERSISTENT")
+    power = template_power("AUTOMATON")         # INHERENT, no END
+    assert power.orig_duration == "INHERENT"
+    assert power.end_usage == 0
+    assert mod.included(power) == ""
+    assert mod.included(template_power("ENERGYBLAST")) == \
+        f"{mod.display} can only be applied to abilities which are Persistent."
+
+
+def test_no_range_modifier_allows_teleportation_in_6e_before_the_generic_guard():
+    """NoRangeModifier.java:42-63. Two defects: the edition gate read
+    EngineContext.active_template() (None everywhere, so the 6E carve-out never
+    fired), and the port returned on super().included() BEFORE the Teleportation
+    check where Java returns after -- so a 6E Teleportation is allowed even when
+    the generic rules refused it. 6E1 p.346 (No Range Modifier); the
+    Teleportation carve-out is HD's own, no page."""
+    mod = template_modifier("NORANGEMODIFIER")
+    assert mod.included(template_power("TELEPORTATION")) == ""
+    assert mod.included(template_power("FLIGHT")) == \
+        f"{mod.display} can only be applied to Ranged Powers."

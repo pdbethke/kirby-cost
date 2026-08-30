@@ -42,15 +42,23 @@ class Nonpersistent(Modifier, xmlid="NONPERSISTENT"):
         if self.force_allow:
             return result
         
+        # Nonpersistent.java:44-54. Java asks
+        # HeroDesigner.getActiveTemplate().is6E(); EngineContext.active_template()
+        # is None everywhere, so this took its 5E form under every 6E template.
+        # The 6E branch also reads getOrigDuration(), not getDuration(), and its
+        # else-arm refuses unconditionally once COSTSENDTOMAINTAIN is absent --
+        # the port re-tested the duration there and let a case through.
+        from kirby_cost.objects.base import is_6e
         from kirby_cost.core.context import EngineContext
         template = EngineContext.active_template()
-        if template and template.is_6e():
-            if generic_object.duration in ("PERSISTENT", "INHERENT") and generic_object.end_usage == 0:
+        if is_6e():
+            if (generic_object.orig_duration in ("PERSISTENT", "INHERENT")
+                    and generic_object.end_usage == 0):
                 return ""
-            if GenericObject.find_object_by_id(generic_object.assigned_modifiers, "COSTSENDTOMAINTAIN"):
+            if GenericObject.find_object_by_id(
+                    generic_object.assigned_modifiers, "COSTSENDTOMAINTAIN") is not None:
                 return ""
-            if not generic_object.duration == "PERSISTENT":
-                return f"{self.display} can only be applied to abilities which are Persistent."
+            return f"{self.display} can only be applied to abilities which are Persistent."
         else:
             if generic_object.duration == "PERSISTENT" and generic_object.end_usage == 0:
                 return ""

@@ -35,22 +35,38 @@ class NoRangeModifier(Modifier, xmlid="NORANGEMODIFIER"):
         Returns:
             Empty string if allowed, error message if not
         """
+        # NoRangeModifier.java:42-63. Note the ORDER: Java runs
+        # super.included() but does NOT return on it until AFTER the
+        # Teleportation check, so a 6E Teleportation is allowed even when the
+        # generic rules refused it. The port had the guard first.
         result = super().included(generic_object)
-        if result and result.strip():
-            return result
-        
+
         if self.force_allow:
             return result
-        
-        from kirby_cost.core.context import EngineContext
+
+        from kirby_cost.objects.base import is_6e
         from kirby_cost.objects.frameworks.multipower import Multipower
         from kirby_cost.objects.frameworks.elemental_control import ElementalControl
         from kirby_cost.objects.powers.teleportation import Teleportation
-        template = EngineContext.active_template()
-        if isinstance(generic_object, Teleportation) and template and template.is_6e():
+
+        # Java asks HeroDesigner.getActiveTemplate().is6E();
+        # EngineContext.active_template() is None everywhere, so this took its
+        # 5E form under every 6E template.
+        if isinstance(generic_object, Teleportation) and is_6e():
             return ""
+
+        if result and result.strip():
+            return result
+
+        # Java's third alternative is `o instanceof FindWeakness`, a 5E power:
+        # Main6E declares no FINDWEAKNESS element and the engine has no class
+        # for it, so the xmlid stands in rather than an import that cannot
+        # resolve. Unreachable under Main6E; kept so the rule is complete.
         if isinstance(generic_object, (Multipower, ElementalControl)):
             return ""
+        if (generic_object.xmlid or "").upper() == "FINDWEAKNESS":
+            return ""
+
         if generic_object.range_value <= 0:
             return f"{self.display} can only be applied to Ranged Powers."
 
