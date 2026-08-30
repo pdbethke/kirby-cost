@@ -39,6 +39,20 @@ def test_build_is_deterministic():
     assert validation_sink.build() == validation_sink.build()
 
 
+def test_not_authored_branches_name_real_overrides():
+    """Fix round 1: NOT_AUTHORED_BRANCHES is the per-branch accounting the coverage test
+    above can't express on its own (it only proves one state per override CLASS). Every key
+    must be a real engine override -- the same universe test_every_state_names_a_real_override
+    checks states against -- and every reason must actually say something."""
+    real = _engine_overrides()
+    bogus = sorted(set(validation_sink.NOT_AUTHORED_BRANCHES) - real)
+    assert not bogus, f"NOT_AUTHORED_BRANCHES names overrides that do not exist: {bogus}"
+    for override, branches in validation_sink.NOT_AUTHORED_BRANCHES.items():
+        assert branches, f"{override} has an empty branch dict in NOT_AUTHORED_BRANCHES"
+        for branch, reason in branches.items():
+            assert reason and reason.strip(), f"{override}/{branch!r} has an empty reason"
+
+
 def test_build_is_a_parseable_character(tmp_path):
     import xml.etree.ElementTree as ET
     p = validation_sink.write(tmp_path / "ValidationSink.hdc")

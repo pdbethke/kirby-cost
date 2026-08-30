@@ -244,16 +244,27 @@ STATES = (
     # the oracle and finding it allowed. That local AOE is kept anyway; it is what makes the
     # Force Field's own target HEX-eligible for Mobile et al. elsewhere, and drives the state's
     # own AreaEffect override coverage.)
-    _s("Multipower", ("Modifier", "HalfRangeModifier", "OnlyToActivate", "Visible", "Focus", "NND"),
+    # Fix round 1 (reviewer finding #4): AOE is a THIRD Multipower common modifier, and the
+    # Force Field slot below carries no local AOE of its own. Discovered along the way: the
+    # oracle's "framework" tier (Task 1's re-implementation of GenericObject.verifyModifiers()'s
+    # List branch) only ever walks Multipower and VPP -- Elemental Control never produces a
+    # framework-tier cell at all, in this run or round 1's (its own MODIFIER children are
+    # only ever exercised as directly-assigned modifiers on the ELEMENTALCONTROL object
+    # itself, never cross-checked against its slots) -- so this fix had to move here, not
+    # onto Elemental Control as originally sketched. This is what actually makes
+    # AreaEffect's SELFONLY-with-no-AOE error branch reachable in the "framework" tier: see
+    # the correction note on Elemental Control below for why a LOCALLY-attached AOE never
+    # produces a refused row (it always self-exempts).
+    _s("Multipower", ("Modifier", "HalfRangeModifier", "OnlyToActivate", "Visible", "Focus", "NND", "AreaEffect"),
        framework("MULTIPOWER", "Multipower", "Multipower", 19,
                  common=[modifier("FOCUS", "Focus", "-1.0", option="OAF", option_alias="OAF"),
-                         modifier("NND", "No Normal Defense", "1.0", option="STANDARD", option_alias="Standard")],
+                         modifier("NND", "No Normal Defense", "1.0", option="STANDARD", option_alias="Standard"),
+                         modifier("AOE", "Area Of Effect", "0.5", levels=4, option="RADIUS",
+                                  option_alias="Radius")],
                  slots=[
                      lambda pid: _slot("ENERGYBLAST", "Blast", 8, 0, pid, name="MP Blast Slot"),
                      lambda pid: _slot("FORCEFIELD", "Resistant Protection", 6, 1, pid,
-                                       name="MP Force Field Slot",
-                                       children=[modifier("AOE", "Area Of Effect", "0.5", levels=4,
-                                                          option="RADIUS", option_alias="Radius")]),
+                                       name="MP Force Field Slot"),
                      lambda pid: (
                          f'<POWER XMLID="COMPOUNDPOWER" ID="{_next()}" BASECOST="0.0" LEVELS="0" '
                          f'ALIAS="Compound Power" {_STD.format(pos=2)} NAME="MP Compound Power Slot" '
@@ -265,6 +276,24 @@ STATES = (
                          + '\n</POWER>'
                      ),
                  ])),
+    # AOE is EC's SECOND common modifier, deliberately (fix round 1, reviewer finding): the
+    # Force Field slot below carries NO local AOE, so the framework harness's own cross-check
+    # of AreaEffect against a SELFONLY-target slot genuinely runs AreaEffect.included() on a
+    # power that does not already have AOE assigned -- unlike round 1's version (AOE attached
+    # directly to the slot), which always passed because AreaEffect.included()'s target check
+    # special-cases "AOE already assigned" as satisfying itself (see Multipower's own comment
+    # on this same discovery). This is what makes AreaEffect's SELFONLY-with-no-AOE error
+    # branch (6E2, AreaEffect.java's target-not-DCV/ECV/... check) actually reachable.
+    # Correction (fix round 1): tried putting AOE here as a second common modifier first, on
+    # the theory that the harness would cross-check it against the Force Field slot the same
+    # way Multipower's NND is. It doesn't: an assigned AOE on the ELEMENTALCONTROL element
+    # itself only gets refused by the base Modifier class's generic "cannot be applied to an
+    # Elemental Control -- Advantages should be applied to each slot individually" rule (true
+    # of every Advantage tried directly on an EC, already well-demonstrated across all 78
+    # overrides via that same base-class check) -- not by anything AreaEffect-specific, and
+    # the oracle's "framework" tier never produces an Elemental-Control row at all (see
+    # Multipower's own comment on this). AreaEffect's SELFONLY-refused branch moved to
+    # Multipower instead, which the framework tier does walk.
     _s("Elemental Control", ("Modifier", "HalfRangeModifier"),
        framework("ELEMENTALCONTROL", "Elemental Control", "Elemental Control", 20,
                  common=[modifier("FOCUS", "Focus", "-1.0", option="OAF", option_alias="OAF")],
@@ -399,39 +428,194 @@ STATES = (
     _s("Force Field Partial Coverage", ("PartialCoverage",),
        power("FORCEFIELD", "Resistant Protection", 6, 57, name="Force Field Partial Coverage", input_="PD",
              children=[modifier("PARTIALCOVERAGE", "Partial Coverage", "-0.25", levels=1)])),
+    # --- fix round 1: AreaEffect's two xmlid-instanceof branches the survey names
+    # (POSSESSION -> always allowed; IMAGES -> allowed under a 6E template) ---
+    _s("Possession", ("AreaEffect",),
+       power("POSSESSION", "Possession", 10, 58, name="Possession", children=[
+           modifier("AOE", "Area Of Effect", "0.5", levels=4, option="RADIUS", option_alias="Radius")])),
+    _s("Images", ("AreaEffect",),
+       power("IMAGES", "Images", 6, 59, name="Images", option="SIGHTGROUP", option_alias="Sight Group", children=[
+           modifier("AOE", "Area Of Effect", "0.5", levels=4, option="RADIUS", option_alias="Radius")])),
+    # --- fix round 1: cross-modifier-conflict markers. Several overrides read
+    # find_object_by_id(assigned_modifiers, "COSTSENDONLYTOACTIVATE"/"COSTSENDTOMAINTAIN")
+    # -- CostsEND's own conflict branches (reviewer finding #3) needed an object that
+    # genuinely carries each, not just one that conceptually behaves like it. Kept apart
+    # (not combined on one power) because CostsENDOnlyToActivate/CostsENDToMaintain refuse
+    # each OTHER's own inclusion, so a single object carrying both would misrepresent what
+    # HD's own modifier wizard would ever let a user build -- these exist purely so OTHER
+    # overrides' assigned-modifier lookups have something real to find, same technique as
+    # kitchen_sink's Bokor-style Focus/Costs-END markers.
+    _s("End Only To Activate Marker", ("CostsENDOnlyToActivate",),
+       power("ENERGYBLAST", "Blast", 8, 60, name="End Only To Activate Marker", children=[
+           modifier("COSTSENDONLYTOACTIVATE", "Costs Endurance Only To Activate", "0.25", option="ACTIVATE",
+                    option_alias="Only Costs END to Activate")])),
+    _s("End Costs To Maintain Marker", ("CostsENDToMaintain", "Nonpersistent"),
+       power("ENERGYBLAST", "Blast", 8, 61, name="End Costs To Maintain Marker", children=[
+           modifier("COSTSENDTOMAINTAIN", "Costs Endurance To Maintain", "0.25")])),
+    # AlwaysOn's STOPSWHENSTUNNED/STOPSWHENKOD conflict branches (its FOCUS-conflict branch
+    # is already exercised for free -- the template-tier sweep tests AlwaysOn against the
+    # Multipower object, which carries a real FOCUS common modifier). These two markers
+    # need no ALWAYSON of their own; the template-tier sweep tests AlwaysOn.included()
+    # against every object, so carrying the conflicting limitation is enough.
+    _s("Stops When Stunned Marker", ("AlwaysOn",),
+       power("ENERGYBLAST", "Blast", 8, 62, name="Stops When Stunned Marker", children=[
+           modifier("STOPSWHENSTUNNED", "Stops Working If Character Is Stunned", "-0.5")])),
+    _s("Stops When KOd Marker", ("AlwaysOn",),
+       power("ENERGYBLAST", "Blast", 8, 63, name="Stops When KOd Marker", children=[
+           modifier("STOPSWHENKOD", "Stops Working If Character Is Knocked Out", "-0.25")])),
 )
 
-# NOT_AUTHORED: overrides the survey named that this generator could not exercise, and why.
-# See the coverage test's own count and the task-2-report.md for the full accounting.
-#   - LimitedArcOfFire, PartialCoverage ARE authored above (the Python coverage test requires
-#     every real engine override to have a state), but their XMLIDs do not resolve against
-#     Main6E.hdt -- see the comment on those two states. Whether HD actually accepts them is
-#     reported by step 5, not assumed here.
-#   - DoubleEnduranceCost, ENDReserveOrEND: named at length in the survey (both read
-#     HeroDesigner.getActiveHero() to scan for an EnduranceReserve power), but kirby-cost has
-#     no class of either name. HD's Double Endurance Cost is INCREASEDEND's own "2X" OPTION,
-#     not a separate modifier; ENDReserveOrEND appears not to have been ported at all.
-#   - AVLD, BasedOnECV, DamageShield, DelayedEND, DoesNotProvideMentalAwareness, Dropped,
-#     Lingering, OthersOnly, RealWeapon, RequiredHands, SemiArmorPiercing, Transparent,
-#     VariableTarget: surveyed Java overrides with no engine Modifier subclass at all
-#     (kirby-cost's registry does not define these classes) -- outside this generator's
-#     reach because there is no included() override to run.
+# Fix round 1 (reviewer): spec section 2d's stronger requirement is that every BRANCH the
+# survey names has a state, or this module says why not -- not just one state per override
+# CLASS. NOT_AUTHORED_BRANCHES is that accounting, keyed by real engine override names (the
+# coverage test below asserts every key is real and every reason is non-empty). It sits
+# alongside two things it deliberately does NOT repeat: which survey names have no engine
+# class at all (SURVEY_NAMES_WITH_NO_ENGINE_CLASS, just below -- there is no included()
+# override to trace branches through, so there is nothing to key), and which branches ARE
+# authored (see the per-state comments above and the report's per-override table).
+NOT_AUTHORED_BRANCHES: dict[str, dict[str, str]] = {
+    "AVAD": {
+        "self-targeted Dispel or Telepathy xmlid bypass":
+            "prototype-covered: same OR-bypass clause as the MENTAL disjunct already "
+            "exercised (Mind Link is SELFONLY and MENTAL); differs only in which xmlid "
+            "string is checked, not in code shape.",
+    },
+    "AffectsPhysicalWorld": {
+        "direct application to a Desolidification power "
+        "('cannot be applied to Desolidification')":
+            "unreachable in the current port: Desolidification's own TARGET is SELFONLY, so "
+            "the earlier generic target check in this same included() (which runs before the "
+            "Desolidification-specific isinstance check) already refuses the object first -- "
+            "confirmed by calling AffectsPhysicalWorld().included() on the Desolidification "
+            "state directly and getting the generic 'can only be applied to Powers which "
+            "affect others' message, never the Desolidification-specific one. Reads as dead "
+            "code in kirby_cost/objects/modifiers/affectsphysicalworld.py as written today.",
+        "active hero has NO Desolidification power anywhere (fallback error)":
+            "unreachable: this generator is one character with active_hero always set to it, "
+            "and a Desolidification power is present (needed for the branch above) -- 'the "
+            "hero has none' can never fire in the same document.",
+        "active hero has Desolidification ONLY nested inside a CompoundPower":
+            "prototype-covered: the hero-scan loop finds the top-level Desolidification power "
+            "(present for the direct-application branch) before it would ever need to descend "
+            "into the CompoundPower nested check; isolating the nested-only path would need "
+            "removing the top-level Desolidification, which the direct-application branch "
+            "needs -- not possible in one single-character fixture.",
+    },
+    "AreaEffect": {
+        "target already HEX with no AOE assigned "
+        "('cannot be applied to Powers which already affect an area')":
+            "not authored: needs a power whose TARGET is natively HEX without an AOE "
+            "advantage yet assigned; every HEX-targeted object here reaches HEX target "
+            "*through* an assigned AOE, which self-exempts the check.",
+        "EXPLOSION already assigned "
+        "('cannot be applied to abilities which already affect an area')":
+            "not authored: no object here carries a literal EXPLOSION-xmlid modifier (as "
+            "opposed to conceptually affecting an area via AOE) -- skipped for scope, "
+            "prototype-covered by the identical find_object_by_id-against-assigned_modifiers "
+            "shape already exercised for the REDUCEDEND/COSTSEND-family conflicts.",
+    },
+    "ReducedEND": {
+        "NakedModifier/CustomPower with a nonzero ap_per_end (END-per-Active-Point)":
+            "not authored: ap_per_end is a computed property this generator has no "
+            "documented, verified way to set reliably -- risked an unreliable state rather "
+            "than a real one.",
+    },
+    "Linked": {
+        "at least one other eligible Power/equipment found (the success path)":
+            "unreachable: Linked.option_vector() "
+            "(kirby_cost/objects/modifiers/linked.py:401-423) is a stub -- its own TODO says "
+            "it needs HeroDesigner.getActiveHero() access it never got, and it "
+            "unconditionally returns an empty list. Every Linked.included() call in this "
+            "engine hits 'There are no other abilities...' regardless of what else is on the "
+            "hero -- confirmed directly: even this generator's own 50+-power document, and "
+            "the 'Linked Flight'/'STR Reduced END And Linked' states built to plausibly be "
+            "success cases, both get the empty-candidate-list error. Genuine engine gap, not "
+            "a fixture limitation.",
+    },
+    "CostsENDToMaintain": {
+        "orig_duration INSTANT without a continuing effect "
+        "(distinct from the DURATION-INSTANT branch)":
+            "not authored: the only object here whose duration differs from its "
+            "orig_duration (Blast Continuous, via CONTINUOUS) also sets "
+            "continuing_effect=True, which this branch requires to be False -- verified "
+            "directly (CostsENDToMaintain().included() on that state returns '', not this "
+            "branch's message). No other modifier here changes duration away from "
+            "orig_duration without implying a continuing effect.",
+        "pre-6E NONPERSISTENT-assigned legacy check":
+            "not applicable: the port's own code treats this as a no-op "
+            "(`pass`, comment \"Assume 6E for now\") -- there is no branch behavior to "
+            "exercise, only a placeholder.",
+    },
+    "Persistent": {
+        "object's own xmlid is COMBAT_LEVELS":
+            "not authored: requires a Combat Skill Levels object; this generator dropped the "
+            "SKILLS/TALENTS/martial-arts sections kitchen_sink.py carries, so no CSL object "
+            "exists here to attach it to -- skipped for scope.",
+    },
+    "TimeLimit": {
+        "uses END, duration != INSTANT, COSTSENDONLYTOACTIVATE assigned (allowed)":
+            "not authored: needs a Constant-duration, END-costing object carrying "
+            "COSTSENDONLYTOACTIVATE; our only Constant+END objects (Blast Continuous, Custom "
+            "Power With END) carry neither -- skipped for scope.",
+        "uses END, duration != INSTANT, COSTSEND with option ACTIVATE/ONLYTOCHANGE (allowed)":
+            "not authored: same gap as above, for a qualifying COSTSEND option instead of "
+            "COSTSENDONLYTOACTIVATE.",
+    },
+    "PartialCoverage": {
+        "instanceof Body/Def/Clairsentience (allowed), and the DEFENSE-type fallback":
+            "unverifiable, not a fixture gap: PartialCoverage.included() crashes on every "
+            "call. kirby_cost/objects/modifiers/partialcoverage.py imports "
+            "`kirby_cost.objects.characteristics.def_` (ModuleNotFoundError -- the real "
+            "module is `def_char`, class DefChar). A real defect this fixture surfaced; not "
+            "fixed here per this task's 'do not touch kirby_cost/' rule. See the report.",
+    },
+    "NotThroughMindLink": {
+        "active hero has no Mind Link power (error)":
+            "unreachable: this generator is one character with active_hero always set to "
+            "it, and a Mind Link power is present (needed for the success branch, and for "
+            "'Telepathy Not Through Mind Link' itself) -- 'character lacks Mind Link' can "
+            "never fire in the same document.",
+    },
+}
+
+# SURVEY_NAMES_WITH_NO_ENGINE_CLASS: Java overrides the survey names for which kirby-cost has
+# no Modifier subclass at all -- there is no included() to trace branches through, so these
+# cannot be NOT_AUTHORED_BRANCHES keys (the coverage test requires every key to be a real
+# override). DoubleEnduranceCost and ENDReserveOrEND are named at length in the survey (both
+# read HeroDesigner.getActiveHero() to scan for an EnduranceReserve power); HD's Double
+# Endurance Cost turned out to be INCREASEDEND's own "2X" OPTION, not a separate modifier, and
+# ENDReserveOrEND appears not to have been ported at all. The rest (AVLD, BasedOnECV,
+# DamageShield, DelayedEND, DoesNotProvideMentalAwareness, Dropped, Lingering, OthersOnly,
+# RealWeapon, RequiredHands, SemiArmorPiercing, Transparent, VariableTarget) simply have no
+# corresponding class in kirby_cost.objects.modifiers.
+SURVEY_NAMES_WITH_NO_ENGINE_CLASS = frozenset({
+    "DoubleEnduranceCost", "ENDReserveOrEND", "AVLD", "BasedOnECV", "DamageShield",
+    "DelayedEND", "DoesNotProvideMentalAwareness", "Dropped", "Lingering", "OthersOnly",
+    "RealWeapon", "RequiredHands", "SemiArmorPiercing", "Transparent", "VariableTarget",
+})
 
 
-def _terrain_characteristic() -> str:
-    """ONLYONAPPROPRIATETERRAIN is defined inside RUNNING in Main6E.hdt; it goes on the
-    characteristic, following the same regex substitution kitchen_sink.py uses. RUNNING's
-    own NAME="" is also set to the state's name here, so it is traceable in HD's cost dump
-    the same way every other state's object is (step 5 of the brief)."""
+def _add_char_modifiers(tag: str, state_name: str, mods: list[str]) -> str:
+    """Attach one or more modifier fragments to a <TAG ...>...<NOTES /> characteristic
+    element inside _CHARACTERISTICS, and give that characteristic a NAME so it is
+    traceable in HD's cost dump (step 5) the same way every other state's object is.
+    Generalized from the terrain-on-RUNNING trick kitchen_sink.py originated; used here
+    for every "assign this modifier to a CHARACTERISTIC, not a POWER" branch fix round 1
+    found missing (ReducedEND's hero-level Characteristic lookup; Linked's non-Power
+    error). Called at the bottom of this module, after _CHARACTERISTICS is defined --
+    calling it here (before that literal exists) would NameError."""
     import re
-    terrain = modifier("ONLYONAPPROPRIATETERRAIN", "Only On Appropriate Terrain", "-0.5")
-    named = re.sub(r'(<RUNNING [^>]*?)NAME=""', r'\1NAME="Running Only On Terrain"', _CHARACTERISTICS, count=1)
-    return re.sub(r'(<RUNNING [^>]*>\s*<NOTES />)', r'\1\n' + terrain.replace('\\', '\\\\'), named,
-                  count=1)
+    global _CHARACTERISTICS
+    body = "\n".join(mods)
+    named = re.sub(rf'(<{tag} [^>]*?)NAME=""', rf'\1NAME="{state_name}"', _CHARACTERISTICS, count=1)
+    _CHARACTERISTICS = re.sub(rf'(<{tag} [^>]*>\s*<NOTES />)', r'\1\n' + body.replace('\\', '\\\\'), named,
+                               count=1)
+    return _CHARACTERISTICS
 
 
 STATES = STATES + (
     _s("Running Only On Terrain", ("Modifier", "OnlyOnAppropriateTerrain"), ""),
+    _s("STR Reduced END And Linked", ("ReducedEND", "Linked"), ""),
 )
 
 OBJECT_NAMES: dict[str, str] = {s.name: s.name for s in STATES}
@@ -484,6 +668,23 @@ _INFO = '<CHARACTER_INFO CHARACTER_NAME="Validation Sink" ALTERNATE_IDENTITIES="
 _CHARACTERISTICS = '  <CHARACTERISTICS>\n    <STR XMLID="STR" ID="1674528649148" BASECOST="0.0" LEVELS="5" ALIAS="STR" POSITION="1" MULTIPLIER="1.0" GRAPHIC="Burst" COLOR="255 255 255" SFX="Default" SHOW_ACTIVE_COST="Yes" INCLUDE_NOTES_IN_PRINTOUT="Yes" NAME="" AFFECTS_PRIMARY="Yes" AFFECTS_TOTAL="Yes">\n      <NOTES />\n    </STR>\n    <DEX XMLID="DEX" ID="1674528648883" BASECOST="0.0" LEVELS="8" ALIAS="DEX" POSITION="2" MULTIPLIER="1.0" GRAPHIC="Burst" COLOR="255 255 255" SFX="Default" SHOW_ACTIVE_COST="Yes" INCLUDE_NOTES_IN_PRINTOUT="Yes" NAME="" AFFECTS_PRIMARY="Yes" AFFECTS_TOTAL="Yes">\n      <NOTES />\n    </DEX>\n    <CON XMLID="CON" ID="1674528648965" BASECOST="0.0" LEVELS="5" ALIAS="CON" POSITION="3" MULTIPLIER="1.0" GRAPHIC="Burst" COLOR="255 255 255" SFX="Default" SHOW_ACTIVE_COST="Yes" INCLUDE_NOTES_IN_PRINTOUT="Yes" NAME="" AFFECTS_PRIMARY="Yes" AFFECTS_TOTAL="Yes">\n      <NOTES />\n    </CON>\n    <INT XMLID="INT" ID="1674528648998" BASECOST="0.0" LEVELS="3" ALIAS="INT" POSITION="4" MULTIPLIER="1.0" GRAPHIC="Burst" COLOR="255 255 255" SFX="Default" SHOW_ACTIVE_COST="Yes" INCLUDE_NOTES_IN_PRINTOUT="Yes" NAME="" AFFECTS_PRIMARY="Yes" AFFECTS_TOTAL="Yes">\n      <NOTES />\n    </INT>\n    <EGO XMLID="EGO" ID="1674528648811" BASECOST="0.0" LEVELS="8" ALIAS="EGO" POSITION="5" MULTIPLIER="1.0" GRAPHIC="Burst" COLOR="255 255 255" SFX="Default" SHOW_ACTIVE_COST="Yes" INCLUDE_NOTES_IN_PRINTOUT="Yes" NAME="" AFFECTS_PRIMARY="Yes" AFFECTS_TOTAL="Yes">\n      <NOTES />\n    </EGO>\n    <PRE XMLID="PRE" ID="1674528648982" BASECOST="0.0" LEVELS="15" ALIAS="PRE" POSITION="6" MULTIPLIER="1.0" GRAPHIC="Burst" COLOR="255 255 255" SFX="Default" SHOW_ACTIVE_COST="Yes" INCLUDE_NOTES_IN_PRINTOUT="Yes" NAME="" AFFECTS_PRIMARY="Yes" AFFECTS_TOTAL="Yes">\n      <NOTES />\n    </PRE>\n    <OCV XMLID="OCV" ID="1674528649511" BASECOST="0.0" LEVELS="3" ALIAS="OCV" POSITION="7" MULTIPLIER="1.0" GRAPHIC="Burst" COLOR="255 255 255" SFX="Default" SHOW_ACTIVE_COST="Yes" INCLUDE_NOTES_IN_PRINTOUT="Yes" NAME="" AFFECTS_PRIMARY="Yes" AFFECTS_TOTAL="Yes">\n      <NOTES />\n    </OCV>\n    <DCV XMLID="DCV" ID="1674528648625" BASECOST="0.0" LEVELS="2" ALIAS="DCV" POSITION="8" MULTIPLIER="1.0" GRAPHIC="Burst" COLOR="255 255 255" SFX="Default" SHOW_ACTIVE_COST="Yes" INCLUDE_NOTES_IN_PRINTOUT="Yes" NAME="" AFFECTS_PRIMARY="Yes" AFFECTS_TOTAL="Yes">\n      <NOTES />\n    </DCV>\n    <OMCV XMLID="OMCV" ID="1674528649055" BASECOST="0.0" LEVELS="5" ALIAS="OMCV" POSITION="9" MULTIPLIER="1.0" GRAPHIC="Burst" COLOR="255 255 255" SFX="Default" SHOW_ACTIVE_COST="Yes" INCLUDE_NOTES_IN_PRINTOUT="Yes" NAME="" AFFECTS_PRIMARY="Yes" AFFECTS_TOTAL="Yes">\n      <NOTES />\n    </OMCV>\n    <DMCV XMLID="DMCV" ID="1674528648705" BASECOST="0.0" LEVELS="2" ALIAS="DMCV" POSITION="10" MULTIPLIER="1.0" GRAPHIC="Burst" COLOR="255 255 255" SFX="Default" SHOW_ACTIVE_COST="Yes" INCLUDE_NOTES_IN_PRINTOUT="Yes" NAME="" AFFECTS_PRIMARY="Yes" AFFECTS_TOTAL="Yes">\n      <NOTES />\n    </DMCV>\n    <SPD XMLID="SPD" ID="1674528649134" BASECOST="0.0" LEVELS="2" ALIAS="SPD" POSITION="11" MULTIPLIER="1.0" GRAPHIC="Burst" COLOR="255 255 255" SFX="Default" SHOW_ACTIVE_COST="Yes" INCLUDE_NOTES_IN_PRINTOUT="Yes" NAME="" AFFECTS_PRIMARY="Yes" AFFECTS_TOTAL="Yes">\n      <NOTES />\n    </SPD>\n    <PD XMLID="PD" ID="1674528648927" BASECOST="0.0" LEVELS="0" ALIAS="PD" POSITION="12" MULTIPLIER="1.0" GRAPHIC="Burst" COLOR="255 255 255" SFX="Default" SHOW_ACTIVE_COST="Yes" INCLUDE_NOTES_IN_PRINTOUT="Yes" NAME="" AFFECTS_PRIMARY="Yes" AFFECTS_TOTAL="Yes">\n      <NOTES />\n    </PD>\n    <ED XMLID="ED" ID="1674528649373" BASECOST="0.0" LEVELS="0" ALIAS="ED" POSITION="13" MULTIPLIER="1.0" GRAPHIC="Burst" COLOR="255 255 255" SFX="Default" SHOW_ACTIVE_COST="Yes" INCLUDE_NOTES_IN_PRINTOUT="Yes" NAME="" AFFECTS_PRIMARY="Yes" AFFECTS_TOTAL="Yes">\n      <NOTES />\n    </ED>\n    <REC XMLID="REC" ID="1674528649207" BASECOST="0.0" LEVELS="4" ALIAS="REC" POSITION="14" MULTIPLIER="1.0" GRAPHIC="Burst" COLOR="255 255 255" SFX="Default" SHOW_ACTIVE_COST="Yes" INCLUDE_NOTES_IN_PRINTOUT="Yes" NAME="" AFFECTS_PRIMARY="Yes" AFFECTS_TOTAL="Yes">\n      <NOTES />\n    </REC>\n    <END XMLID="END" ID="1674528649022" BASECOST="0.0" LEVELS="20" ALIAS="END" POSITION="15" MULTIPLIER="1.0" GRAPHIC="Burst" COLOR="255 255 255" SFX="Default" SHOW_ACTIVE_COST="Yes" INCLUDE_NOTES_IN_PRINTOUT="Yes" NAME="" AFFECTS_PRIMARY="Yes" AFFECTS_TOTAL="Yes">\n      <NOTES />\n    </END>\n    <BODY XMLID="BODY" ID="1674528649409" BASECOST="0.0" LEVELS="5" ALIAS="BODY" POSITION="16" MULTIPLIER="1.0" GRAPHIC="Burst" COLOR="255 255 255" SFX="Default" SHOW_ACTIVE_COST="Yes" INCLUDE_NOTES_IN_PRINTOUT="Yes" NAME="" AFFECTS_PRIMARY="Yes" AFFECTS_TOTAL="Yes">\n      <NOTES />\n    </BODY>\n    <STUN XMLID="STUN" ID="1674528649021" BASECOST="0.0" LEVELS="14" ALIAS="STUN" POSITION="17" MULTIPLIER="1.0" GRAPHIC="Burst" COLOR="255 255 255" SFX="Default" SHOW_ACTIVE_COST="Yes" INCLUDE_NOTES_IN_PRINTOUT="Yes" NAME="" AFFECTS_PRIMARY="Yes" AFFECTS_TOTAL="Yes">\n      <NOTES />\n    </STUN>\n    <RUNNING XMLID="RUNNING" ID="1674528649464" BASECOST="0.0" LEVELS="0" ALIAS="Running" POSITION="18" MULTIPLIER="1.0" GRAPHIC="Burst" COLOR="255 255 255" SFX="Default" SHOW_ACTIVE_COST="Yes" INCLUDE_NOTES_IN_PRINTOUT="Yes" NAME="" AFFECTS_PRIMARY="Yes" AFFECTS_TOTAL="Yes">\n      <NOTES />\n    </RUNNING>\n    <SWIMMING XMLID="SWIMMING" ID="1674528649027" BASECOST="0.0" LEVELS="0" ALIAS="Swimming" POSITION="19" MULTIPLIER="1.0" GRAPHIC="Burst" COLOR="255 255 255" SFX="Default" SHOW_ACTIVE_COST="Yes" INCLUDE_NOTES_IN_PRINTOUT="Yes" NAME="" AFFECTS_PRIMARY="Yes" AFFECTS_TOTAL="Yes">\n      <NOTES />\n    </SWIMMING>\n    <LEAPING XMLID="LEAPING" ID="1674528649234" BASECOST="0.0" LEVELS="0" ALIAS="Leaping" POSITION="20" MULTIPLIER="1.0" GRAPHIC="Burst" COLOR="255 255 255" SFX="Default" SHOW_ACTIVE_COST="Yes" INCLUDE_NOTES_IN_PRINTOUT="Yes" NAME="" AFFECTS_PRIMARY="Yes" AFFECTS_TOTAL="Yes">\n      <NOTES />\n    </LEAPING>\n  </CHARACTERISTICS>'
 
 
-# The terrain characteristic block is built once, at import time (like STATES), so build()
-# never allocates another ID and stays deterministic across repeated calls in one process.
-_CHARACTERISTICS_WITH_TERRAIN = _terrain_characteristic()
+# Characteristic-level modifier attachments, all built once at import time (like STATES) so
+# build() never allocates another ID and stays deterministic across repeated calls in one
+# process. ONLYONAPPROPRIATETERRAIN is defined inside RUNNING in Main6E.hdt.
+_add_char_modifiers("RUNNING", "Running Only On Terrain",
+                     [modifier("ONLYONAPPROPRIATETERRAIN", "Only On Appropriate Terrain", "-0.5")])
+# ReducedEND's hero-level branch (fix round 1, reviewer finding #1): the survey names this
+# as reading the ACTIVE HERO's own Characteristic of the matching type -- but the engine's
+# port (kirby_cost/objects/modifiers/reducedend.py) is a documented stub: its own comment
+# says "Would need HeroDesigner.getActiveHero() check / For now, check directly" and never
+# actually reads EngineContext.active_hero() at all for this branch -- it just reads the
+# tested object's OWN end_usage. Attaching REDUCEDEND to STR exercises the real code that
+# runs today (the `isinstance(generic_object, Characteristic)` branch), documented here as
+# a stub rather than a genuine hero-level lookup; only a POWER carried REDUCEDEND before
+# this fix. Linked's non-Power error (reviewer finding #2, "can only be applied to Powers")
+# is exercised the same way -- attaching LINKED to a Characteristic (is_power is False).
+_add_char_modifiers("STR", "STR Reduced END And Linked", [
+    modifier("REDUCEDEND", "Reduced Endurance", "0.25", option="HALFEND", option_alias="1/2 END"),
+    modifier_linked("Linked", "-0.5", linked_id=_LINK_TARGET_ID),
+])
+_CHARACTERISTICS_WITH_TERRAIN = _CHARACTERISTICS
