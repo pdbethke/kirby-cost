@@ -401,25 +401,125 @@ class Linked(Modifier, xmlid="LINKED"):
     def option_vector(self, generic_object: GenericObject) -> List[Adder]:
         """
         Generate list of available powers to link to.
-        
+
+        Ported from ``Linked.getOptionVector`` (Linked.java:182-260, and the
+        Compound-Power-slot tail at :458 -- the constituent-power loop that
+        runs when ``generic_object`` is itself inside a Compound Power). The
+        method walks the active hero's powers, then equipment, each pass also
+        descending into a candidate's Compound Power constituents; a final
+        pass adds any sibling inside ``generic_object``'s OWN Compound Power
+        not already found. Every exclusion Java applies is kept, including
+        the id comparison at Linked.java:220/302 that compares a candidate's
+        already-selected Linked target against THIS modifier's own id (not
+        its parent power's) -- a faithful port keeps what the licensed
+        source states, odd as that particular comparison reads.
+
         Args:
             generic_object: The power that will have this modifier
-            
+
         Returns:
             List of Adder objects representing available powers
         """
-        options = []
-        option_ids = []
-        
-        # TODO: Would need HeroDesigner.getActiveHero() access
-        # This method needs to:
-        # 1. Iterate through hero's powers
-        # 2. Iterate through hero's equipment
-        # 3. Check compound powers
-        # 4. Exclude invalid targets (self, frameworks, already linked, etc.)
-        # 5. Create Adder objects for each valid power
-        
-        # Placeholder implementation
+        from kirby_cost.objects.frameworks.multipower import Multipower
+        from kirby_cost.objects.frameworks.elemental_control import ElementalControl
+        from kirby_cost.objects.frameworks.vpp import VariablePowerPool
+        from kirby_cost.objects.powers.compound_power import CompoundPower
+        from kirby_cost.objects.list import List as HeroList
+
+        frameworks = (Multipower, ElementalControl, VariablePowerPool)
+
+        hero = _active_hero()
+        options: List[Adder] = []
+        ids: List[int] = []
+        if hero is None:
+            return options
+
+        def make_adder(o: GenericObject) -> Adder:
+            a = Adder()
+            a.display = o.alias
+            if o.name and o.name.strip():
+                a.display = o.name
+            a.base_cost = o.active_cost
+            a.xmlid = o.xmlid
+            a._id = o._id
+            return a
+
+        def links_back_to_me(o: GenericObject) -> bool:
+            """Linked.java:214-219/296-301: skip a candidate whose OWN
+            Linked modifier has already chosen an option whose id equals
+            THIS Linked modifier's id."""
+            mod = GenericObject.find_object_by_id(o.assigned_modifiers, "LINKED")
+            if mod is not None and mod.selected_option is not None:
+                return mod.selected_option._id == self._id
+            return False
+
+        def add_candidate(o: GenericObject) -> None:
+            options.append(make_adder(o))
+            ids.append(o._id)
+
+        def descend_compound(o: GenericObject) -> None:
+            """Linked.java:229-247/265-283: a Compound Power's own
+            constituents are candidates too."""
+            if not isinstance(o, CompoundPower):
+                return
+            for o2 in (getattr(o, "powers", None) or ()):
+                if isinstance(o2, HeroList):
+                    continue
+                if o2._id == generic_object._id:
+                    continue
+                if links_back_to_me(o2):
+                    continue
+                add_candidate(o2)
+
+        def scan(objects) -> None:
+            parent_list = generic_object.parent
+            for o in objects or ():
+                o_parent_list = o.parent
+                # Linked.java:184-192: two objects both slotted inside a
+                # framework (Multipower/ElementalControl/VPP) can't link to
+                # each other.
+                if (parent_list is not None and isinstance(parent_list, frameworks)
+                        and o_parent_list is not None and isinstance(o_parent_list, frameworks)):
+                    continue
+                # Linked.java:193-197: a framework itself can't link to
+                # anything already slotted in one.
+                if isinstance(generic_object, frameworks) and o_parent_list is not None:
+                    continue
+                # Linked.java:198-201: not the framework this power is in.
+                if parent_list is not None and parent_list._id == o._id:
+                    continue
+                # Linked.java:202-205: not the Compound Power this power is
+                # a constituent of.
+                if generic_object.main_power is not None and generic_object.main_power._id == o._id:
+                    continue
+                # Linked.java:206-208: never a List (framework) itself.
+                if isinstance(o, HeroList):
+                    continue
+                # Linked.java:209-211: never itself.
+                if o._id == generic_object._id:
+                    continue
+                if links_back_to_me(o):
+                    continue
+                add_candidate(o)
+                descend_compound(o)
+
+        scan(getattr(hero, "powers", None))
+        scan(getattr(hero, "equipment", None))
+
+        # Linked.java:336-364: a slot's siblings inside its own Compound
+        # Power, added only if not already found above.
+        main_power = generic_object.main_power
+        if main_power is not None:
+            for o2 in (getattr(main_power, "powers", None) or ()):
+                if isinstance(o2, HeroList):
+                    continue
+                if o2._id == generic_object._id:
+                    continue
+                if links_back_to_me(o2):
+                    continue
+                if o2._id not in ids:
+                    add_candidate(o2)
+
         return options
     
     @property

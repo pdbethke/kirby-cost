@@ -138,15 +138,27 @@ def allows_other_modifiers(obj) -> bool:
 
 
 @lru_cache(maxsize=1)
-def sink_hero():
-    """The validation sink, loaded through the REAL loader and installed as
-    the active hero (six overrides read it, exactly as HD's do)."""
+def _built_sink_hero():
+    """The validation sink, loaded through the REAL loader -- built once and
+    cached, since ``HDCLoader.load_file`` is the expensive part."""
     import tempfile
-    from kirby_cost.core.context import EngineContext
     from tests.validation_sink import write
     path = Path(tempfile.gettempdir()) / "kirby-cost-ValidationSink.hdc"
     write(path)
-    hero = _loader().load_file(str(path))
+    return _loader().load_file(str(path))
+
+
+def sink_hero():
+    """The validation sink, installed as the active hero (six overrides
+    read it, exactly as HD's do). Re-arms ``EngineContext`` on EVERY call,
+    not only the first: ``_built_sink_hero()`` is cached, but the active
+    hero is process-wide mutable state -- another test (``blank_hero_context()``
+    for the applicability matrix's blank-character survey, most often) can
+    leave it pointing elsewhere between calls, and a caller relying on a
+    cache hit to also mean "the hero is still active" got the blank
+    context's answers instead of the sink's."""
+    from kirby_cost.core.context import EngineContext
+    hero = _built_sink_hero()
     EngineContext.set_active_hero(hero)
     return hero
 

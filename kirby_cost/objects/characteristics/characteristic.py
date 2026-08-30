@@ -537,13 +537,25 @@ class Characteristic(CharAffectingObject):
         Check if this is a power (not a base characteristic).
 
         Overrides GenericObject.is_power to add characteristic-specific logic.
-        Uses self._hero (wired by HDCLoader._wire_hero_reference).
+        Uses self._hero (wired by HDCLoader._wire_hero_reference), falling
+        back to ``EngineContext.active_hero()`` -- Java's ``isPower()``
+        (Characteristic.java:1915-1932) reads only ``HeroDesigner.
+        getActiveHero()``, the single global hero, with no per-object
+        wiring. A prototype built straight from the template (the applicability
+        matrix's blank-hero survey) is never wired to a ``_hero`` at all, so
+        without this fallback it fell through to the raw field and answered
+        False where HD -- with a blank character open, so its Leaping
+        prototype is not literally one of THAT hero's own characteristics
+        either -- answers True.
         """
         # Check the internal attribute first
         if self._is_power:
             return True
 
         active_hero = self._hero
+        if active_hero is None:
+            from kirby_cost.core.context import EngineContext
+            active_hero = EngineContext.active_hero()
         if active_hero is None:
             return self._is_power
 

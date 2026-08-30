@@ -599,3 +599,24 @@ def test_an_entangle_neither_damages_nor_does_body():
     assert mod.included(power) == (
         f"{mod.display} can only be applied to Attack Powers and Powers which "
         "affect others.")
+
+
+def test_linked_refuses_when_the_hero_has_nothing_to_link_to():
+    """Linked (6E1 p.384) needs another ability on the character; HD's
+    message names that (Linked.java:182-190). Prototype matrix cell
+    LINKED-on-LEAPING carries the blank-hero verdict."""
+    from tests.matrix_support import blank_hero_context, cells, template_modifier, template_power
+    blank_hero_context()
+    reason = template_modifier("LINKED").included(template_power("LEAPING"))
+    cell = next(c for c in cells() if c["modifier"] == "LINKED" and c["power"] == "LEAPING")
+    assert reason == cell["reason"]
+
+
+def test_linked_allows_when_the_hero_has_another_power():
+    """Linked.java:182-190 -- getOptionVector finds Blast AOE among the
+    sink's other powers."""
+    from tests.matrix_support import sink_hero, template_modifier
+    hero = sink_hero()
+    blast = next(o for o in hero.powers if o.name == "Blast AOE")
+    assert template_modifier("LINKED").included(blast) == ""
+
