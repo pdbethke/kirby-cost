@@ -130,12 +130,12 @@ class CannotEscapeWithTeleport(Modifier, xmlid="NOTELEPORT"):
             return result
         
         # Can be applied to Def, Entangle, ForceWall, NakedModifier
-        from kirby_cost.objects.characteristics.def_ import Def
+        from kirby_cost.objects.characteristics.def_char import DefChar
         from kirby_cost.objects.powers.entangle import Entangle
         from kirby_cost.objects.powers.force_wall import ForceWall
         from kirby_cost.objects.powers.naked_modifier import NakedModifier
         
-        if isinstance(generic_object, (Def, Entangle, ForceWall, NakedModifier)):
+        if isinstance(generic_object, (DefChar, Entangle, ForceWall, NakedModifier)):
             return ""
         
         return f"{self._display} can only be applied to Entangles or Powers which are used to create walls or barriers."

@@ -214,3 +214,18 @@ def test_does_body_refuses_a_flash_and_a_power_that_already_does_body():
         f"{mod.display} cannot be applied to a Flash Attack."
     assert mod.included(template_power("ENERGYBLAST")) == \
         f"{template_power('ENERGYBLAST').display} already does BODY Damage."
+
+
+def test_cannot_escape_with_teleport_allows_only_barriers_and_entangles():
+    """CannotEscapeWithTeleport.java:111-125. The port imported a module named
+    `characteristics.def_`, which does not exist -- the class is
+    `characteristics.def_char.DefChar` -- so every cell raised
+    ModuleNotFoundError. 6E1 p.304 (also p.175 Barrier, p.220 Entangle): HD
+    agrees with the book, which puts the Advantage on walls, Entangles and
+    other barriers."""
+    mod = template_modifier("NOTELEPORT")
+    assert mod.included(template_power("ENTANGLE")) == ""
+    assert mod.included(template_power("FORCEWALL")) == ""
+    assert mod.included(template_power("ENERGYBLAST")) == (
+        f"{mod.display} can only be applied to Entangles or Powers which are "
+        "used to create walls or barriers.")
