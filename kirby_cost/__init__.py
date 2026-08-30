@@ -50,7 +50,7 @@ __all__ = [
     'Rules',
     # I/O
     'XMLUtility',
-    # Validation -- the three doors a builder walks through (validation.py)
+    # Validation -- the four doors a builder walks through (validation.py)
     'Verdict', 'check', 'allowed_modifiers', 'exclusive_conflict', 'Finding', 'verify',
 ]
 

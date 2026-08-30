@@ -1,4 +1,4 @@
-"""Validation -- the three questions a character builder asks before adding
+"""Validation -- the four questions a character builder asks about
 a modifier, answered the way Hero Designer answers them.
 
     >>> from kirby_cost import check
@@ -9,10 +9,10 @@ a modifier, answered the way Hero Designer answers them.
     >>> check("ZEROPHASE", blast).reason
     'Powers Can Be Changed As A Zero-Phase Action can only be applied to abilities of type vpp'
 
-See ``examples/validation_door.py`` for a runnable walkthrough of all three
-doors, including ``allowed_modifiers`` and ``exclusive_conflict``.
+See ``examples/validation_door.py`` for a runnable walkthrough of all four
+doors, including ``allowed_modifiers``, ``exclusive_conflict`` and ``verify``.
 
-HD keeps three separate surfaces and so does this module:
+HD keeps four separate surfaces and so does this module:
 
 * ``check``              -- Modifier.included(): may this modifier go here,
                             and if not, why (HD's own message).
@@ -73,7 +73,19 @@ class Finding:
 def verify(obj: GenericObject) -> list[Finding]:
     """HD's third surface: what verifyModifiers() would complain about on
     ``obj`` -- its own modifiers re-checked and, for a framework, each common
-    modifier against each slot. Empty when HD is content. Never mutates."""
+    modifier against each slot. Empty when HD is content. Never mutates.
+
+    ``obj`` is a purchasable object -- a power, characteristic, skill, talent,
+    perk or framework list -- not a modifier. (Asking a modifier is meaningless
+    and would crash: CONCENTRATION, INCANTATIONS and GESTURES override the
+    ``assigned_modifiers`` getter with no setter to match.)
+    """
+    from kirby_cost.objects.modifier import Modifier
+    if isinstance(obj, Modifier):
+        raise TypeError(
+            "verify() takes a purchasable object (power, characteristic, skill, "
+            f"list), not a modifier: {obj.xmlid!r}"
+        )
     return [Finding(mod.xmlid, (slot.hdc_id() if slot is not None else None), Verdict(False, reason))
             for mod, slot, reason in obj.verify_modifiers()]
 

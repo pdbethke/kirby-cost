@@ -63,12 +63,20 @@ def test_an_absent_exclusive_attribute_means_exclusive():
 
 
 def test_verify_reports_a_refused_common_modifier_on_its_slot():
+    """The framework door, checked against HD's own words: the sink's
+    Multipower has AOE as a common modifier and a self-targeted Resistant
+    Protection slot, and the fixture's `framework` row for that pair carries
+    the message HD showed. verify() must return that message, on that slot."""
     from kirby_cost import verify
-    from tests.matrix_support import sink_hero
+    from tests.matrix_support import sink_hero, stateful_cells
     mp = next(o for o in sink_hero().powers if o.name == "Multipower")
-    findings = verify(mp)
-    assert any(f.slot_id is not None and not f.verdict.allowed for f in findings)
-    assert all(f.verdict.reason for f in findings)
+    row = next(c for c in stateful_cells()
+               if c["tier"] == "framework" and c["modifier"] == "AOE"
+               and c["parent_id"] == mp.hdc_id() and not c["allowed"])
+    finding = next(f for f in verify(mp)
+                   if f.modifier_xmlid == "AOE" and f.slot_id == row["object_id"])
+    assert finding.verdict.reason == row["reason"]
+    assert finding.verdict.allowed is False
 
 
 def test_verify_is_empty_for_a_clean_power():
@@ -80,3 +88,13 @@ def test_verify_is_empty_for_a_clean_power():
     # Penetrating" carries PENETRATING and HD is content with it.
     blast = next(o for o in sink_hero().powers if o.name == "Blast Penetrating")
     assert verify(blast) == []
+
+
+def test_verify_refuses_a_modifier_as_its_subject():
+    """A modifier is not a purchasable object; three subclasses override the
+    ``assigned_modifiers`` getter with no setter, so the walk would crash."""
+    import pytest
+    from kirby_cost import verify
+    from tests.matrix_support import template_modifier
+    with pytest.raises(TypeError, match="not a modifier"):
+        verify(template_modifier("CONCENTRATION"))
