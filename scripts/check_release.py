@@ -100,6 +100,10 @@ def check_install_and_version(wheel: Path) -> bool:
     --no-cache-dir, so a dependency that only resolves because it happens to
     be on this machine cannot mask a floor that is too low.
     """
+    # The install below runs with cwd=tmp, so a relative `dist/...` argument
+    # (exactly how CI invokes this script) stops resolving the moment pip
+    # changes directory -- the 0.5.0 release failed its own guard this way.
+    wheel = wheel.resolve()
     meta = wheel_metadata(wheel)
     dist_name = meta["Name"][0]
     version = meta["Version"][0]
