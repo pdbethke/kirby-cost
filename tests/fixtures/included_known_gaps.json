@@ -1,7 +1,5 @@
 {
   "_comment": "SHRINK-ONLY. Cells where the engine's included() disagrees with Hero Designer's, with what each side said. Written once as the 2026-08-29 baseline before any fix; every later commit may only remove entries. The target is empty.",
-  "_baseline": "3770 of 8395 cells disagree (2026-08-29); now 1 remain (2026-08-30)",
-  "gaps": {
-    "REDUCEDEND-on-SHAPESHIFT": "HD allows; mechanism unlocated after a full read of ReducedEND.java:124-210 -- the visible path refuses on getEndUsage()==0, HD's own echo for this prototype says end_usage=0/active_cost=0.0, no getEndUsage/getActiveCost override exists in Shapeshift/SenseAffectingPower, and clone() re-selects the same (null) option. Cross-evidence: on the LOADED sink Shape Shift (stateful fixture, object 20260830000064) HD reports end_usage=1/active=8.0 and allows -- consistent with its rule -- and the engine agrees there. The divergence is confined to HD's PROTOTYPE tier. Last prototype cell; needs a live-HD debugger trace (2026-08-31)."
-  }
+  "_baseline": "3770 of 8395 cells disagree (2026-08-29); now 1 remain (2026-08-30); 0 remain (2026-08-31) -- EMPTY. The last cell was the CLONE: ReducedEND.included judges o.clone(), and GenericObject.clone() re-prices via setSelectedOption (SenseAffectingPower assigns the power's base cost from the option's), so the clone of an unpriced prototype has endUsage 1 where the original has 0. Probe-proved headlessly; no live-HD trace was needed after all.",
+  "gaps": {}
 }

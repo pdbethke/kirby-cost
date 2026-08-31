@@ -146,6 +146,21 @@ class ReducedEND(Modifier, xmlid="REDUCEDEND"):
         orig_main_power = generic_object.main_power
         generic_object.parent = None
         generic_object.main_power = None
+        # The clone also RE-PRICES: GenericObject.clone() runs
+        # clone.setSelectedOption(op) (GenericObject.java, clone(): the
+        # getSelectedOption() branch), and SenseAffectingPower's override
+        # assigns the power's base cost from the option's. A template
+        # PROTOTYPE was never priced through setSelectedOption -- HD's own
+        # echo shows the Shape Shift prototype at baseCost 0 / endUsage 0 --
+        # so the clone this rule judges has endUsage 1 where the original
+        # has 0, and HD allows. Probe-proved 2026-08-31: original
+        # activeCost=0.0/endUsage=0, clone activeCost=5.0/endUsage=1,
+        # verdict allow. Mirror it for the duration of the check.
+        orig_base_cost = generic_object._base_cost
+        _opt = getattr(generic_object, "_selected_option", None)
+        if (_opt is not None and generic_object._base_cost == 0
+                and getattr(_opt, "base_cost", 0)):
+            generic_object._base_cost = _opt.base_cost
         try:
             # Cannot be applied with Increased END
             if GenericObject.find_object_by_id(
@@ -229,5 +244,6 @@ class ReducedEND(Modifier, xmlid="REDUCEDEND"):
             finally:
                 generic_object.assigned_modifiers = orig_assigned
         finally:
+            generic_object._base_cost = orig_base_cost
             generic_object.parent = orig_parent
             generic_object.main_power = orig_main_power

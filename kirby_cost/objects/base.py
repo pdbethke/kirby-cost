@@ -558,6 +558,16 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
                 default_opt._alias = first.alias or first.display
                 default_opt._selected = True
                 default_opt._display_in_string = first.display_in_string
+                # The option carries its own price, exactly as the resolved
+                # branch above copies it. HD's Template builds every option
+                # Adder priced, and clone() re-prices a power from it
+                # (GenericObject.clone -> setSelectedOption ->
+                # SenseAffectingPower reads ad.getBaseCost()); an unpriced
+                # default left ReducedEND judging a Shape Shift prototype
+                # as costing no END.
+                default_opt._base_cost = first.base_cost
+                default_opt._levels = first.levels
+                default_opt._level_value = first.level_value
                 default_opt.parent = self
                 self._selected_option = default_opt
 
