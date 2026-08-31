@@ -97,12 +97,18 @@ class AreaEffect(Modifier, xmlid="AOE"):
         lp = self.level_power
         lm = self.level_multiplier
         if lp > 0 and lm > 0:
-            n2 = int(math.ceil(math.log(float(self._levels) / float(lm)) / math.log(lp)))
+            # The MINVAL-clamped accessor, not the raw field: Java's
+            # getTotalValue reads getLevels(), and GenericObject.getLevels
+            # (GenericObject.java:1996-2002) floors at minVal — AOE's
+            # template states MINVAL="1", so a document that writes no
+            # LEVELS still prices a 1m radius instead of feeding log(0).
+            levels = self.levels
+            n2 = int(math.ceil(math.log(float(levels) / float(lm)) / math.log(lp)))
             if n2 < 1:
                 n2 = 1
             # Special case: IMAGES power at level 1 gets 0 level cost
             progenitor = self.progenitor
-            if progenitor is not None and progenitor.xmlid == "IMAGES" and self._levels == 1:
+            if progenitor is not None and progenitor.xmlid == "IMAGES" and levels == 1:
                 n2 = 0
             d += float(n2) * self._level_cost
 
