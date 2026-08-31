@@ -1872,6 +1872,44 @@ class HDCLoader:
                                                option_id=adder_opt if adder_opt else None)
                 mod.assigned_adders.append(adder)
 
+        # HD attaches every REQUIRED available adder the moment the list is
+        # read -- GenericObject.getAssignedAdders() clones any required
+        # available adder not already assigned and marks it selected -- and
+        # the attached adder prices at its FIRST option (the sink's Damage
+        # Over Time: base 1 + INCREMENTS "2" 0.25 + TIMEBETWEEN SEGMENT 2.0 =
+        # HD's +3 1/4, both first options). HD-written files always state
+        # these adders explicitly, so the corpus never exercises the attach;
+        # a hand-written element without them must still get HD's answer.
+        # Runs AFTER the element's own ADDER children are parsed -- attaching
+        # before them duplicated every stated required adder (24 corpus
+        # failures, caught 2026-08-31).
+        # Resolve the SAME template variant the modifier application used --
+        # a nested definition (MINDLINK's own INVISIBLE has NO required
+        # adders) beats the global one (whose EFFECTSTARGET/EFFECTSOTHER are
+        # REQUIRED); attaching from the global variant garbled nine MindLinks.
+        tmpl_late = None
+        provider = self._provider_in_use
+        if parent is not None and hasattr(provider, "get_nested_modifier"):
+            tmpl_late = provider.get_nested_modifier((parent.xmlid or "").upper(), xmlid)
+        if tmpl_late is None:
+            tmpl_late = self._get_template_data(xmlid)
+        for adder_xmlid, adder_tmpl in (getattr(tmpl_late, "adders", None) or {}).items():
+            if not getattr(adder_tmpl, "required", False):
+                continue
+            if GenericObject.find_object_by_id(mod.assigned_adders, adder_xmlid) is not None:
+                continue
+            adder = Adder()
+            adder.xmlid = adder_xmlid
+            adder._required = True
+            adder._selected = True
+            adder._alias = getattr(adder_tmpl, "alias", "") or getattr(adder_tmpl, "display", "")
+            adder.apply_adder_template(adder_tmpl)
+            opts = getattr(adder_tmpl, "options", None) or {}
+            if opts and not adder.base_cost:
+                first_id, first = next(iter(opts.items()))
+                adder.base_cost = getattr(first, "base_cost", 0.0) or 0.0
+                adder.option_id = first_id
+            mod.assigned_adders.append(adder)
         return mod
 
     def _build_adder(self, elem) -> Optional[Adder]:
