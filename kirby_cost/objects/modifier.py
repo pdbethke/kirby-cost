@@ -135,9 +135,13 @@ class Modifier(GenericObject):
             # Use getDoubleTotal() for modifier calculations
             total += adder.double_total()
         
-        # Add level costs
+        # Add level costs. Java reads getLevels() -- the MINVAL-clamped
+        # accessor -- not the raw field (Modifier.getTotalValue), so a stated
+        # LEVELS below the template's MINVAL still prices at the floor:
+        # NOTELEPORT (MINVAL=1, LVLCOST=.25) is +1/4 even when the document
+        # writes no LEVELS at all.
         if self._level_value > 0.0:
-            level_units = float(self._levels) / self._level_value
+            level_units = float(self.levels) / self._level_value
             total += level_units * self._level_cost
         
         # Apply advantages (positive nested modifiers)

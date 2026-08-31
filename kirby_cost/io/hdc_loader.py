@@ -1849,6 +1849,13 @@ class HDCLoader:
             mod.private_mod = True
         elif private_str.upper().startswith("N"):
             mod.private_mod = False
+        else:
+            # Modifier.restoreFromSave (Modifier.java:1136-1147): no PRIVATE
+            # attribute falls back to the types-based default -- a modifier
+            # typed for a framework is private to it. HD always writes the
+            # attribute back out, so this only fires for hand-authored XML.
+            mod.private_mod = bool(
+                {"VPP", "MP", "EC", "LIST"} & set(mod.types or ()))
 
         # Load sub-modifiers (modifiers on modifiers)
         for sub_elem in elem.findall("MODIFIER"):

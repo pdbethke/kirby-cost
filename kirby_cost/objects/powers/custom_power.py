@@ -10,7 +10,7 @@ from kirby_cost.engine.xml_attrs import XMLAttr
 from kirby_cost.objects.powers.power import Power
 from kirby_cost.objects.base import GenericObject
 from kirby_cost.util.rounder import round_half_down, round_up
-from kirby_cost.objects.frameworks import is_multipower, is_elemental_control, is_vpp
+from kirby_cost.objects.frameworks import is_multipower, is_elemental_control
 from kirby_cost.objects.modifiers.linked import is_linked
 from typing import Optional
 
@@ -155,6 +155,12 @@ class CustomPower(Power, xmlid="CUSTOMPOWER"):
             parent = self.main_power.parent
         if parent:
             for mod in parent.assigned_modifiers:
+                # Private modifiers belong to the pool alone -- HD's List
+                # removed them from getAssignedModifiers() at restore
+                # (List.separatePrivateMods); this engine keeps one list, so
+                # the skip is explicit, as in engine/cost.py.
+                if getattr(mod, "private", False):
+                    continue
                 if mod.types and "VPP" in mod.types:
                     continue
                 if mod.xmlid == "CHARGES" and is_multipower(parent):
@@ -198,8 +204,17 @@ class CustomPower(Power, xmlid="CUSTOMPOWER"):
         parent = self._parent
         if self.main_power:
             parent = self.main_power.parent
-        if parent and not is_vpp(parent):
+        # Java folds the parent List's limitations for VPP children too --
+        # CustomPower.getRealCostPreList has no parent-type check. What keeps a
+        # pool like Ultrasonique's from folding is that its commons are
+        # PRIVATE="Yes": List.separatePrivateMods (List.java:53-60) moves
+        # private modifiers OUT of getAssignedModifiers() at restore, so the
+        # fold never sees them. This engine keeps both kinds in one list, so
+        # the skip is explicit, as in engine/cost.py.
+        if parent:
             for mod in parent.assigned_modifiers:
+                if getattr(mod, "private", False):
+                    continue
                 if mod.types and "VPP" in mod.types:
                     continue
                 if mod.xmlid == "CHARGES" and is_multipower(self._parent):
@@ -216,10 +231,12 @@ class CustomPower(Power, xmlid="CUSTOMPOWER"):
         if has_limitations:
             real_cost = round_half_down(real_cost)
 
-        # Minimum 1 CP
+        # Minimum 1 CP -- Java's condition sees the COMPUTED getLevels()
+        # (roundUp(baseCost), CustomPower.java:205-206 and :246-250), so a
+        # stated LEVELS with baseCost 0 stays 0 and the floor does not fire.
         if (real_cost < 1.0 and
             (d > 0.0 or
-             (self._levels > 0 and len(self.assigned_adders) == 0 and
+             (self.levels > 0 and len(self.assigned_adders) == 0 and
               self.base_cost >= 0.0))):
             real_cost = 1.0
 
