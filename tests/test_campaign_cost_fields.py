@@ -152,6 +152,7 @@ _EFFECTIVE_FIELD_VALUES = {
     "range": "LOS",
     "target": "DCV",
     "uses_end": True,
+    "min_val": 1,
     "continuing_effect": True,
     "base_value": 12.0,
     "all_cost": 5.0,

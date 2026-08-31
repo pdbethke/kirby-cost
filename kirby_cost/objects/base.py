@@ -436,10 +436,12 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
             opt = tmpl.options.get(option_id)
             if opt:
                 if opt.level_cost != 0:
-                    self._level_cost = opt.level_cost
+                    if opt.level_cost != -1.0:  # -1 = the option states no level pricing
+                        self._level_cost = opt.level_cost
                     option_set_lc = True
                 if opt.level_value != 0:
-                    self._level_value = opt.level_value
+                    if opt.level_value != -1.0:
+                        self._level_value = opt.level_value
                     option_set_lv = True
                 self.level_power = opt.level_power
                 self.level_multiplier = opt.level_multiplier
@@ -717,6 +719,13 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
         # so type gating in included() was dead for every other modifier.
         if getattr(tmpl, "types", ()) and not getattr(self, "_types", None):
             self._types = list(tmpl.types)
+        # MINVAL -> minimumLevel (GenericObject.java:3329-3335, template init).
+        # Placed HERE because the modifier apply-path never reaches the
+        # power-fields region above; only Modifier.levels clamps on it, so a
+        # power carrying it is inert (sold-back characteristics keep negative
+        # levels).
+        if getattr(tmpl, "min_val", 0) and not self._minimum_level:
+            self._minimum_level = int(tmpl.min_val)
         if hasattr(self, "_excludes"):
             self._excludes = tuple(getattr(tmpl, "excludes", ()))
             self._requires = tuple(getattr(tmpl, "requires", ()))
@@ -747,7 +756,11 @@ class GenericObject(CostMixin, ModifierMixin, XMLAttrsMixin,
 
     @property
     def levels(self) -> int:
-        """Get the number of levels. Override in subclasses."""
+        """Get the number of levels. Override in subclasses. (Java's
+        getLevels() clamps at minimumLevel, GenericObject.java:1996-2001, but
+        a generic clamp here floors sold-back characteristics -- the Zombie's
+        Running is LEVELS=-6 and HD prices it that way -- so the clamp lives
+        only where the oracle evidenced it: Modifier.levels.)"""
         return self._levels
 
     @levels.setter

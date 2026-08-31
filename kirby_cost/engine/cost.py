@@ -234,7 +234,8 @@ class CostMixin:
         # slots do — they share the pool's active point cap instead). The
         # modifier.types "VPP" check below is separate: those are limitation
         # tags that mark mods as VPP-only, filtered regardless of parent type.
-        if parent and not is_vpp(parent):
+        if parent:  # Java folds the parent List's limitations for VPP slots too
+            # (getRealCostPreList skips only VPP-TYPED modifiers)
             for modifier in parent.assigned_modifiers:
                 # A List has already MOVED its private modifiers out of
                 # getAssignedModifiers() into privateMods
@@ -268,7 +269,7 @@ class CostMixin:
         # Minimum real cost
         if (real_cost < 1.0 and
                 (active_cost > 0.0 or
-                 (self._levels > 0 and len(self.assigned_adders) == 0 and
+                 (self.levels > 0 and len(self.assigned_adders) == 0 and
                   self.base_cost >= 0.0)) and
                 not should_check_enhancer):
             real_cost = 1.0

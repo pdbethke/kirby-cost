@@ -97,6 +97,20 @@ class Modifier(GenericObject):
         return self._parent_object
     
     @property
+    def levels(self) -> int:
+        """Java's getLevels() clamp (GenericObject.java:1996-2001), scoped to
+        modifiers: the template's MINVAL floors the raw field. NOTELEPORT
+        declares MINVAL=1 LVLCOST=.25, so a stated LEVELS=0 still prices one
+        level -- HD's +1/4 on the sink's Naked Advantage."""
+        if self._levels < self._minimum_level:
+            return self._minimum_level
+        return self._levels
+
+    @levels.setter
+    def levels(self, value: int) -> None:
+        self._levels = value
+
+    @property
     def total_value(self) -> float:
         """
         Calculate the total value of this modifier.

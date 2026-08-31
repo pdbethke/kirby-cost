@@ -92,6 +92,10 @@ class TemplateData:
     #: (GenericObject.java:3003-3005). Parsed but never applied on the load
     #: path; the applicability matrix reads it, because HD's prototypes carry
     #: it and two duration rules branch on it.
+    #: MINVAL -- the floor Java's getLevels() clamps to (minimumLevel).
+    #: Parsed by HDTParser, dropped by this dataclass until 2026-08-31 --
+    #: the same parsed-then-dropped class as level_start.
+    min_val: int = 0
     continuing_effect: bool = False
     #: The element's LEVELSTART -- the level count HD's own prototype object
     #: carries before a character buys anything. A .hdc always states LEVELS,
@@ -212,6 +216,8 @@ class TemplateData:
             level_cost=float(raw.get("level_cost", 0)),
             level_value=float(raw.get("level_value", 0)),
             level_power=int(raw.get("level_power", 1)),
+            min_val=int(float(raw.get("min_val", 0) or 0)),
+
             level_multiplier=int(raw.get("level_multiplier", 1)),
             minimum_cost=float(raw.get("minimum_cost", 0)),
             min_set=bool(raw.get("min_set", False)),

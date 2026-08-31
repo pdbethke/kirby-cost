@@ -312,6 +312,7 @@ def _template_data(entry: dict[str, Any], *, is_power: bool) -> TemplateData:
         level_cost=level_cost,
         level_value=level_value,
         level_power=_i(a, "LVLPOWER"),
+        min_val=_i(a, "MINVAL"),
         level_multiplier=_i(a, "LVLMULTIPLIER"),
         level_start=_i(a, "LEVELSTART"),
         continuing_effect=(a.get("CONTINUINGEFFECT") or "").upper().startswith("Y"),
