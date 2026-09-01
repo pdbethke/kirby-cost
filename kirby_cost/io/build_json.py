@@ -59,6 +59,19 @@ _TYPED_ATTR = {
 # dropping adder cost. Emit the EFFECTIVE flag (Yes/No) so the mode is preserved.
 _SKILL_FLAG = {"familiarity": "FAMILIARITY", "proficiency": "PROFICIENCY",
                "levels_only": "LEVELSONLY", "everyman": "EVERYMAN"}
+#: Input-only spellings of the same three flags. `Skill.to_build_dict` writes
+#: `familiarity`/`proficiency`/`everyman`, and so does this module's emitter --
+#: but the ORACLE's dump (hd6cli, the shape `tests/fixtures/authored/*.json`
+#: ships in) writes them `is_`-prefixed, after the engine's own predicate
+#: properties. Reading only the unprefixed names meant every flag in an oracle
+#: dump arrived False: Ravel's five Proficiency skills came back as full
+#: skills, and `roll_value` ran the characteristic formula on them instead of
+#: short-circuiting to the flat proficiency roll. Accepted on the way IN only;
+#: the emitter keeps writing the canonical name, so a round trip does not
+#: acquire a second spelling.
+_SKILL_FLAG_ALIASES = {"familiarity": "is_familiarity",
+                       "proficiency": "is_proficiency",
+                       "everyman": "is_everyman"}
 # Maneuver fields: get_save_xml (maneuver.py:795-822) is the attr authority.
 # Plain string/int attrs:
 _MANEUVER_ATTR = {
@@ -92,8 +105,11 @@ def _obj_node(o: dict, child_tag: str | None = None) -> BuildNode:
         if field_name in o:
             attrs[hdc] = _yn(bool(o[field_name]))
     for field_name, hdc in _SKILL_FLAG.items():
+        alias = _SKILL_FLAG_ALIASES.get(field_name)
         if field_name in o:
             attrs[hdc] = _yn(bool(o[field_name]))
+        elif alias is not None and alias in o:
+            attrs[hdc] = _yn(bool(o[alias]))
     if o.get("maneuver"):
         for f, hdc in _MANEUVER_ATTR.items():
             if o.get(f) is not None:

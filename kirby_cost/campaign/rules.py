@@ -60,6 +60,12 @@ _NOT_OVERRIDABLE = frozenset({"campaign_forced"})
 #:                   object, not a real character load, because none of the
 #:                   authored characters carries a SenseAdder.)
 #:
+#:   * characteristic -> forcing "STR" on DEDUCTION moved Ravel's Deduction
+#:                   off INT, and its roll with it (skill.py, Skill's own
+#:                   apply_template override). Only Skill reads it; every
+#:                   other object type ignores it, which is why it is listed
+#:                   here as a rule rather than as inert.
+#:
 #: The one field that is neither wired nor listed as a rule is `class_name`,
 #: below: it has ZERO reads off a `TemplateData` anywhere in `kirby_cost/`.
 _UNSUPPORTED_FIELDS = {

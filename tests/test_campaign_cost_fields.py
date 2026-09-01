@@ -166,6 +166,7 @@ _EFFECTIVE_FIELD_VALUES = {
     "excludes": ("LOS",),
     "requires": ("AOE",),
     "requires_all": True,
+    "characteristic": "INT",
 }
 
 
