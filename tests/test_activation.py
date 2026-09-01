@@ -58,3 +58,35 @@ def test_the_derivation_omits_inactive_sources():
 def test_a_state_with_no_contributions_is_its_base():
     st = CharacteristicState(xmlid="INT", base=23.0, contributions=[])
     assert st.value(ActivationContext()) == 23.0
+
+
+def test_a_purchase_carrying_the_hero_id_limitation_is_conditional():
+    """Ravel's PRE +8 is bought as a power limited to his Hero identity."""
+    import json
+    from kirby_cost.io.build_json import build_from_json
+    from kirby_cost.model.activation import contribution_from_purchase
+
+    hero = build_from_json(json.load(
+        open("tests/fixtures/authored/Ravel.json")))
+    pre_powers = [p for p in hero.powers
+                  if (getattr(p, "xmlid", "") or "").upper() == "PRE"]
+    assert pre_powers, "Ravel should buy PRE as a power"
+
+    c = contribution_from_purchase(pre_powers[0])
+    assert c is not None
+    assert c.xmlid == "PRE"
+    assert c.delta == 8.0
+    assert c.requires_hero_id is True
+
+
+def test_a_plain_purchase_is_unconditional():
+    import json
+    from kirby_cost.io.build_json import build_from_json
+    from kirby_cost.model.activation import contribution_from_purchase
+
+    hero = build_from_json(json.load(
+        open("tests/fixtures/authored/Ravel.json")))
+    section_int = [c for c in hero.characteristics
+                   if (getattr(c, "xmlid", "") or "").upper() == "INT"][0]
+    c = contribution_from_purchase(section_int)
+    assert c is None or c.requires_hero_id is False

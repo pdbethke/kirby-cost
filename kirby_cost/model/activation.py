@@ -18,6 +18,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from kirby_cost.objects.base import GenericObject
+
 
 @dataclass(frozen=True)
 class ActivationContext:
@@ -73,3 +75,40 @@ class CharacteristicState:
         parts = [f"{self.base:g} base"]
         parts += [f"{c.delta:+g} ({c.source_label})" for c in self.active(ctx)]
         return f"{self.xmlid} {self.value(ctx):g} = " + " ".join(parts)
+
+
+def _has_hero_id_limitation(obj) -> bool:
+    """True if ``obj`` carries the Only-In-Hero-ID limitation (xmlid OIHID).
+
+    Uses ``GenericObject.find_object_by_id``, the engine's own idiom for
+    locating an assigned modifier by xmlid (see e.g.
+    ``kirby_cost/objects/base.py``'s ``duration`` property, which builds
+    ``has``/``has_own`` closures around exactly this call). It recurses
+    through List/CompoundPower containers, unlike a hand-rolled scan.
+    """
+    return GenericObject.find_object_by_id(
+        getattr(obj, "assigned_modifiers", None) or [], "OIHID"
+    ) is not None
+
+
+def contribution_from_purchase(obj) -> "Contribution | None":
+    """Describe what a purchased object contributes to a characteristic.
+
+    Returns None when the object contributes nothing — it is not a
+    characteristic purchase, or it buys no levels.
+
+    The Hero-identity limitation is xmlid ``OIHID`` in the HD model.
+    """
+    xmlid = (getattr(obj, "xmlid", None) or "").upper()
+    if not xmlid:
+        return None
+    levels = float(getattr(obj, "levels", 0) or 0)
+    if levels == 0:
+        return None
+    name = (getattr(obj, "name", None) or "").strip()
+    return Contribution(
+        xmlid=xmlid,
+        delta=levels,
+        source_label=name or xmlid,
+        requires_hero_id=_has_hero_id_limitation(obj),
+    )
