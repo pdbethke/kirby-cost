@@ -388,6 +388,21 @@ class LoadedHero:
         A Power Framework's slots are NOT read that way: the loader already
         lists those flat in ``self.powers`` (a pool holds them in
         ``objects``), so recursing into a pool would count every slot twice.
+
+        CAVEAT — a pooled purchase can OVERSTATE the character. A Power
+        Framework's slot is summed unconditionally, because slot allocation
+        is not modelled in v1: only one slot of a Multipower is allocated at
+        a time, so a characteristic bought as a slot is usually not in play.
+        Ravel's pool "Maleable Sting Body" holds 19 slots, one of them a +30
+        STR, and this reports ``STR 40 = 10 base +30 (Reinforced String)`` —
+        the right answer in one allocation of nineteen. v1 knows exactly one
+        condition (the Hero identity); allocation is a SECOND and a stateful
+        one, needing a chosen allocation rather than a context flag, so it
+        was deliberately left out. It fits the same shape when someone wants
+        it: another condition on ``Contribution``, gated on a context that
+        names which slot is up. Until then, treat a pooled contribution as an
+        upper bound, and read ``derivation()`` — it names the source, so a
+        slot is identifiable — rather than trusting the total blind.
         """
         from kirby_cost.model.activation import (
             CharacteristicState, contribution_from_purchase,
@@ -414,7 +429,17 @@ class LoadedHero:
     def temporal_characteristic(
         self, xmlid: str, ctx: "ActivationContext | None" = None,
     ) -> float:
-        """What this characteristic IS right now, conditions applied."""
+        """What this characteristic IS right now, conditions applied.
+
+        CAVEAT — this can OVERSTATE a character who buys characteristics
+        inside a Power Framework. A slot is summed unconditionally because
+        slot allocation is not modelled in v1, so a pooled purchase counts
+        even in the allocations where it is not in play. See
+        ``characteristic_state``, which this delegates to, for the worked
+        example and the shape of the eventual fix (allocation is another
+        ``Contribution`` condition). The one condition v1 does honour is the
+        Hero identity.
+        """
         from kirby_cost.model.activation import ActivationContext
 
         return self.characteristic_state(xmlid).value(ctx or ActivationContext())
