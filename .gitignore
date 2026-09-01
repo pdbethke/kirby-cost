@@ -73,3 +73,19 @@ legal/
 tests/fixtures/oracle/
 tests/fixtures/*.hdc
 tests/fixtures/roundtrip_hd6_costs.json
+
+# DELIBERATELY TRACKED, and the only .hdc files in the repository:
+# tests/fixtures/authored/{Ravel,Bokor,PowerLad}.hdc are PeterB's own
+# characters, built on stock templates and cleared by him for publication
+# (2026-09-01). They are here so the canonical load path -- HDCLoader on a
+# real HD-saved file -- runs by default instead of only where an environment
+# variable happened to be set. The pattern above is `tests/fixtures/*.hdc`
+# and does not reach this subdirectory; the negation is written out anyway so
+# that tightening the pattern cannot silently drop them.
+#
+# THREE FILES, NO MORE. Nothing else from that document store may be added:
+# the rest is licensed third-party content and personal campaign material,
+# including the variants that sit beside these (background sheets, kits).
+!tests/fixtures/authored/Ravel.hdc
+!tests/fixtures/authored/Bokor.hdc
+!tests/fixtures/authored/PowerLad.hdc

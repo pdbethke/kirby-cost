@@ -17,11 +17,15 @@ bugs. Testing kirby-cost against characters of this kind has now found:
   and no OPTION printed no option at all (Bokor)
 
 **Only these three characters are fair game** (PeterB, 2026-08-21). The rest
-of the maintainer's character store is personal campaign material: not test
-corpus, not to be read here, committed as a fixture, or named in output.
+of the maintainer's character store is personal campaign material or licensed
+third-party content: not test corpus, not to be read here, committed as a
+fixture, or named in output. That includes the variant files sitting beside
+these three (background sheets, equipment kits) -- three .hdc files, no more.
 
-Point ``KIRBY_COST_AUTHORED`` at a directory holding the three files, by those
-names. Symlinks are fine — they need not live together on disk.
+All three now ship in ``tests/fixtures/authored/`` (2026-09-01), cleared for
+publication by their author, so these tests run everywhere and never skip.
+``KIRBY_COST_AUTHORED`` still overrides them for anyone working against their
+own document store; symlinks are fine.
 
 | | Points | Template | Frameworks |
 |---|---|---|---|
@@ -51,16 +55,15 @@ from pathlib import Path
 import pytest
 
 from kirby_cost.io.hdc_loader import HDCLoader
-from tests.corpus import authored_hdc
+from tests.corpus import require_authored_hdc
 from tests.test_display_fidelity import _engine_index, _oracle_index
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "authored"
 
-#: The characters, by name. The .hdc files themselves are NOT redistributed —
-#: they are found through KIRBY_COST_AUTHORED, like every other machine-bound
-#: input (see tests/corpus.py). Only the oracle's JSON dumps ship, and those
-#: carry costs and display strings: no player or GM name, no campaign name, no
-#: background, quote or tactics, and no path into anyone's home directory.
+#: The characters, by name. Both halves of each pair ship: the .hdc the
+#: engine loads and the oracle's JSON dump it is judged against. The .hdc is
+#: the canonical input -- HD writes fields the dump drops -- so the comparison
+#: is a real load against HD's own verdict rather than a dump against itself.
 NAMES = ("Ravel", "Bokor", "PowerLad")
 
 #: oracle field -> the engine attribute that answers it.
@@ -74,14 +77,12 @@ COST_FIELDS = {
 def _cases():
     for name in NAMES:
         fixture = FIXTURE_DIR / f"{name}.json"
-        hdc = authored_hdc(name)
-        yield pytest.param(
-            name, hdc, fixture,
-            marks=pytest.mark.skipif(
-                not (fixture.exists() and hdc is not None),
-                reason="KIRBY_COST_AUTHORED unset, or the character is not in it",
-            ),
-        )
+        # No skipif: both files are tracked, so a missing one is a deleted
+        # fixture and must go red at collection rather than quietly subtract
+        # twelve tests' worth of coverage.
+        hdc = require_authored_hdc(name)
+        assert fixture.exists(), f"{fixture} has gone missing"
+        yield pytest.param(name, hdc, fixture)
     # The kitchen sink is nobody's build -- it is generated, so it never
     # skips and needs no environment. It carries every registered 6E rule
     # that no corpus character takes (see tests/kitchen_sink.py), and its

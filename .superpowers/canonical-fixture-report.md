@@ -1,0 +1,164 @@
+# Canonical fixture correction — `fix/skill-characteristic-linkage`
+
+*2026-09-01*
+
+## The question
+
+"Does not canonical imply default?" It did not. `HDCLoader` is this project's
+canon — 100% Java-oracle parity, and the only path that reads what HERO
+Designer actually wrote. But the skill-roll tests on this branch asserted
+against `tests/fixtures/authored/Ravel.json`, an **oracle dump**, and the one
+test that loaded through the canonical path was gated on `KIRBY_COST_AUTHORED`,
+which nothing set. Sixteen dump-based tests ran; the faithful one did not.
+
+The dump is lossy in two ways that matter:
+
+1. It omits `CHARACTERISTIC` on every skill.
+2. It does not record which ITEM a multi-ITEM skill (`PROFESSIONAL_SKILL`,
+   `SCIENCE_SKILL`) was bought as, so the engine can only take the template's
+   first.
+
+That produced two false alarms in one evening — five "proficiency regressions"
+and two "multi-ITEM build-doc gaps" — both of which evaporate on a real load.
+
+## What changed
+
+**1. The characters are bundled.** `tests/fixtures/authored/` now holds three
+`.hdc` files, verified by `CHARACTER_NAME` before copying:
+
+| file | bytes | `CHARACTER_NAME` |
+|---|---|---|
+| `Ravel.hdc` | 172,400 | `Ravel, The Unmade Man` |
+| `Bokor.hdc` | 140,178 | `Bokor` |
+| `PowerLad.hdc` | 85,944 | `Power Lad` |
+
+md5 verified identical to the originals. **Nothing else was copied** from
+`~/Documents/Champions` — not `Ravel_background.hdc`, not `Ravel (CSI Kit).hdc`,
+not any licensed third-party character. `.gitignore` gained explicit
+`!` negations for exactly these three plus a comment saying three files, no
+more, so tightening `tests/fixtures/*.hdc` later cannot silently drop them and
+a fourth cannot be added by accident.
+
+**2. `authored_hdc()` finds them with no environment variable.**
+`tests/corpus.py` gained `BUNDLED_AUTHORED`; `authored_hdc(name)` checks
+`KIRBY_COST_AUTHORED` first and falls back to the bundle. The override is
+per-name, so a maintainer pointing at his own store still gets his working
+copies, and a name that store lacks still resolves.
+
+**3. A missing canonical fixture FAILS.** New `require_authored_hdc(name)`
+raises `FileNotFoundError` naming the bundled path. The canonical tests carry
+**no skip guard at all** — in `test_skill_characteristic_roll.py`,
+`test_campaign_cost_fields.py`, and `test_authored_characters.py`'s `_cases()`.
+These files are tracked, so absence is a deletion, not an unconfigured machine.
+
+**4. The skip guard was ARMED, not bypassed.** `conftest.py`'s design is
+untouched: it still reads `INPUTS` twice, to report what a run was configured
+with and to decide whether a skip is acceptable or a defect.
+`KIRBY_COST_AUTHORED` stays in `INPUTS` — it is still honoured as an override.
+What changed is `missing_inputs()`: via `_BUNDLE_SATISFIES`, an input the
+repository itself carries is no longer "missing". That tightens the guard
+rather than loosening it. The run header on this machine now reads:
+
+```
+kirby-cost: all 9 inputs present — any skip will fail the run
+```
+
+Before, it reported `KIRBY_COST_AUTHORED` missing and the guard excused all 14
+skips. Three tests in `test_test_inputs.py` pin the new contract (bundle
+satisfies; variable still overrides; missing bundle raises).
+
+**5. The tests moved to the canonical path.** `test_skill_characteristic_roll.py`
+is now explicitly two-lane, and says which lane each test is in:
+
+- **Canonical** — the `ravel` fixture is `HDCLoader().load_file(...)`,
+  function-scoped and reloaded per test on purpose, because `load_file`
+  *installs the active hero* and `roll_value`'s characteristic branch reads it.
+  Caching it would be correct only until another test loaded another character.
+- **Degraded, deliberately** — the `ravel_dump` fixture builds from the JSON
+  dump, and is the only shape in which the template fallback fires at all
+  (across the 655-character corpus it fires on zero of 4,434 skill-like
+  objects). `test_the_dump_states_no_characteristic_at_all` pins that premise,
+  so the fallback tests cannot go on passing while testing nothing. The
+  familiarity/Everyman short-circuit tests keep building from a mutated doc,
+  labelled as such.
+
+**6. The test that would have caught tonight.**
+`test_ravel_reproduces_every_roll_hero_designer_printed` loads Ravel
+canonically and asserts fifteen skill rolls against HD's own rendered output.
+`test_the_transcribed_rolls_are_still_the_ones_hero_designer_printed`
+re-derives that table from the dump's `column2_output` so the transcription
+cannot rot into a test of a typo. Seven of the fifteen — the five Proficiencies
+and both multi-ITEM skills — are precisely the cases a dump-based test cannot
+state.
+
+## Ravel against HD's printed rolls, via the canonical loader
+
+Every skill for which HD renders a roll. **16 of 16 agree, 0 mismatched.**
+
+| skill | characteristic | engine | HD printed |
+|---|---|---|---|
+| PROFESSIONAL_SKILL | INT | 14 | 14 |
+| SCIENCE_SKILL | INT | 14 | 14 |
+| DEDUCTION | INT | 14 | 14 |
+| CRIMINOLOGY | INT | 14 | 14 |
+| FORENSIC_MEDICINE | INT | 14 | 14 |
+| PARAMEDICS | INT | 14 | 14 |
+| COMPUTER_PROGRAMMING | INT | 14 | 14 |
+| NAVIGATION | INT | 14 | 14 |
+| ACTING | PRE | 13 | 13 |
+| CHARM | PRE | 13 | 13 |
+| KNOWLEDGE_SKILL | GENERAL | 13 | 13 |
+| HIGH_SOCIETY | PRE | 10 | 10 |
+| BUREAUCRATICS | PRE | 10 | 10 |
+| SECURITY_SYSTEMS | INT | 10 | 10 |
+| STREETWISE | PRE | 10 | 10 |
+| INTERROGATION | PRE | 10 | 10 |
+
+`LANGUAGES` and `SKILL_LEVELS` are excluded because HD renders no roll for
+either, and the provenance test asserts that exclusion set exactly.
+
+The five Proficiencies sit at 10 despite PRE/INT linkage: `roll_value`
+short-circuits on the proficiency flag before it consults the characteristic
+(6E1 p57 sets the linked base; a Proficiency is bought as a flat roll).
+
+## Gates
+
+**Oracle (release gate):** `656 passed`, exit 0.
+`tests/fixtures/oracle_known_residuals.json` untouched — `git status` reports
+no modification to it.
+
+**Full suite**, `KIRBY_COST_HDT` pointed at the complete 17-template directory:
+
+| | passed | skipped |
+|---|---|---|
+| before (stashed working tree) | 1732 | **14** |
+| after | **1753** | **0** |
+
+The 14 skips were all `KIRBY_COST_AUTHORED unset`: 12 in
+`test_authored_characters.py` (4 parametrized tests x 3 characters), 1 in
+`test_campaign_cost_fields.py`, 1 in `test_skill_characteristic_roll.py`.
+All 14 now run. **Zero skips remain.**
+
++21 net passing: 12 previously-skipped authored tests + 2 previously-skipped
+canonical tests, plus the new canonical and provenance tests in
+`test_skill_characteristic_roll.py` and three new guard tests in
+`test_test_inputs.py`, less the dump-based tests that were folded into the
+canonical ones.
+
+## The caution that did not fire
+
+`test_authored_characters.py` compares each `.hdc` against its JSON fixture on
+every cost and every display string, for all three characters. Those twelve
+tests had never run in this environment. **They pass on first run** — no
+disagreement between the real files and the dumps on anything those tests
+compare. That is a genuinely useful negative result: the dumps are faithful on
+*costs and strings*, and lossy specifically on the **skill characteristic
+linkage and multi-ITEM selection**, which is the narrow seam this branch is
+about. Nothing was adjusted to make anything pass.
+
+## Not touched
+
+`Hero.characteristic_value()` — unchanged.
+`tests/fixtures/oracle_known_residuals.json` — unchanged.
+`conftest.py` — unchanged; the guard mechanism it implements is now armed by
+default rather than modified.
