@@ -84,10 +84,10 @@ is now explicitly two-lane, and says which lane each test is in:
 
 **6. The test that would have caught tonight.**
 `test_ravel_reproduces_every_roll_hero_designer_printed` loads Ravel
-canonically and asserts fifteen skill rolls against HD's own rendered output.
+canonically and asserts sixteen skill rolls against HD's own rendered output.
 `test_the_transcribed_rolls_are_still_the_ones_hero_designer_printed`
 re-derives that table from the dump's `column2_output` so the transcription
-cannot rot into a test of a typo. Seven of the fifteen — the five Proficiencies
+cannot rot into a test of a typo. Seven of the sixteen — the five Proficiencies
 and both multi-ITEM skills — are precisely the cases a dump-based test cannot
 state.
 
@@ -162,3 +162,116 @@ about. Nothing was adjusted to make anything pass.
 `tests/fixtures/oracle_known_residuals.json` — unchanged.
 `conftest.py` — unchanged; the guard mechanism it implements is now armed by
 default rather than modified.
+
+---
+
+# Fix round — the licensing rail was inert
+
+*2026-09-01, after review*
+
+## What was wrong
+
+The three `!tests/fixtures/authored/*.hdc` negations I added were **inert**,
+and worse than inert: they were a claim of protection where none existed.
+
+The pre-existing pattern is `tests/fixtures/*.hdc`. A single `*` does not
+cross a directory separator, so that line never reached
+`tests/fixtures/authored/` at all. Nothing there was ever ignored, so
+negating it re-admitted nothing. The three bundled files stayed tracked for
+the same reason they would have without any of my lines: they were never
+matched.
+
+The consequence is the part that mattered. A licensed third-party `.hdc`
+dropped into `tests/fixtures/authored/` would have been picked up by
+`git add -A` with no warning — the exact failure the comment above it claimed
+to prevent. My report said a fourth file "cannot be added by accident" and the
+SKILL.md said the three were "explicitly un-ignored". Both described a
+mechanism that was not running. A false assurance on the rail that keeps
+licensed content out of a public repo is worse than no claim at all, because
+it stops anyone from checking.
+
+## The fix
+
+One line, above the negations, which is what makes them load-bearing:
+
+```
+tests/fixtures/oracle/
+tests/fixtures/*.hdc
+tests/fixtures/**/*.hdc      <-- added
+tests/fixtures/roundtrip_hd6_costs.json
+...
+!tests/fixtures/authored/Ravel.hdc
+!tests/fixtures/authored/Bokor.hdc
+!tests/fixtures/authored/PowerLad.hdc
+```
+
+Deny every `.hdc` anywhere under `tests/fixtures/`, then re-admit exactly
+three by name. The surrounding comment now says *why* the `**` line exists and
+tells the next reader to verify with `git check-ignore -v` rather than trust
+the prose — since trusting the prose is what went wrong here.
+
+## Proof, run after the change
+
+```
+$ git check-ignore -v "tests/fixtures/authored/Ravel_background.hdc"
+.gitignore:75:tests/fixtures/**/*.hdc	tests/fixtures/authored/Ravel_background.hdc
+exit=0
+
+$ git check-ignore -v "tests/fixtures/authored/Ravel (CSI Kit).hdc"
+.gitignore:75:tests/fixtures/**/*.hdc	tests/fixtures/authored/Ravel (CSI Kit).hdc
+exit=0
+
+$ git ls-files tests/fixtures/ | grep hdc
+tests/fixtures/authored/Bokor.hdc
+tests/fixtures/authored/PowerLad.hdc
+tests/fixtures/authored/Ravel.hdc
+
+$ git status --porcelain
+ M .gitignore
+ M .superpowers/canonical-fixture-report.md
+ M tests/test_skill_characteristic_roll.py
+```
+
+Both licensed names are now ignored, and `.gitignore:75` names the line doing
+it. Exactly the three bundled files remain tracked. The porcelain output shows
+only this fix round's own edits and no stray `.hdc`.
+
+**Live drill, not just a dry check.** I copied the real
+`Ravel_background.hdc` into `tests/fixtures/authored/`, ran `git add -A .`,
+and confirmed the staged set:
+
+```
+$ git diff --cached --name-only | grep hdc
+NONE STAGED
+```
+
+The file was physically present in the directory and `git add -A` did not
+stage it. Removed afterwards; the directory holds the three bundled `.hdc`
+and their four `.json` fixtures again.
+
+## Minors
+
+- "fifteen skill rolls" corrected to **sixteen** in both places in this
+  report. `HD_PRINTED_ROLLS` has sixteen entries and the table above lists
+  sixteen rows; the prose was simply wrong.
+- `test_the_transcribed_rolls_are_still_the_ones_hero_designer_printed` no
+  longer takes the `ravel` fixture. It reads HD's rendered output and the
+  transcription and never loads a character, so the parameter was buying an
+  `HDCLoader` run per invocation for nothing. Its docstring now says it takes
+  no hero, so the parameter does not come back.
+- SKILL.md's "explicitly un-ignored" wording replaced. It now states what is
+  actually true — everything under `tests/fixtures/` is denied, exactly three
+  are negated back in — names the `**` line as the one that reaches
+  subdirectories, and records that negations against `*.hdc` alone were inert,
+  so the next person does not repeat this.
+
+## Gates re-run after the fix
+
+| | result |
+|---|---|
+| Oracle | **656 passed**, exit 0; `oracle_known_residuals.json` unmodified |
+| Full suite | **1753 passed, 0 skipped**, exit 0 |
+
+Unchanged from before the fix round, as expected: nothing here touches engine
+behaviour, and dropping an unused fixture parameter removes a redundant load
+rather than a test.

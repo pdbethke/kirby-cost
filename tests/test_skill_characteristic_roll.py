@@ -167,8 +167,11 @@ def test_ravel_reproduces_every_roll_hero_designer_printed(ravel):
     assert not mismatched, f"engine vs HD's printed rolls: {mismatched}"
 
 
-def test_the_transcribed_rolls_are_still_the_ones_hero_designer_printed(ravel):
+def test_the_transcribed_rolls_are_still_the_ones_hero_designer_printed():
     """The provenance check on the table above.
+
+    Takes no hero: it reads HD's rendered output and the transcription, and
+    never loads a character.
 
     ``HD_PRINTED_ROLLS`` is transcribed, and a transcription can rot. This
     re-reads the rolls out of HD's own rendered lines and insists they still
