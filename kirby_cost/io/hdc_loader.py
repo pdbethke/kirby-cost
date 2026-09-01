@@ -371,6 +371,54 @@ class LoadedHero:
             self.compute_characteristic_values()
         return self._char_values.get(xmlid, 0.0)
 
+    def characteristic_state(self, xmlid: str) -> "CharacteristicState":
+        """Base plus every contribution acting on this characteristic.
+
+        The base comes from ``characteristic_value`` — the section-only,
+        oracle-verified value Java's addModifiersToBase needs. Contributions
+        come from purchases made OUTSIDE the characteristics section: powers,
+        and powers nested in compound powers.
+
+        NOTE: the aggregation walk in ``Characteristic._calc_primary_value``
+        does something similar and is a Java port used by cost math. It is
+        deliberately NOT reused here: it sums unconditionally, and adding a
+        condition to it would put activation logic inside the cost path.
+
+        Nested purchases are read off ``powers`` — a CompoundPower's parts.
+        A Power Framework's slots are NOT read that way: the loader already
+        lists those flat in ``self.powers`` (a pool holds them in
+        ``objects``), so recursing into a pool would count every slot twice.
+        """
+        from kirby_cost.model.activation import (
+            CharacteristicState, contribution_from_purchase,
+        )
+
+        want = (xmlid or "").upper()
+        contributions: list = []
+
+        def visit(obj) -> None:
+            c = contribution_from_purchase(obj)
+            if c is not None and c.xmlid == want:
+                contributions.append(c)
+            for sub in (getattr(obj, "powers", None) or []):
+                visit(sub)
+
+        for p in (self.powers or []):
+            visit(p)
+        return CharacteristicState(
+            xmlid=want,
+            base=self.characteristic_value(want),
+            contributions=contributions,
+        )
+
+    def temporal_characteristic(
+        self, xmlid: str, ctx: "ActivationContext | None" = None,
+    ) -> float:
+        """What this characteristic IS right now, conditions applied."""
+        from kirby_cost.model.activation import ActivationContext
+
+        return self.characteristic_state(xmlid).value(ctx or ActivationContext())
+
     @property
     def maneuvers(self) -> list[GenericObject]:
         """Java name for the martial-arts list (Hero.getManeuvers)."""

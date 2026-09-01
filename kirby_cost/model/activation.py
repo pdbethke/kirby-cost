@@ -10,13 +10,16 @@ is not, and a bare 19 is why two code paths disagreed for months without
 anyone noticing.
 
 v1 knows exactly one condition: a purchase limited to the character's Hero
-identity (the OIHID limitation). Focus limitations, charges and activation
-rolls fit the same shape and are deliberately NOT implemented — one condition,
-built so a second is cheap.
+identity (the OIHID limitation, printed "Only In Alternate Identity"; the
+Limitation is described at 6E1 p.386, and the book's own index names that
+page). It restricts a power to one of the character's two identities, so a
+character out of costume simply does not have it. Focus limitations, charges
+and activation rolls fit the same shape and are deliberately NOT implemented —
+one condition, built so a second is cheap.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from kirby_cost.objects.base import GenericObject
 
@@ -63,7 +66,14 @@ class CharacteristicState:
 
     xmlid: str
     base: float
-    contributions: list[Contribution] = field(default_factory=list)
+    contributions: tuple[Contribution, ...] = ()
+
+    def __post_init__(self) -> None:
+        # `frozen=True` freezes the ATTRIBUTE, not what it points at: with a
+        # plain list, `state.contributions.append(...)` still mutated a
+        # supposedly-immutable state. Callers hand in whatever sequence is
+        # convenient (the hero builds a list), so coerce once, here.
+        object.__setattr__(self, "contributions", tuple(self.contributions))
 
     def active(self, ctx: ActivationContext) -> list[Contribution]:
         return [c for c in self.contributions if c.applies(ctx)]
@@ -77,8 +87,8 @@ class CharacteristicState:
         return f"{self.xmlid} {self.value(ctx):g} = " + " ".join(parts)
 
 
-def _has_hero_id_limitation(obj) -> bool:
-    """True if ``obj`` carries the Only-In-Hero-ID limitation (xmlid OIHID).
+def _carries_oihid(modifiers) -> bool:
+    """True if this modifier list holds OIHID.
 
     Uses ``GenericObject.find_object_by_id``, the engine's own idiom for
     locating an assigned modifier by xmlid (see e.g.
@@ -87,8 +97,54 @@ def _has_hero_id_limitation(obj) -> bool:
     through List/CompoundPower containers, unlike a hand-rolled scan.
     """
     return GenericObject.find_object_by_id(
-        getattr(obj, "assigned_modifiers", None) or [], "OIHID"
-    ) is not None
+        list(modifiers or []), "OIHID") is not None
+
+
+def _enclosing_purchases(obj):
+    """Yield the purchases whose own limitations also bind ``obj``.
+
+    A slot in a Power Framework is constrained by the pool's limitations, and
+    a part of a Compound Power by the Compound Power's — which is why HD
+    prints them on each slot (``base.py``'s ``modifier_string``) and why
+    Java's ``getAllAssignedModifiers`` (``base.py``'s
+    ``_java_all_assigned_modifiers``) combines an object's own modifiers with
+    its parent list's. Those two are the precedent this follows.
+
+    It walks the whole chain rather than Java's single hop, because a part of
+    a Compound Power that is itself a Multipower slot sits two levels down:
+    ``main_power`` reaches the Compound Power, whose ``parent`` is the pool.
+    """
+    node = obj
+    seen = {id(obj)}
+    while True:
+        nxt = getattr(node, "main_power", None)
+        if nxt is None:
+            nxt = getattr(node, "parent", None)
+        if nxt is None or id(nxt) in seen:
+            return
+        seen.add(id(nxt))
+        yield nxt
+        node = nxt
+
+
+def _has_hero_id_limitation(obj) -> bool:
+    """True if the Only-In-Hero-ID limitation (xmlid OIHID) binds ``obj``.
+
+    Either because the purchase carries it, or because something enclosing it
+    does — see ``_enclosing_purchases``. An enclosing object's PRIVATE
+    modifiers are skipped: a List moves those out of the shared list
+    (``List.separatePrivateMods``) precisely because they price the pool and
+    do not reach its slots, and ``modifier_string`` skips them for the same
+    reason.
+    """
+    if _carries_oihid(getattr(obj, "assigned_modifiers", None)):
+        return True
+    for enclosing in _enclosing_purchases(obj):
+        inherited = [m for m in (getattr(enclosing, "assigned_modifiers", None) or [])
+                     if not getattr(m, "private", False)]
+        if _carries_oihid(inherited):
+            return True
+    return False
 
 
 def contribution_from_purchase(obj) -> "Contribution | None":
