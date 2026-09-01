@@ -27,7 +27,7 @@ from kirby_cost.campaign.rules import (
 )
 from kirby_cost.io.hdc_loader import HDCLoader
 from kirby_cost.template.dataclasses import TemplateData
-from tests.corpus import authored_hdc
+from tests.corpus import require_authored_hdc
 
 
 def _find(hero, xmlid: str):
@@ -49,10 +49,6 @@ def _find(hero, xmlid: str):
     return None
 
 
-@pytest.mark.skipif(
-    authored_hdc("Ravel") is None,
-    reason="KIRBY_COST_AUTHORED unset, or Ravel is not in it",
-)
 def test_forcing_level_cost_reprices_the_power(provider):
     """The capability that actually works, locked in end to end.
 
@@ -73,7 +69,9 @@ def test_forcing_level_cost_reprices_the_power(provider):
     re-measured, not silently keep passing against a formula that happens to
     fit.
     """
-    hdc = authored_hdc("Ravel")
+    # No skip guard: Ravel ships in tests/fixtures/authored/, so his absence
+    # is a deleted tracked file and belongs in red, not in a skip.
+    hdc = require_authored_hdc("Ravel")
 
     # Establish the untouched shape first, so both assertions below are
     # provably about the SAME power, not two different objects that merely
@@ -166,6 +164,7 @@ _EFFECTIVE_FIELD_VALUES = {
     "excludes": ("LOS",),
     "requires": ("AOE",),
     "requires_all": True,
+    "characteristic": "INT",
 }
 
 

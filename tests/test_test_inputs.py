@@ -6,7 +6,10 @@ decides what it was pointed at — so a quiet mistake in either one restores
 exactly the failure mode the guard was built to catch.
 """
 import os
+import pathlib
 from pathlib import Path
+
+import pytest
 
 from tests import corpus
 from tests.conftest import _parse_env_file, _skip_reason
@@ -51,12 +54,50 @@ class TestMissingInputs:
         """Subset, not equality: whether GENERATED is also missing depends on
         whether this checkout has generated its fixtures, and asserting on that
         would make this test pass or fail by machine — the very thing the guard
-        exists to stop."""
+        exists to stop.
+
+        Exempted: an input the repository itself satisfies. Unset is only
+        "missing" when nothing else supplies it.
+        """
         for var in corpus.INPUTS:
             monkeypatch.delenv(var, raising=False)
         missing = corpus.missing_inputs()
         for var in corpus.INPUTS:
+            if corpus._satisfied_by_bundle(var):
+                continue
             assert var in missing
+
+    def test_an_input_the_repository_bundles_is_not_missing(self, monkeypatch):
+        """KIRBY_COST_AUTHORED, unset, on a checkout that carries the files.
+
+        This is the tightening, not a loophole: the three authored .hdc files
+        ship, so those tests can run everywhere, so an unset variable must
+        stop excusing a skip. Before this, a default local run reported the
+        variable missing and the guard let 14 skips pass unremarked.
+        """
+        monkeypatch.delenv("KIRBY_COST_AUTHORED", raising=False)
+        for name in ("Ravel", "Bokor", "PowerLad"):
+            assert (corpus.BUNDLED_AUTHORED / f"{name}.hdc").is_file(), name
+        assert corpus._satisfied_by_bundle("KIRBY_COST_AUTHORED")
+        assert "KIRBY_COST_AUTHORED" not in corpus.missing_inputs()
+        # And it is still resolvable, with no variable set at all.
+        assert corpus.authored_hdc("Bokor") is not None
+
+    def test_the_variable_still_overrides_the_bundled_copy(self, monkeypatch, tmp_path):
+        """Anyone may point at their own document store; the bundle is a floor."""
+        mine = tmp_path / "Ravel.hdc"
+        mine.write_text("<CHARACTER/>")
+        monkeypatch.setenv("KIRBY_COST_AUTHORED", str(tmp_path))
+        assert corpus.authored_hdc("Ravel") == mine
+        # A name the override does not carry still falls back to the bundle.
+        assert corpus.authored_hdc("Bokor") == corpus.BUNDLED_AUTHORED / "Bokor.hdc"
+
+    def test_a_missing_bundled_character_raises_rather_than_skips(self, monkeypatch):
+        """The canonical path has no skip guard, so absence must be loud."""
+        monkeypatch.delenv("KIRBY_COST_AUTHORED", raising=False)
+        monkeypatch.setattr(corpus, "BUNDLED_AUTHORED", pathlib.Path("/nonexistent"))
+        with pytest.raises(FileNotFoundError, match="Ravel"):
+            corpus.require_authored_hdc("Ravel")
 
     def test_a_path_that_does_not_exist_counts_as_missing(self, monkeypatch):
         """The dangerous case: configured-looking, absent in fact.

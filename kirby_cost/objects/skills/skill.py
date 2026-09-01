@@ -80,6 +80,12 @@ class Skill(GenericObject):
         
         # Characteristic
         self.characteristic: int = 0
+        #: Whether the CHARACTERISTIC came from the document rather than the
+        #: template. The document outranks the template exactly as
+        #: ``_base_cost_from_xml`` does: a character who chose to run a
+        #: Knowledge Skill off INT said so, and the template's default must not
+        #: overwrite that on the way back in.
+        self._characteristic_from_xml: bool = False
         self.characteristic_choices: List[CharacteristicChoice] = []
         
         # Familiarity and proficiency
@@ -125,6 +131,45 @@ class Skill(GenericObject):
             self._minimum_cost = 1.0
             self.min_set = True
     
+    def apply_template(self, tmpl, option_id: str = None) -> None:
+        """Apply template defaults, including WHICH characteristic this rolls against.
+
+        6E1 p57 splits skills by what they roll against: an Intellect, Agility
+        or Interaction Skill takes its base roll from a characteristic, while a
+        Background Skill mostly does not. The template is the only thing that
+        says which a given skill is -- it names the characteristic inside
+        ``<CHARACTERISTIC_CHOICE>`` and never as an attribute of the skill
+        element -- and the provider dropped that name, so every skill loaded as
+        GENERAL and every roll came out the same number.
+
+        Sets the IDENTITY only. ``set_characteristic`` is deliberately not
+        called, and NOT because it would misbehave -- as of today it does
+        nothing at all, since ``characteristic_choices`` is never populated
+        (the parse is still the commented-out stub below, and every loaded
+        skill carries an empty list). The reason is that it would be
+        REDUNDANT-THEN-WRONG: ``hdt_provider._template_data`` already folds the
+        chosen ITEM's BASECOST/LVLCOST/LVLVAL into this very ``TemplateData``,
+        and ``super().apply_template()`` has just applied them under the
+        established precedence gates. Identity and costs therefore agree by
+        construction -- they come from the same ITEM. Calling
+        ``set_characteristic`` would be a SECOND application of those same
+        costs, outside those gates.
+
+        Which matters most on the day someone implements the
+        ``CHARACTERISTIC_CHOICE`` parse: that single change makes
+        ``set_characteristic`` live and makes calling it here a double-apply,
+        both at once. Wire the choices if you like; do not route this through
+        them.
+        """
+        super().apply_template(tmpl, option_id)
+        forced = "characteristic" in (getattr(tmpl, "campaign_forced", None)
+                                      or frozenset())
+        if self._characteristic_from_xml and not forced:
+            return
+        stated = (getattr(tmpl, "characteristic", "") or "").strip()
+        if stated:
+            self.characteristic = characteristic_integer(stated)
+
     def set_characteristic(self, characteristic: int) -> None:
         """Set the characteristic type."""
         for choice in self.characteristic_choices:
@@ -655,6 +700,9 @@ class Skill(GenericObject):
         # Parse skill-specific XML attributes
         if element is None:
             return
+
+        if (element.get("CHARACTERISTIC", "") or "").strip():
+            self._characteristic_from_xml = True
 
         char_str = element.get("CHARACTERISTIC", "")
         if char_str and char_str.strip():

@@ -298,6 +298,11 @@ def _template_data(entry: dict[str, Any], *, is_power: bool) -> TemplateData:
     options = entry.get("options") or []
     if options and "BASECOST" not in a:
         base_cost = _f(_attrs(options[0]), "BASECOST")
+    # The same ITEM that prices the skill also NAMES the characteristic its
+    # roll is taken against, and only the choice states it.
+    characteristic = ""
+    if isinstance(choice, dict):
+        characteristic = (choice.get("characteristic") or "").strip().upper()
     if isinstance(choice, dict):
         if "BASECOST" not in a:
             base_cost = float(choice.get("base_cost") or 0.0)
@@ -334,6 +339,7 @@ def _template_data(entry: dict[str, Any], *, is_power: bool) -> TemplateData:
         # template has no say in it, so this stays empty.
         class_name="",
         base_value=_f(a, "BASE"),
+        characteristic=characteristic,
         all_cost=_f(a, "ALLCOST", -1.0),
         group_cost=_f(a, "GROUPCOST", -1.0),
         sense_cost=_f(a, "SENSECOST", -1.0),

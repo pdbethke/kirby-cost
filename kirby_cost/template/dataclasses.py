@@ -142,6 +142,19 @@ class TemplateData:
     # ``BASE="10"`` on ``<STR>``, ``BASE="2"`` on ``<SPD>`` etc.). 0.0
     # for non-characteristic templates (powers, skills, modifiers).
     base_value: float = 0.0
+    #: The characteristic a skill's roll is taken against, as the template
+    #: names it ("INT", "DEX", ...) or "" where the template names none.
+    #: A skill states this in its <CHARACTERISTIC_CHOICE> block rather than as
+    #: an attribute of its own element, and HD offers the character a choice
+    #: where more than one ITEM is listed; the FIRST is what HD presents by
+    #: default, and is what the element means when nothing else selects one.
+    #: 6E1 p57: an Intellect, Agility or Interaction Skill rolls against a
+    #: base derived from that characteristic; Background Skills mostly do not,
+    #: and their template says GENERAL. Parsed by HDTParser for the COSTS
+    #: since the start; the identity of the characteristic itself was dropped
+    #: here, so every characteristic-based skill in the engine rolled as if it
+    #: were general.
+    characteristic: str = ""
     # Sense rates, straight off the element (``ALLCOST`` / ``GROUPCOST`` /
     # ``SENSECOST``). HD charges a sense adder at one of three rates depending
     # on whether it was bought for every sense, a sense group, or one sense —

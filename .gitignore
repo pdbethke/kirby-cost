@@ -72,4 +72,27 @@ legal/
 # roundtrip_hd6_costs.json is one character's costed build. Same rule.
 tests/fixtures/oracle/
 tests/fixtures/*.hdc
+tests/fixtures/**/*.hdc
 tests/fixtures/roundtrip_hd6_costs.json
+
+# DELIBERATELY TRACKED, and the only .hdc files in the repository:
+# tests/fixtures/authored/{Ravel,Bokor,PowerLad}.hdc are PeterB's own
+# characters, built on stock templates and cleared by him for publication
+# (2026-09-01). They are here so the canonical load path -- HDCLoader on a
+# real HD-saved file -- runs by default instead of only where an environment
+# variable happened to be set.
+#
+# The `tests/fixtures/**/*.hdc` line above is what makes these three
+# negations load-bearing, and it was added for that reason. `*.hdc` alone
+# does not match a subdirectory, so before it every .hdc under
+# tests/fixtures/authored/ was tracked by default -- including any licensed
+# third-party character dropped there, which `git add -A` would have staged
+# without a word. Deny everything under tests/fixtures/, re-admit exactly
+# three by name.
+#
+# THREE FILES, NO MORE. Nothing else from that document store may be added:
+# the rest is licensed third-party content and personal campaign material,
+# including the variants that sit beside these (background sheets, kits).
+!tests/fixtures/authored/Ravel.hdc
+!tests/fixtures/authored/Bokor.hdc
+!tests/fixtures/authored/PowerLad.hdc

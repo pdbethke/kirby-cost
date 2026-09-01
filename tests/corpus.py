@@ -5,6 +5,14 @@ corpus, and not the character files those are built from. Tests that cost real
 published characters therefore need somewhere to find them, and must skip
 cleanly when they cannot.
 
+One exception, added 2026-09-01: ``tests/fixtures/authored/`` holds three
+.hdc files — ``Ravel.hdc``, ``Bokor.hdc`` and ``PowerLad.hdc``. They are the
+maintainer's OWN characters, built on stock templates, cleared for
+publication. They are the only .hdc files in the repository, and they are here
+so that the canonical load path — ``HDCLoader`` on a real HD-saved file — runs
+by default rather than only on the one machine with a variable set. See
+``authored_hdc``.
+
 Two roots, both overridable, both optional:
 
 ``KIRBY_COST_CORPUS``
@@ -116,13 +124,23 @@ def roundtrip_hdc() -> Optional[Path]:
     return _from_env("KIRBY_COST_ROUNDTRIP_HDC")
 
 
+#: The authored characters that ship WITH the repository: Ravel, Bokor and
+#: PowerLad, the maintainer's own creations, built on stock templates and
+#: cleared by him for publication — so the canonical load path has real
+#: HD-saved .hdc files to run against on every machine, with nothing to
+#: configure. Nothing else from his document store may join them: the rest of
+#: that directory is licensed third-party material, and so are the variant
+#: files (background sheets, equipment kits) sitting beside these three.
+BUNDLED_AUTHORED = Path(__file__).resolve().parent / "fixtures" / "authored"
+
+
 def authored_root() -> Optional[Path]:
     """A directory holding the authored characters, or None.
 
     The three characters the maintainer has cleared for use as corpus, by
-    name: ``Ravel.hdc``, ``Bokor.hdc``, ``PowerLad.hdc``. They are not
-    redistributed — only the oracle's JSON dumps of them are, and those carry
-    costs and display strings and no campaign material.
+    name: ``Ravel.hdc``, ``Bokor.hdc``, ``PowerLad.hdc``. All three are now
+    bundled (see ``BUNDLED_AUTHORED``), so this variable is an override rather
+    than the only way to find them.
 
     A directory rather than three variables, and no default, for the reason
     ``roundtrip_hdc`` records: a path into a maintainer's home is not
@@ -133,12 +151,47 @@ def authored_root() -> Optional[Path]:
 
 
 def authored_hdc(name: str) -> Optional[Path]:
-    """``<authored root>/<name>.hdc``, if the root is set and the file exists."""
+    """The authored character's .hdc: the configured store first, then bundled.
+
+    The environment variable still wins, so a maintainer pointing at his own
+    document store gets his working copies, and anyone can point it at a
+    directory of their own. What changed is the floor: ``tests/fixtures/
+    authored/`` is searched when the variable names nothing useful, so the
+    bundled characters are found by default and the canonical load path is
+    exercised on every machine.
+
+    Why that matters is worth stating plainly. ``HDCLoader`` is this project's
+    canon — an HD-saved .hdc carries fields the oracle's JSON dump drops, and
+    a test that asserts against the dump is asserting against a lossy copy.
+    Gating the canonical test on an unset variable meant the lossy tests ran
+    and the faithful one did not; two "regressions" were reported in one
+    evening that existed only in the dump. Canonical implies default.
+    """
     root = authored_root()
-    if root is None:
-        return None
-    candidate = root / f"{name}.hdc"
-    return candidate if candidate.exists() else None
+    if root is not None:
+        configured = root / f"{name}.hdc"
+        if configured.exists():
+            return configured
+    bundled = BUNDLED_AUTHORED / f"{name}.hdc"
+    return bundled if bundled.exists() else None
+
+
+def require_authored_hdc(name: str) -> Path:
+    """``authored_hdc(name)``, or raise.
+
+    For a bundled character, absence is not "unrunnable on this machine" — it
+    is a tracked file someone deleted, and the run should say so in red. Tests
+    on the canonical path call this instead of carrying a skip guard.
+    """
+    found = authored_hdc(name)
+    if found is None:
+        raise FileNotFoundError(
+            f"{name}.hdc was not found in KIRBY_COST_AUTHORED nor bundled at "
+            f"{BUNDLED_AUTHORED}. If {name} is one of the bundled three, the "
+            f"tracked fixture has gone missing; restore it rather than "
+            f"skipping the canonical load path."
+        )
+    return found
 
 
 #: Every input the suite can be pointed at: variable -> what it should name.
@@ -150,6 +203,11 @@ INPUTS = {
     "KIRBY_COST_HERO_DOCS": "a HERO Designer document store",
     "KIRBY_COST_HD6CLI": "the headless HERO Designer comparison CLI",
     "KIRBY_COST_ROUNDTRIP_HDC": "a structurally complex .hdc to roundtrip",
+    # Still an input, and still honoured: it overrides the bundled copies for
+    # anyone working against their own document store. It is deliberately NOT
+    # removed from this table — `conftest.py` reads INPUTS both to report what
+    # a run was configured with and to decide whether a skip is a defect, and
+    # an input that is satisfiable two ways is still an input.
     "KIRBY_COST_AUTHORED": "a directory of the three authored .hdc characters",
 }
 
@@ -186,7 +244,7 @@ def missing_sibling_templates() -> "list[str]":
     return [t for t in REQUIRED_SIBLING_TEMPLATES if not (d / t).is_file()]
 
 
-_FIXTURES = Path(__file__).resolve().parent / "fixtures"
+_FIXTURES = BUNDLED_AUTHORED.parent
 
 #: Inputs that are not environment variables but generated files, kept out of
 #: the repository by .gitignore because they are derived Hero Games content —
@@ -209,6 +267,28 @@ def _generated_present(name: str) -> bool:
     return (_FIXTURES / name.rsplit("/", 1)[-1]).exists()
 
 
+#: Names an input can be satisfied by without any environment variable,
+#: because the repository now carries what it points at. Only
+#: KIRBY_COST_AUTHORED qualifies: its three characters are bundled.
+#:
+#: This is not a bypass of the skip guard, it is the reason the guard can
+#: tighten. An input that is present is not missing, and `conftest.py` fails a
+#: run that skips while nothing is missing -- so a machine with no
+#: KIRBY_COST_AUTHORED set is now HELD to running the authored-character
+#: tests, instead of being excused from them.
+_BUNDLE_SATISFIES = {
+    "KIRBY_COST_AUTHORED": lambda: all(
+        (BUNDLED_AUTHORED / f"{name}.hdc").is_file()
+        for name in ("Ravel", "Bokor", "PowerLad")
+    ),
+}
+
+
+def _satisfied_by_bundle(var: str) -> bool:
+    check = _BUNDLE_SATISFIES.get(var)
+    return bool(check and check())
+
+
 def missing_inputs() -> "list[str]":
     """Which inputs are absent — unset, mispointed, or never generated.
 
@@ -216,12 +296,17 @@ def missing_inputs() -> "list[str]":
     names a path which no longer exists is the more dangerous of the two —
     it reads as configured and behaves as absent.
 
+    An input the repository itself now satisfies does not count as missing —
+    see `_BUNDLE_SATISFIES`. The variable still overrides it; what it no
+    longer does is decide whether those tests run at all.
+
     `GENERATED` is folded in for one reason: `conftest.py` fails a run that
     skips while nothing is missing, and without these a fresh clone with all
     five variables set would still skip 45 tests and be told its coverage had
     gone missing, when in truth it had never generated the fixtures.
     """
     return (
-        [var for var in INPUTS if _from_env(var) is None]
+        [var for var in INPUTS
+         if _from_env(var) is None and not _satisfied_by_bundle(var)]
         + [name for name in GENERATED if not _generated_present(name)]
     )
