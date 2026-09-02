@@ -147,11 +147,45 @@ def _has_hero_id_limitation(obj) -> bool:
     return False
 
 
+def _affects_the_characteristic(obj) -> bool:
+    """True if HD counts this purchase toward the character's totals.
+
+    ``AFFECTS_PRIMARY`` / ``AFFECTS_TOTAL`` are HD's own record of whether a
+    purchase raises the character's characteristic or merely sits on the
+    sheet as a situational ability, and they are written into every HDC
+    element (``CharAffectingObject.XML_ATTRS``). Primary implies total, which
+    is why this reads the ``affect_total`` property rather than the raw
+    attribute — that property is the Java port's implication rule
+    (``char_affecting.py``), not a convenience wrapper.
+
+    This is the difference between two purchases that otherwise look
+    identical to this module:
+
+      * White Wolf's +30 STR is ``AFFECTS_TOTAL="Yes"``: it is part of his
+        numbers, conditioned on being in costume. It contributes.
+      * Gorgon's "Tail" +20 STR is ``AFFECTS_TOTAL="No"``, and its
+        limitation is aliased "Only With Tail" — a restrainable limb, not a
+        general increase. HD does not add it to his STR, and neither does
+        this. Same for a Multipower slot like Ravel's "Reinforced String".
+
+    A purchase HD excludes from the total is situational by construction,
+    and the situation is exactly what v1 does not model. Counting it would
+    hand every such character a permanent bonus the character sheet does
+    not give them: measured, it made Gorgon STR 80 instead of 60 in every
+    calculation, thrown-object damage included.
+
+    Objects with no such flags (anything that is not a
+    ``CharAffectingObject``) default to True, matching the class default.
+    """
+    return bool(getattr(obj, "affect_total", True))
+
+
 def contribution_from_purchase(obj) -> "Contribution | None":
     """Describe what a purchased object contributes to a characteristic.
 
     Returns None when the object contributes nothing — it is not a
-    characteristic purchase, or it buys no levels.
+    characteristic purchase, it buys no levels, or HD does not count it
+    toward the character's total (see ``_affects_the_characteristic``).
 
     The Hero-identity limitation is xmlid ``OIHID`` in the HD model.
     """
@@ -160,6 +194,8 @@ def contribution_from_purchase(obj) -> "Contribution | None":
         return None
     levels = float(getattr(obj, "levels", 0) or 0)
     if levels == 0:
+        return None
+    if not _affects_the_characteristic(obj):
         return None
     name = (getattr(obj, "name", None) or "").strip()
     return Contribution(

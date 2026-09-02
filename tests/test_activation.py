@@ -168,9 +168,19 @@ def test_ravels_multipower_slot_inherits_from_the_real_document():
 
     The .hdc path is the one that rebuilds framework membership, so this is
     where the inheritance is observable on real data.
+
+    RE-DERIVED: this slot is also ``AFFECTS_TOTAL="No"``, so it now yields no
+    contribution at all and the old assertion (``.requires_hero_id is True``)
+    can no longer be written — it would raise on None. The inheritance itself
+    is unchanged and still worth proving on the real document, so the test
+    asserts the predicate directly, then pins the interaction: HD's exclusion
+    wins over an inherited condition, because a purchase HD keeps out of the
+    total contributes nothing to condition.
     """
     from kirby_cost.io.hdc_loader import HDCLoader
-    from kirby_cost.model.activation import contribution_from_purchase
+    from kirby_cost.model.activation import (
+        _has_hero_id_limitation, contribution_from_purchase,
+    )
 
     hero = HDCLoader().load_file("tests/fixtures/authored/Ravel.hdc")
     strs = [p for p in hero.powers
@@ -180,7 +190,9 @@ def test_ravels_multipower_slot_inherits_from_the_real_document():
     assert not [m for m in slot.assigned_modifiers if m.xmlid == "OIHID"], (
         "the slot must NOT carry OIHID itself, or this proves nothing")
     assert slot.parent is not None and slot.parent.xmlid == "MULTIPOWER"
-    assert contribution_from_purchase(slot).requires_hero_id is True
+    assert _has_hero_id_limitation(slot) is True
+    assert slot.affect_total is False
+    assert contribution_from_purchase(slot) is None
 
 
 # --------------------------------------------------------------------------
@@ -263,11 +275,103 @@ def test_a_characteristic_nobody_bought_as_a_power_is_just_its_base():
     assert hero.temporal_characteristic("EGO") == hero.characteristic_value("EGO")
 
 
-def test_the_walk_counts_a_framework_slot_exactly_once():
-    """A pool holds its slots in `objects` AND the loader lists them flat."""
+def test_the_walk_counts_a_framework_slot_exactly_once(monkeypatch):
+    """A pool holds its slots in `objects` AND the loader lists them flat.
+
+    RE-DERIVED: this used to count the contributions the slot produced, which
+    stopped working when HD's own AFFECTS_TOTAL="No" removed the slot from the
+    total — a walk that visited it twice would now read zero either way, so
+    the old assertion could no longer fail. Counting VISITS instead keeps the
+    double-counting guard on the real document and makes it independent of
+    whether the slot contributes.
+    """
+    from kirby_cost.io import hdc_loader as loader_mod
+    from kirby_cost.io.hdc_loader import HDCLoader
+    from kirby_cost.model import activation
+
+    hero = HDCLoader().load_file("tests/fixtures/authored/Ravel.hdc")
+    slot = next(p for p in hero.powers
+                if (p.name or "").strip() == "Reinforced String")
+    assert slot.parent is not None and slot.parent.xmlid == "MULTIPOWER", (
+        "the fixture must still hold this STR as a POOLED slot")
+
+    visits = []
+    real = activation.contribution_from_purchase
+
+    def counting(obj):
+        visits.append(id(obj))
+        return real(obj)
+
+    monkeypatch.setattr(activation, "contribution_from_purchase", counting)
+    monkeypatch.setattr(loader_mod, "contribution_from_purchase", counting,
+                        raising=False)
+    hero.characteristic_state("STR")
+
+    assert visits, "the walk visited nothing — the spy is not wired in"
+    assert visits.count(id(slot)) == 1
+
+
+# ── HD's own totals flags ───────────────────────────────────────────────────
+# AFFECTS_PRIMARY / AFFECTS_TOTAL are how HD records whether a purchase
+# raises the character's characteristic or merely sits on the sheet as a
+# situational ability. A purchase HD excludes from the total is situational
+# by construction, and the situation is what v1 does not model — so counting
+# it would give the character a permanent bonus their sheet does not.
+
+
+class _Purchase:
+    """The smallest thing contribution_from_purchase reads."""
+
+    def __init__(self, xmlid, levels, name="", affect_total=True):
+        self.xmlid = xmlid
+        self.levels = levels
+        self.name = name
+        self.affect_total = affect_total
+        self.assigned_modifiers = []
+
+
+def test_a_purchase_hd_excludes_from_the_total_contributes_nothing():
+    from kirby_cost.model.activation import contribution_from_purchase
+
+    tail = _Purchase("STR", 20, name="Tail", affect_total=False)
+    assert contribution_from_purchase(tail) is None
+
+
+def test_a_purchase_hd_counts_toward_the_total_still_contributes():
+    from kirby_cost.model.activation import contribution_from_purchase
+
+    c = contribution_from_purchase(_Purchase("STR", 30, name="Wolf Strength"))
+    assert c is not None
+    assert c.delta == 30.0 and c.source_label == "Wolf Strength"
+
+
+def test_an_object_with_no_totals_flags_still_contributes():
+    """Only a CharAffectingObject carries the flags; everything else keeps
+    the class default of True rather than silently dropping out."""
+    from kirby_cost.model.activation import contribution_from_purchase
+
+    class _Flagless:
+        xmlid, levels, name = "DEX", 5, "Nimble"
+        assigned_modifiers = ()
+
+    assert contribution_from_purchase(_Flagless()) is not None
+
+
+def test_ravels_pooled_str_slot_is_excluded_by_hds_own_flag():
+    """"Reinforced String" is AFFECTS_PRIMARY="No" AFFECTS_TOTAL="No".
+
+    It is a Multipower slot: one allocation of nineteen, and HD does not add
+    it to Ravel's STR. The docstring on ``characteristic_state`` used to warn
+    that a pooled slot OVERSTATES the character — for this slot the warning is
+    now unnecessary, because HD already said it does not count.
+    """
     from kirby_cost.io.hdc_loader import HDCLoader
 
     hero = HDCLoader().load_file("tests/fixtures/authored/Ravel.hdc")
+    slot = next(p for p in hero.powers
+                if (p.name or "").strip() == "Reinforced String")
+    assert slot.affect_total is False, "fixture no longer has the flag"
+
     st = hero.characteristic_state("STR")
-    assert len(st.contributions) == 1
-    assert st.contributions[0].delta == 30.0
+    assert [c.source_label for c in st.contributions] == []
+    assert st.value(ActivationContext(in_hero_id=True)) == st.base
