@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from kirby_cost.objects.base import GenericObject
+from kirby_cost.model.modifiers import has_modifier
 
 
 @dataclass(frozen=True)
@@ -87,64 +87,16 @@ class CharacteristicState:
         return f"{self.xmlid} {self.value(ctx):g} = " + " ".join(parts)
 
 
-def _carries_oihid(modifiers) -> bool:
-    """True if this modifier list holds OIHID.
-
-    Uses ``GenericObject.find_object_by_id``, the engine's own idiom for
-    locating an assigned modifier by xmlid (see e.g.
-    ``kirby_cost/objects/base.py``'s ``duration`` property, which builds
-    ``has``/``has_own`` closures around exactly this call). It recurses
-    through List/CompoundPower containers, unlike a hand-rolled scan.
-    """
-    return GenericObject.find_object_by_id(
-        list(modifiers or []), "OIHID") is not None
-
-
-def _enclosing_purchases(obj):
-    """Yield the purchases whose own limitations also bind ``obj``.
-
-    A slot in a Power Framework is constrained by the pool's limitations, and
-    a part of a Compound Power by the Compound Power's — which is why HD
-    prints them on each slot (``base.py``'s ``modifier_string``) and why
-    Java's ``getAllAssignedModifiers`` (``base.py``'s
-    ``_java_all_assigned_modifiers``) combines an object's own modifiers with
-    its parent list's. Those two are the precedent this follows.
-
-    It walks the whole chain rather than Java's single hop, because a part of
-    a Compound Power that is itself a Multipower slot sits two levels down:
-    ``main_power`` reaches the Compound Power, whose ``parent`` is the pool.
-    """
-    node = obj
-    seen = {id(obj)}
-    while True:
-        nxt = getattr(node, "main_power", None)
-        if nxt is None:
-            nxt = getattr(node, "parent", None)
-        if nxt is None or id(nxt) in seen:
-            return
-        seen.add(id(nxt))
-        yield nxt
-        node = nxt
-
-
 def _has_hero_id_limitation(obj) -> bool:
     """True if the Only-In-Hero-ID limitation (xmlid OIHID) binds ``obj``.
 
-    Either because the purchase carries it, or because something enclosing it
-    does — see ``_enclosing_purchases``. An enclosing object's PRIVATE
-    modifiers are skipped: a List moves those out of the shared list
-    (``List.separatePrivateMods``) precisely because they price the pool and
-    do not reach its slots, and ``modifier_string`` skips them for the same
-    reason.
+    Either because the purchase carries it or because something enclosing it
+    does. Both rules — recursion through containers, and inheritance from an
+    enclosing purchase minus its PRIVATE modifiers — now live in
+    ``kirby_cost.model.modifiers``, which is also what kirby-combat asks, so
+    the three copies of this walk that used to disagree are one.
     """
-    if _carries_oihid(getattr(obj, "assigned_modifiers", None)):
-        return True
-    for enclosing in _enclosing_purchases(obj):
-        inherited = [m for m in (getattr(enclosing, "assigned_modifiers", None) or [])
-                     if not getattr(m, "private", False)]
-        if _carries_oihid(inherited):
-            return True
-    return False
+    return has_modifier(obj, "OIHID")
 
 
 def _affects_the_characteristic(obj) -> bool:
