@@ -27,18 +27,21 @@ class ChangeEnvironment(Power, xmlid="CHANGEENVIRONMENT"):
         """Empty in 6E. The 5E branch computed a radius from the level power;
         6E states the area through an Area Of Effect modifier instead."""
         return ""
-    def can_add(self, adder) -> bool:
-        """
-        Check if adder can be added.
-        
-        Special logic for MULTIPLECOMBATEFFECTS, VARYINGCOMBATEFFECTS, LONG.
-        """
-        can_add = super().can_add(adder)
-        if not can_add:
-            return False
-        
-        # Stub: would check for MULTIPLECOMBATEFFECTS logic
-        return True
+    # NOTE: no ``can_add`` here. There was one, and it was worse than nothing:
+    # it called ``super().can_add(adder)``, which does not exist anywhere in
+    # the engine, so ANY call raised AttributeError — while its docstring
+    # advertised "special logic for MULTIPLECOMBATEFFECTS,
+    # VARYINGCOMBATEFFECTS, LONG" that its body (a bare ``return True``) did
+    # not contain. Nothing in kirby-cost, kirby-combat or kirby-api ever
+    # called it, which is the only reason it never crashed anything.
+    #
+    # Adder/option VALIDATION — which adders a given power legally accepts —
+    # is a capability this engine deliberately does not have (see
+    # ChangeEnvironment.canAdd in the Java source for the shape it would
+    # take). It is not needed to COST an imported build: HD validated the
+    # character before it was ever saved. It becomes necessary when a build is
+    # assembled here rather than imported, and at that point it wants a
+    # template-derived matrix and a spec, not a stub that answers True.
 
     @property
     def column2_output(self) -> str:

@@ -451,22 +451,53 @@ class LoadedHero:
         )
 
         want = (xmlid or "").upper()
-        contributions: list = []
+        return self.characteristic_states([want])[want]
+
+    def characteristic_states(
+        self, xmlids: "list[str] | tuple[str, ...]",
+    ) -> "dict[str, CharacteristicState]":
+        """Several characteristics' states, from ONE walk of the purchases.
+
+        ``characteristic_state`` walks the whole purchase tree to answer for a
+        single xmlid, so a caller wanting the whole stat block walked it once
+        per characteristic — around eighteen times, and
+        ``contribution_from_purchase`` ran ~1,500 times per read on a
+        medium-sized character. That is the combat AI's inner loop: measured on
+        Ravel, ``combat_stats()`` cost 1.53 ms, and 3.00 ms with a Drain active
+        (a Drain prices the block twice, to read its floor off).
+
+        Caching was the obvious fix and is the wrong one — the docstrings on
+        both callers forbid it, because Drains, Aids and identity flips have to
+        compose live. Walking once for all of them keeps every read fresh and
+        pays the walk a single time.
+
+        ``characteristic_state`` is this method with one xmlid, so there is one
+        walk to be correct rather than two to keep in step.
+        """
+        from kirby_cost.model.activation import (
+            CharacteristicState, contribution_from_purchase,
+        )
+
+        wanted = [(x or "").upper() for x in xmlids]
+        found: dict[str, list] = {x: [] for x in wanted}
 
         def visit(obj) -> None:
             c = contribution_from_purchase(obj)
-            if c is not None and c.xmlid == want:
-                contributions.append(c)
+            if c is not None and c.xmlid in found:
+                found[c.xmlid].append(c)
             for sub in (getattr(obj, "powers", None) or []):
                 visit(sub)
 
         for p in (self.powers or []):
             visit(p)
-        return CharacteristicState(
-            xmlid=want,
-            base=self.characteristic_value(want),
-            contributions=contributions,
-        )
+        return {
+            x: CharacteristicState(
+                xmlid=x,
+                base=self.characteristic_value(x),
+                contributions=found[x],
+            )
+            for x in wanted
+        }
 
     def temporal_characteristic(
         self, xmlid: str, ctx: "ActivationContext | None" = None,
