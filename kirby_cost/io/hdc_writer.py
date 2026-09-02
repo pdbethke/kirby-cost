@@ -187,7 +187,7 @@ def hero_to_element(hero: Any) -> etree._Element:
     # The character's own embedded template, after RULES as HD writes it.
     embedded = getattr(hero, "embedded_template", None)
     if embedded is not None:
-        root.append(copy.deepcopy(embedded))
+        root.append(_as_lxml(embedded))
 
     if getattr(hero, "image_data", ""):
         image = etree.SubElement(root, "IMAGE")
@@ -195,6 +195,39 @@ def hero_to_element(hero: Any) -> etree._Element:
         image.text = hero.image_data
 
     return root
+
+
+def _as_lxml(node) -> etree._Element:
+    """A preserved element, as something lxml will accept.
+
+    ``embedded_template`` is kept VERBATIM from the source rather than
+    re-serialized, because it is HD's own template block and this engine does
+    not model it. That works while the source was XML; a hero loaded through
+    the json door holds ``BuildNode``s instead, and ``root.append`` rejects
+    them outright — 15 corpus characters (every one carrying an embedded
+    template) failed to write at all, with a bare lxml TypeError.
+
+    Duck-typed rather than isinstance-checked against BuildNode, so the writer
+    does not import the loader to know about one adapter: anything shaped like
+    an element re-materialises.
+    """
+    if isinstance(node, etree._Element):
+        return copy.deepcopy(node)
+    element = etree.Element(node.tag)
+    for key, value in dict(getattr(node, "attrib", {}) or {}).items():
+        element.set(str(key), str(value))
+    text = getattr(node, "text", None)
+    if text:
+        element.text = text
+    # Tail as well as text: lxml re-indents a subtree whose whitespace it does
+    # not already hold, which turned a preserved template block into 1,698
+    # bytes of new indentation. Same document, different file.
+    tail = getattr(node, "tail", None)
+    if tail:
+        element.tail = tail
+    for child in node:
+        element.append(_as_lxml(child))
+    return element
 
 
 def _space_before_self_close(body: str) -> str:

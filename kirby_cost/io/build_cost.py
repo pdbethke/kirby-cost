@@ -25,6 +25,9 @@ class CostResult:
     points_spent: float
     per_object: dict[str, dict[str, float]] = field(default_factory=dict)
 
+from kirby_cost.io.build_json import _doc_id  # noqa: E402
+
+
 def extract_costs(hero: LoadedHero) -> CostResult:
     """Read the loaded build's live cost properties into a CostResult.
 
@@ -42,7 +45,12 @@ def extract_costs(hero: LoadedHero) -> CostResult:
             idx += 1
             rc = float(getattr(o, "real_cost", 0) or 0)
             exact += rc
-            per_object[f"O{idx}"] = {
+            # Keyed by the SAME rule the document uses (build_json._doc_id):
+            # HD's own ID where the object has one, synthetic O<n> only where
+            # it does not. These keys exist to join back to the doc, so a
+            # second numbering scheme here means they join to nothing — which
+            # is what happened the moment the doc started stating real ids.
+            per_object[_doc_id(o, idx)] = {
                 "base_cost": float(getattr(o, "base_cost", 0) or 0),
                 "active_cost": float(getattr(o, "active_cost", 0) or 0),
                 "real_cost": rc,
