@@ -375,3 +375,37 @@ def test_ravels_pooled_str_slot_is_excluded_by_hds_own_flag():
     st = hero.characteristic_state("STR")
     assert [c.source_label for c in st.contributions] == []
     assert st.value(ActivationContext(in_hero_id=True)) == st.base
+
+
+def test_the_build_doc_carries_hds_totals_flags():
+    """A rebuild that drops AFFECTS_PRIMARY/AFFECTS_TOTAL is a different character.
+
+    kirby-api stores the build doc relationally and rebuilds from it. The flags
+    were not in the doc, so a rebuilt object took the class default (True) and
+    counted a purchase HD keeps out of the totals: `Cobra.hdc` has a +2 DCV
+    power marked AFFECTS_TOTAL="No", and the database came back DCV 12 where
+    the canonical load says 10.
+
+    Emitted only when False, since True is the default on both — a character
+    with nothing situational produces the same doc as before.
+    """
+    from kirby_cost.io.build_json import build_from_json, to_build_json
+    from kirby_cost.io.formats import load_build
+
+    hero = load_build("tests/fixtures/authored/Ravel.hdc", format="hdc")
+    doc = to_build_json(hero)
+
+    slot = next(o for o in doc["powers"]
+                if (o.get("name") or "").strip() == "Reinforced String")
+    assert slot["affects_primary"] is False
+    assert slot["affects_total"] is False
+    # Unremarkable purchases stay quiet.
+    plain = next(o for o in doc["powers"]
+                 if (o.get("name") or "").strip() == "Enhanced Reflexes")
+    assert "affects_total" not in plain and "affects_primary" not in plain
+
+    # And the rebuild agrees with the original about what counts.
+    again = build_from_json(doc)
+    for xmlid in ("STR", "DEX", "SPD", "DCV"):
+        assert (again.temporal_characteristic(xmlid)
+                == hero.temporal_characteristic(xmlid)), xmlid

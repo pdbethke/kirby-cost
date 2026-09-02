@@ -34,6 +34,10 @@ _ATTR = {"levels": "LEVELS", "alias": "ALIAS",
          "min_cost": "MINCOST", "max_cost": "MAXCOST",
          "characteristic": "CHARACTERISTIC"}
 _BOOL = {"ultra_slot": "ULTRA_SLOT", "add_modifiers_to_base": "ADD_MODIFIERS_TO_BASE",
+         # See SerializationMixin.to_build_dict: these decide whether a
+         # purchase contributes to a temporal characteristic, so a rebuild
+         # that drops them is a different character.
+         "affects_primary": "AFFECTS_PRIMARY", "affects_total": "AFFECTS_TOTAL",
          # "is_power"→ISPOWER is accepted on input but NOT emitted by to_build_json
          # (is_power is derived from the element tag at load time, not stored as an
          # attribute). Does not survive a round-trip; keep for hand-authored docs.

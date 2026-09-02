@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.6.1 — 2026-09-02
+
+### Fixed
+- **The build doc carries `AFFECTS_PRIMARY` / `AFFECTS_TOTAL`.** 0.6.0 made
+  those flags decide whether a purchase contributes to a temporal
+  characteristic, but the (legacy, curated) build doc did not emit them — so a
+  consumer that stores the doc relationally and rebuilds from it took the class
+  default of True and counted purchases HD keeps out of the character's totals.
+  Measured downstream: `Cobra.hdc` carries a +2 DCV power marked
+  `AFFECTS_TOTAL="No"`, and the database rebuilt him at DCV 12 where the
+  canonical load says 10. Emitted only when False, since True is the default on
+  both, so a character with nothing situational produces the same doc as
+  before. Read from the raw attributes rather than the `affect_*` properties —
+  `affect_total`'s getter writes to `affects_total`, and serialising a
+  character is not allowed to change it.
+
+  This is the flag-carrying half of 0.6.0's behaviour change. Consumers
+  persisting the doc need columns for both, or they inherit the old answer.
+
 ## 0.6.0 — 2026-09-02
 
 The theme is **one source of truth for what a build says**. Three places had

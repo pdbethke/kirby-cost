@@ -160,6 +160,24 @@ class SerializationMixin:
             d["ultra_slot"] = False
         if getattr(self, "add_modifiers_to_base", False):
             d["add_modifiers_to_base"] = True
+        # HD's own record of whether a purchase raises the character's
+        # characteristic or merely sits on the sheet as a situational ability.
+        # It decides whether the purchase contributes to a TEMPORAL
+        # characteristic (kirby_cost.model.activation), so a consumer that
+        # rebuilds from this doc and does not carry these two flags gets a
+        # DIFFERENT CHARACTER: measured on kirby-api, a +2 DCV power marked
+        # AFFECTS_TOTAL="No" was counted, and Cobra came back DCV 12 where the
+        # canonical load says 10.
+        #
+        # Emitted only when False, because True is the class default on both —
+        # so a doc for a character with nothing situational is unchanged.
+        # Read from the raw attributes, NOT the affect_* properties:
+        # `affect_total`'s getter WRITES to affects_total when affects_primary
+        # is set, and serialising a character is not allowed to change it.
+        if getattr(self, "affects_primary", True) is False:
+            d["affects_primary"] = False
+        if getattr(self, "affects_total", True) is False:
+            d["affects_total"] = False
         self._emit_build_children(d)
         return d
 
