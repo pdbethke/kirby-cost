@@ -42,10 +42,43 @@ class BuildNode:
     attrs: dict = field(default_factory=dict)
     children: list = field(default_factory=list)
     text: str | None = None
+    #: Which attributes the SOURCE DOCUMENT stated, in its own order — or
+    #: None for "no source spoke for this object".
+    #:
+    #: The distinction decides what gets written back out. A node built from a
+    #: curated document (the legacy build doc) must say None: its keys are the
+    #: fields that emitter happened to carry, and treating them as the source's
+    #: statement would freeze template-derived values into the file as though
+    #: the character had declared them — the MINCOST="1.0" defect, which made
+    #: HD recost two of Ravel's skills 3 -> 2.
+    #:
+    #: A node decoded from the FAITHFUL json encoding (io/formats.py) is the
+    #: opposite case: its attributes are exactly the ones the document stated,
+    #: in document order, so it says so and statedness survives the trip. Left
+    #: None, the rebuild lost every explicitly-stated empty value (NAME="") and
+    #: invented a dozen defaults per element (LVLCOST, SHOWALIAS, QUANTITY...).
+    stated: tuple | None = None
 
     def get(self, name, default=None):
         v = self.attrs.get(name)
         return v if v is not None else default
+
+    def keys(self):
+        """The stated attributes, or () meaning "no source spoke".
+
+        () is what a missing ``keys()`` used to produce, so a node that does
+        not set ``stated`` behaves exactly as before.
+        """
+        return tuple(self.stated) if self.stated is not None else ()
+
+    @property
+    def attrib(self):
+        """lxml spells the attribute map ``attrib``; the loader reads it
+        directly for the RULES block (``hero.rules_attrs``). Missing, a
+        campaign's whole rules block took the character down on the json
+        path while the .hdc path loaded it fine — the adapter has to answer
+        to every name the core actually uses, not most of them."""
+        return self.attrs
 
     def find(self, tag):
         return next((c for c in self.children if c.tag == tag), None)
@@ -370,6 +403,119 @@ class LoadedHero:
         if not self._char_values:
             self.compute_characteristic_values()
         return self._char_values.get(xmlid, 0.0)
+
+    def export(self, *, format: str = "hdc"):
+        """This build, in another shape. See ``kirby_cost.io.formats``.
+
+        Imported inside the method because ``formats`` imports this module for
+        ``BuildNode`` and ``LoadedHero``.
+        """
+        from kirby_cost.io.formats import export_build
+        return export_build(self, format=format)
+
+    def characteristic_state(self, xmlid: str) -> "CharacteristicState":
+        """Base plus every contribution acting on this characteristic.
+
+        The base comes from ``characteristic_value`` — the section-only,
+        oracle-verified value Java's addModifiersToBase needs. Contributions
+        come from purchases made OUTSIDE the characteristics section: powers,
+        and powers nested in compound powers.
+
+        NOTE: the aggregation walk in ``Characteristic._calc_primary_value``
+        does something similar and is a Java port used by cost math. It is
+        deliberately NOT reused here: it sums unconditionally, and adding a
+        condition to it would put activation logic inside the cost path.
+
+        Nested purchases are read off ``powers`` — a CompoundPower's parts.
+        A Power Framework's slots are NOT read that way: the loader already
+        lists those flat in ``self.powers`` (a pool holds them in
+        ``objects``), so recursing into a pool would count every slot twice.
+
+        CAVEAT — a pooled purchase can OVERSTATE the character. A Power
+        Framework's slot is summed unconditionally, because slot allocation
+        is not modelled in v1: only one slot of a Multipower is allocated at
+        a time, so a characteristic bought as a slot is usually not in play.
+        Ravel's pool "Maleable Sting Body" holds 19 slots, one of them a +30
+        STR, and this reports ``STR 40 = 10 base +30 (Reinforced String)`` —
+        the right answer in one allocation of nineteen. v1 knows exactly one
+        condition (the Hero identity); allocation is a SECOND and a stateful
+        one, needing a chosen allocation rather than a context flag, so it
+        was deliberately left out. It fits the same shape when someone wants
+        it: another condition on ``Contribution``, gated on a context that
+        names which slot is up. Until then, treat a pooled contribution as an
+        upper bound, and read ``derivation()`` — it names the source, so a
+        slot is identifiable — rather than trusting the total blind.
+        """
+        from kirby_cost.model.activation import (
+            CharacteristicState, contribution_from_purchase,
+        )
+
+        want = (xmlid or "").upper()
+        return self.characteristic_states([want])[want]
+
+    def characteristic_states(
+        self, xmlids: "list[str] | tuple[str, ...]",
+    ) -> "dict[str, CharacteristicState]":
+        """Several characteristics' states, from ONE walk of the purchases.
+
+        ``characteristic_state`` walks the whole purchase tree to answer for a
+        single xmlid, so a caller wanting the whole stat block walked it once
+        per characteristic — around eighteen times, and
+        ``contribution_from_purchase`` ran ~1,500 times per read on a
+        medium-sized character. That is the combat AI's inner loop: measured on
+        Ravel, ``combat_stats()`` cost 1.53 ms, and 3.00 ms with a Drain active
+        (a Drain prices the block twice, to read its floor off).
+
+        Caching was the obvious fix and is the wrong one — the docstrings on
+        both callers forbid it, because Drains, Aids and identity flips have to
+        compose live. Walking once for all of them keeps every read fresh and
+        pays the walk a single time.
+
+        ``characteristic_state`` is this method with one xmlid, so there is one
+        walk to be correct rather than two to keep in step.
+        """
+        from kirby_cost.model.activation import (
+            CharacteristicState, contribution_from_purchase,
+        )
+
+        wanted = [(x or "").upper() for x in xmlids]
+        found: dict[str, list] = {x: [] for x in wanted}
+
+        def visit(obj) -> None:
+            c = contribution_from_purchase(obj)
+            if c is not None and c.xmlid in found:
+                found[c.xmlid].append(c)
+            for sub in (getattr(obj, "powers", None) or []):
+                visit(sub)
+
+        for p in (self.powers or []):
+            visit(p)
+        return {
+            x: CharacteristicState(
+                xmlid=x,
+                base=self.characteristic_value(x),
+                contributions=found[x],
+            )
+            for x in wanted
+        }
+
+    def temporal_characteristic(
+        self, xmlid: str, ctx: "ActivationContext | None" = None,
+    ) -> float:
+        """What this characteristic IS right now, conditions applied.
+
+        CAVEAT — this can OVERSTATE a character who buys characteristics
+        inside a Power Framework. A slot is summed unconditionally because
+        slot allocation is not modelled in v1, so a pooled purchase counts
+        even in the allocations where it is not in play. See
+        ``characteristic_state``, which this delegates to, for the worked
+        example and the shape of the eventual fix (allocation is another
+        ``Contribution`` condition). The one condition v1 does honour is the
+        Hero identity.
+        """
+        from kirby_cost.model.activation import ActivationContext
+
+        return self.characteristic_state(xmlid).value(ctx or ActivationContext())
 
     @property
     def maneuvers(self) -> list[GenericObject]:

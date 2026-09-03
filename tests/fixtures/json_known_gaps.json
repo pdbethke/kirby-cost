@@ -1,0 +1,15 @@
+{
+  "_comment": "JSON-door fidelity ledger for the chain .hdc -> hero -> json -> hero -> .hdc. Shrink-only, with a staleness ratchet in test_build_doc_ledger_is_not_stale. Same rules as export_known_gaps.json.",
+  "_measured": {
+    "characters": 794,
+    "round_trip_clean": 791,
+    "date": "2026-09-02"
+  },
+  "gaps": [],
+  "_gaps_comment": "Defects: attributes or elements a character LOSES through the JSON door. Empty, and meant to stay that way. Measured at 0/794 clean before this door existed (609 element kinds dropped, 5,014 attribute keys churned); the curated build doc it replaced had no attribute-level gate at all.",
+  "matches_hd": [
+    "ADDER:IMMUNITY|BASECOST",
+    "POWER:NAKEDMODIFIER|TEXT"
+  ],
+  "_matches_hd_comment": "The SAME two entries the .hdc door carries, for the same reasons, and they arrive here through it: the JSON door re-materialises the element tree the .hdc writer produces, so anything HD itself normalises on a re-save normalises identically in both. See export_known_gaps.json for the Java behind each."
+}

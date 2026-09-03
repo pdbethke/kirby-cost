@@ -34,6 +34,10 @@ _ATTR = {"levels": "LEVELS", "alias": "ALIAS",
          "min_cost": "MINCOST", "max_cost": "MAXCOST",
          "characteristic": "CHARACTERISTIC"}
 _BOOL = {"ultra_slot": "ULTRA_SLOT", "add_modifiers_to_base": "ADD_MODIFIERS_TO_BASE",
+         # See SerializationMixin.to_build_dict: these decide whether a
+         # purchase contributes to a temporal characteristic, so a rebuild
+         # that drops them is a different character.
+         "affects_primary": "AFFECTS_PRIMARY", "affects_total": "AFFECTS_TOTAL",
          # "is_power"→ISPOWER is accepted on input but NOT emitted by to_build_json
          # (is_power is derived from the element tag at load time, not stored as an
          # attribute). Does not survive a round-trip; keep for hand-authored docs.
@@ -210,19 +214,38 @@ def build_from_json(doc: dict[str, Any]) -> LoadedHero:
     return HDCLoader()._build_hero_from_root(_root_from_doc(doc))
 
 
+def _doc_id(o, idx: int) -> str:
+    """The id this object is known by in the document.
+
+    HD's own ID when the object has one, and only otherwise a synthetic
+    ``O<n>``. It used to be synthetic ALWAYS, which quietly re-identified every
+    element in every character: HD writes ``ID="1288023596014"``, the doc said
+    ``"O1"``, and the rebuild wrote ``ID="204"``. So a character sent through
+    the build doc came back as a document HD would not recognise as the same
+    one — every PARENTID target renamed, and any external reference to an
+    element broken. Nothing in the cost total moves, which is why the doc's
+    only gate never saw it.
+
+    The synthetic fallback stays for hand-authored docs, which have no ids to
+    keep.
+    """
+    own = getattr(o, "id", None)
+    return str(own) if own else f"O{idx}"
+
+
 def _obj_to_dict(o, idx: int, parent_id: str | None) -> dict[str, Any]:
     """Document placement around the object's own export.
 
     Everything about WHAT an object is now comes from the object
     (``SerializationMixin.to_build_dict``, overridden by the classes that have
-    more to say). What is left here is where it sits in the document: the
-    synthetic id and the parent link, which no object can know about itself.
+    more to say). What is left here is where it sits in the document: the id
+    and the parent link, which no object can know about itself.
 
     This function used to be 120 lines that branched on isinstance for
     ForceWall, Sense, Skill and Maneuver — so adding a subclass with anything
     extra to export meant editing this module, and forgetting to was silent.
     """
-    d: dict[str, Any] = {"id": f"O{idx}"}
+    d: dict[str, Any] = {"id": _doc_id(o, idx)}
     d.update(o.to_build_dict())
     if parent_id:
         d["parent"] = parent_id
@@ -245,7 +268,9 @@ def to_build_json(hero: LoadedHero) -> dict[str, Any]:
         attr = {"disadvantages": "complications"}.get(key, key)
         for o in getattr(hero, attr, []):
             counter += 1
-            ids[id(o)] = f"O{counter}"
+            # Same rule as the emitter, or a slot would name its pool by an id
+            # the pool does not answer to.
+            ids[id(o)] = _doc_id(o, counter)
     out_counter = 0
     for key in _SECTION_TAG:
         attr = {"disadvantages": "complications"}.get(key, key)
