@@ -31,6 +31,27 @@ class ForceField(Power, xmlid="FORCEFIELD"):
         XMLAttr("POWDLEVELS", "powd_levels", "int"),
     )
 
+    def to_build_dict(self) -> dict:
+        """The split, which the cost does not depend on and the FIGHT does.
+
+        `XML_ATTRS` has read PDLEVELS/EDLEVELS off the element since a
+        re-export was found dropping the whole power. Writing them back was
+        missed because nothing in the COST notices: HD prices Resistant
+        Protection by LEVELS, so a doc without the split round-trips to the
+        same points and looks correct. What it loses is which half is
+        physical -- and kirby-combat, handed 45 and no split, guessed half
+        and half.
+
+        Emitted whenever non-zero, matching ForceWall's exporter one file
+        over; a power with no split of its own says nothing rather than
+        writing four zeroes.
+        """
+        d = super().to_build_dict()
+        for field in ("pd_levels", "ed_levels", "md_levels", "powd_levels"):
+            if getattr(self, field, 0):
+                d[field] = getattr(self, field)
+        return d
+
     def __init__(self):
         """Initialize a Force Field power."""
         super().__init__()
