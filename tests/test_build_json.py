@@ -141,3 +141,128 @@ def test_user_wording_and_notes_survive_the_build_doc():
     again = build_from_json(to_build_json(hero)).powers[0]
     assert again.text_output == power.text_output
     assert again.notes == power.notes
+
+
+# ── A native tongue is free, and the doc has to remember that ────────────────
+
+NATIVE = dict(MINIMAL, skills=[
+    # Bokor's Creole, as HERO Designer writes it: OPTIONID="ACCENT",
+    # BASECOST="3.0", NATIVE_TONGUE="Yes". The base cost on the element is
+    # the price of the option, and the flag is what makes it free.
+    {"id": "S1", "xmlid": "LANGUAGES", "option_id": "ACCENT",
+     "base_cost": 3.0, "alias": "Language", "input": "Creole",
+     "skill": True, "native_tongue": True},
+])
+
+
+def _creole(hero):
+    return [s for s in hero.skills if s.xmlid == "LANGUAGES"][0]
+
+
+def test_a_native_tongue_costs_nothing_through_the_build_doc():
+    """Found by moving kirby-combat's suite onto build docs (2026-09-08):
+    Bokor came back 279 points against the .hdc's 276, and the whole
+    difference was his Creole.
+
+    `Language` parses `NATIVE_TONGUE` and prices on it, but had no
+    `to_build_dict` of its own, so the flag never reached the document.
+    The reader then rebuilt an ordinary 3-point Language. The .hdc path
+    is the one validated against the Java oracle, and it says 0.
+    """
+    assert _creole(build_from_json(NATIVE)).real_cost == 0.0
+
+
+def test_a_language_that_is_not_native_still_costs():
+    """Guards the guard: the flag must not zero every Language."""
+    doc = dict(NATIVE, skills=[dict(NATIVE["skills"][0], native_tongue=False)])
+    assert _creole(build_from_json(doc)).real_cost == 3.0
+
+
+def test_the_flag_survives_a_round_trip_out_and_back():
+    """The writer's half. A doc that loses the flag reads as a legal
+    document and prices a character wrongly, which is the worst shape a
+    serializer can have."""
+    once = build_from_json(NATIVE)
+    doc = to_build_json(once)
+    assert doc["skills"][0].get("native_tongue") is True
+    assert _creole(build_from_json(doc)).real_cost == 0.0
+
+
+# ── A carried weapon is part of the build ────────────────────────────────────
+
+EQUIPPED = dict(MINIMAL, equipment=[
+    {"id": "E1", "xmlid": "RKA", "levels": 2, "base_cost": 0.0,
+     "level_cost": 15.0, "level_value": 1.0,
+     "alias": "Killing Attack - Ranged", "name": "Revolver"},
+])
+
+
+def test_equipment_survives_the_build_doc():
+    """Found converting kirby-combat off raw .hdc (2026-09-08): the doc had
+    no equipment section at all.
+
+    `_SECTION_TAG` listed characteristics, powers, skills, perks, talents,
+    martial arts and disadvantages -- so a character whose weapon is CARRIED
+    round-tripped without it, silently, and arrived unarmed. The loader has
+    always read one (`hero.equipment = _load_powers_section(root,
+    "EQUIPMENT")`), and kirby-combat has read `hero.equipment` for its
+    attacks since 2026-09-07; only the document forgot.
+    """
+    hero = build_from_json(EQUIPPED)
+    assert [e.name for e in hero.equipment] == ["Revolver"]
+
+
+def test_equipment_is_written_back_out():
+    doc = to_build_json(build_from_json(EQUIPPED))
+    assert [e["name"] for e in doc.get("equipment", [])] == ["Revolver"]
+
+
+def test_a_carried_weapon_keeps_its_cost_across_the_round_trip():
+    """The half that matters: equipment that survives by name but not by
+    cost is worse than equipment that vanishes, because it looks right."""
+    once = build_from_json(EQUIPPED)
+    twice = build_from_json(to_build_json(once))
+    costs = [e.real_cost for e in once.equipment]
+    assert costs, "nothing to compare — the weapon did not survive at all"
+    assert [e.real_cost for e in twice.equipment] == costs
+
+
+# ── Resistant Protection keeps its PD/ED split ───────────────────────────────
+
+PROTECTED = dict(MINIMAL, powers=[
+    # Power Lad's "Body Like Iron": LEVELS 45 split 25 PD / 20 ED. HD costs
+    # the power by the split, and combat READS the split -- 25 rPD is the
+    # difference between shrugging off a revolver and being killed by one.
+    {"id": "P1", "xmlid": "FORCEFIELD", "levels": 45, "base_cost": 0.0,
+     "level_cost": 3.0, "level_value": 2.0, "alias": "Resistant Protection",
+     "name": "Body Like Iron", "pd_levels": 25, "ed_levels": 20},
+])
+
+
+def _protection(hero):
+    return [p for p in hero.powers if p.xmlid == "FORCEFIELD"][0]
+
+
+def test_resistant_protection_keeps_its_split_through_the_build_doc():
+    """`ForceField.XML_ATTRS` has read PDLEVELS/EDLEVELS off the .hdc since
+    the day someone noticed a re-export losing the whole power. The build
+    doc never wrote them, so a character whose armor is Resistant
+    Protection rebuilt with the split at 0/0 and the consumer left to
+    guess -- kirby-combat guessed half and half, then capped the guess
+    against natural PD, and Power Lad fought at rPD 2 against 25.
+    """
+    p = _protection(build_from_json(PROTECTED))
+    assert (p.pd_levels, p.ed_levels) == (25, 20)
+
+
+def test_the_split_is_written_back_out():
+    doc = to_build_json(build_from_json(PROTECTED))
+    node = [n for n in doc["powers"] if n["xmlid"] == "FORCEFIELD"][0]
+    assert (node.get("pd_levels"), node.get("ed_levels")) == (25, 20)
+
+
+def test_the_split_survives_two_round_trips():
+    once = build_from_json(PROTECTED)
+    twice = build_from_json(to_build_json(once))
+    assert (twice.powers[0].pd_levels, twice.powers[0].ed_levels) == (25, 20)
+    assert twice.powers[0].real_cost == once.powers[0].real_cost

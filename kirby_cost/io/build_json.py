@@ -12,6 +12,13 @@ _SECTION_TAG = {
     "characteristics": "CHARACTERISTICS", "powers": "POWERS", "skills": "SKILLS",
     "perks": "PERKS", "talents": "TALENTS", "martial_arts": "MARTIALARTS",
     "disadvantages": "DISADVANTAGES",
+    # Carried gear. Shaped exactly like POWERS -- the loader builds it with
+    # the same `_load_powers_section` -- and 6E2 p.182 says why: "Most
+    # equipment is built with Powers". Missing here, a character whose
+    # weapon is carried rather than innate round-tripped UNARMED, silently,
+    # and kirby-combat has read `hero.equipment` for its attacks since
+    # 2026-09-07. Last of the seven sections to be written down.
+    "equipment": "EQUIPMENT",
 }
 # Cost-driving fields the loader's _init() reads off every element (power,
 # modifier, adder). Emitting the EFFECTIVE values back as their HDC attributes
@@ -55,6 +62,12 @@ _TYPED_ATTR = {
     "body_levels": "BODYLEVELS", "width_levels": "WIDTHLEVELS",
     "cost_per_inch": "COSTPERINCH", "cost_per_body": "COSTPERBODY",
     "group": "GROUP",
+    # Resistant Protection's PD/ED/MD/POWD split. HD costs the power by
+    # LEVELS, so losing these did not move a single point and the round trip
+    # looked clean -- but the split is what COMBAT reads, and without it a
+    # consumer is left guessing which half of 45 is physical.
+    "pd_levels": "PDLEVELS", "ed_levels": "EDLEVELS",
+    "md_levels": "MDLEVELS", "powd_levels": "POWDLEVELS",
 }
 # Skill cost-mode flags the Skill loader reads in _init (skill.py:654-668). These
 # decide the base cost (familiarity=1 / proficiency=N / 3) and the adder-cost
@@ -62,7 +75,12 @@ _TYPED_ATTR = {
 # off in the HDC re-defaults ON (set_familiarity(True) at adder_based_skill.py:43),
 # dropping adder cost. Emit the EFFECTIVE flag (Yes/No) so the mode is preserved.
 _SKILL_FLAG = {"familiarity": "FAMILIARITY", "proficiency": "PROFICIENCY",
-               "levels_only": "LEVELSONLY", "everyman": "EVERYMAN"}
+               "levels_only": "LEVELSONLY", "everyman": "EVERYMAN",
+               # A native tongue is FREE, and the flag is the only thing that
+               # says so -- the element still carries the option's BASECOST.
+               # Missing here, Bokor's Creole rebuilt as an ordinary 3-point
+               # Language and he came back 279 points against the .hdc's 276.
+               "native_tongue": "NATIVE_TONGUE"}
 #: Input-only spellings of the same three flags. `Skill.to_build_dict` writes
 #: `familiarity`/`proficiency`/`everyman`, and so does this module's emitter --
 #: but the ORACLE's dump (hd6cli, the shape `tests/fixtures/authored/*.json`

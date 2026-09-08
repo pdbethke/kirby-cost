@@ -106,7 +106,26 @@ class Language(Skill, xmlid="LANGUAGES"):
         self._minimum_cost = 0.0
         self._minimum_level = 0
         self._alias = "Language"
-    
+
+    def to_build_dict(self) -> dict:
+        """Everything `Skill` exports, plus the one flag that sets the price.
+
+        A native tongue is free. The element still carries the option's
+        BASECOST -- Bokor's Creole is `OPTIONID="ACCENT" BASECOST="3.0"` --
+        so `NATIVE_TONGUE` is the ONLY thing distinguishing a free language
+        from a three-point one. `_init` has always read it; nothing wrote it
+        back, so the canonical build doc was lossy in a way that changed a
+        character's total: Bokor round-tripped 276 -> 279, and every one of
+        those points was his mother tongue.
+
+        Written unconditionally rather than only when true: a reader that
+        sees the key absent cannot tell "not native" from "written by an
+        older exporter", and this document is the corpus's shape.
+        """
+        d = super().to_build_dict()
+        d["native_tongue"] = bool(self.native_tongue)
+        return d
+
     def _init(self, element) -> None:
         """Initialize from XML element, including native tongue flag."""
         super()._init(element)
