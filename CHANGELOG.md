@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.6.2 — 2026-10-05
+
+### Fixed — the build doc stops forgetting three things
+None of the three moved cost parity, which is why none was caught by it. All
+merged on 2026-09-08 and unreleased until now.
+
+- **`native_tongue` on a Language.** A native tongue is free, and the flag is
+  the only thing that says so: the element still carries the option's base
+  cost. The doc never wrote it, so Bokor rebuilt at 279 against his file's
+  276. Written on every Language, true or false.
+- **The `equipment` section.** Carried gear is loaded like powers but was not
+  a doc section, so a character whose weapon is carried round-tripped
+  unarmed.
+- **Resistant Protection's `pd_levels` / `ed_levels` / `md_levels` /
+  `powd_levels`.** Cost is by LEVELS, so the split moves no points, but it is
+  which half is physical: Power Lad's 45 points rebuilt as 0/0. Written when
+  non-zero.
+
+Consumers that store the doc relationally need somewhere to keep all three,
+or their rebuild differs from the engine's load.
+
 ## 0.6.1 — 2026-09-02
 
 ### Fixed
