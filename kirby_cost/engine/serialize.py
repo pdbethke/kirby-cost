@@ -178,6 +178,13 @@ class SerializationMixin:
             d["affects_primary"] = False
         if getattr(self, "affects_total", True) is False:
             d["affects_total"] = False
+        # Which pool the power draws END from (6E1 p.207). HD writes
+        # USE_END_RESERVE="Yes" only on a power that runs off a Reserve, so
+        # it is emitted only when True. It was dropped here while the .hdc
+        # writer kept it, so a stored build spent every power's END from
+        # the character and never from his Reserve.
+        if getattr(self, "_use_end_reserve", False):
+            d["use_end_reserve"] = True
         self._emit_build_children(d)
         return d
 

@@ -50,7 +50,10 @@ _BOOL = {"ultra_slot": "ULTRA_SLOT", "add_modifiers_to_base": "ADD_MODIFIERS_TO_
          # attribute). Does not survive a round-trip; keep for hand-authored docs.
          "is_power": "ISPOWER",
          "selected": "SELECTED", "private": "PRIVATE",
-         "required": "REQUIRED"}
+         "required": "REQUIRED",
+         # Which pool a power draws END from (6E1 p.207). See
+         # SerializationMixin.to_build_dict.
+         "use_end_reserve": "USE_END_RESERVE"}
 # Power-type-specific cost fields the loader reads in a subclass _init and that
 # drive cost but are NOT generic LEVELS/BASECOST:
 #   - ForceWall dimension levels (force_wall.py:42-48): length/height/body/width
