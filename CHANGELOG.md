@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.3 — 2026-10-30
+
+### Fixed — the build doc keeps which powers run off an Endurance Reserve
+6E1 p.207: the character decides which powers draw on the Reserve. The loader
+read HD's `USE_END_RESERVE` and the .hdc writer wrote it back, but
+`to_build_json` / `build_from_json` dropped it, so every power rebuilt from a
+build doc drew on personal END. The doc now writes `use_end_reserve: true` on
+such a power (absent means personal END, as HD writes it). Cost parity is
+unmoved: the flag costs nothing.
+
 ## 0.6.2 — 2026-10-05
 
 ### Fixed — the build doc stops forgetting three things
