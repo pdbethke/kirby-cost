@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.4 — 2026-11-02
+
+### Fixed — the build doc keeps a modifier's name
+XMLID="MODIFIER" is HD's custom advantage or limitation, and its ALIAS is the
+whole of its meaning. `Modifier.to_build_dict` emitted only the costs, so a
+custom limitation reached a consumer as an anonymous value: the Destroid's
+Self Destruct System kept its -2 and lost "Self Only", and a combat engine
+offered it as an attack on someone else. Every modifier now carries `alias`
+when it has one. Cost parity is unmoved: the name costs nothing.
+
 ## 0.6.3 — 2026-10-30
 
 ### Fixed — the build doc keeps which powers run off an Endurance Reserve
