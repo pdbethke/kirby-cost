@@ -266,3 +266,36 @@ def test_the_split_survives_two_round_trips():
     twice = build_from_json(to_build_json(once))
     assert (twice.powers[0].pd_levels, twice.powers[0].ed_levels) == (25, 20)
     assert twice.powers[0].real_cost == once.powers[0].real_cost
+
+
+# ── A custom modifier's name is the only thing that says what it does ────────
+
+def test_a_custom_modifiers_name_survives_the_build_doc():
+    """XMLID="MODIFIER" is HD's custom advantage or limitation, and its ALIAS is
+    the whole of its meaning: the Destroid's Self Destruct System carries
+    ALIAS="Self Only" (-2), and nothing else in the element says so.
+
+    The build doc kept the -2 and dropped the name, so a consumer saw an
+    anonymous limitation and a combat engine offered a self-only RKA as an
+    attack on someone else. Costs never moved, which is why no cost gate
+    noticed.
+    """
+    doc = {
+        "powers": [{
+            "id": 1,
+            "xmlid": "RKA",
+            "levels": 8,
+            "name": "Self Destruct System",
+            "modifiers": [
+                {"xmlid": "NORANGE", "base_cost": -0.5},
+                {"xmlid": "MODIFIER", "base_cost": -2.0, "alias": "Self Only"},
+            ],
+        }],
+    }
+    hero = build_from_json(doc)
+    out = to_build_json(hero)["powers"][0]
+    custom = [m for m in out["modifiers"] if m["xmlid"] == "MODIFIER"]
+    assert custom and custom[0].get("alias") == "Self Only", "the custom limitation lost its name"
+
+    again = to_build_json(build_from_json(to_build_json(hero)))["powers"][0]
+    assert [m.get("alias") for m in again["modifiers"] if m["xmlid"] == "MODIFIER"] == ["Self Only"]

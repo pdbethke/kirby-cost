@@ -30,6 +30,11 @@ class Modifier(GenericObject):
     def to_build_dict(self) -> dict:
         """A modifier, with the adders and sub-modifiers it carries."""
         d = self._build_dict_core()
+        # The name. For a custom MODIFIER it is the whole of its meaning
+        # ("Self Only"); dropping it left an anonymous -2 that a consumer
+        # could only guess at.
+        if getattr(self, "_alias", ""):
+            d["alias"] = self._alias
         if getattr(self, "private_mod", False):
             d["private"] = True
         nested = [a.to_build_dict()
