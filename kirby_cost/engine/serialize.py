@@ -199,8 +199,13 @@ class SerializationMixin:
         if adders:
             d["adders"] = adders
         # A CompoundPower's sub-powers are not in the hero's top-level lists,
-        # so they are emitted nested or their cost is lost.
-        sub_powers = [sp.to_build_dict() for sp in getattr(self, "powers", [])]
+        # so they are emitted nested or their cost is lost. Each carries its
+        # own id: HD writes one on every part, and without it a rebuild gave
+        # each part a load-order counter instead, so kirby-combat (which names
+        # an attack by its power's id) could not find a chosen part again in a
+        # fight rebuilt from the doc. tests/test_build_json_compound_part_ids.py
+        sub_powers = [{"id": str(sp.id), **sp.to_build_dict()}
+                      for sp in getattr(self, "powers", [])]
         if sub_powers:
             d["sub_powers"] = sub_powers
         rec = getattr(self, "rec", None)
