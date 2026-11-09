@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.5 — 2026-11-09
+
+### Fixed — a Compound Power's parts keep their ids through the build doc
+HD writes an `ID` on every part of a Compound Power. `to_build_json` emitted
+the parts without one, so a rebuild gave each part a load-order counter: a
+different id on every load, and a different `ID` in every `.hdc` written from
+the doc. A consumer that names a power by its id (kirby-combat's attacks)
+could not find a Compound part again in a build rebuilt from its doc. Each
+part now carries its own id, as top-level objects always have. Cost parity is
+unmoved (1817 passed).
+
 ## 0.6.4 — 2026-11-02
 
 ### Fixed — the build doc keeps a modifier's name
