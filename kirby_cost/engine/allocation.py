@@ -140,3 +140,20 @@ def levels_within(power, active_points: int) -> LevelFit:
     if not fits:
         raise ValueError(f"no step of the power fits {active_points} points")
     return fits[-1]
+
+
+def step_display(power) -> str:
+    """What ``power`` reads as, in HD's own words: its name and its damage
+    display (``Blast 6d6``, ``Flight 30m``), and for a power bought as a
+    defence split its levels (``Resistant Protection 3 PD/3 ED``, 6E1
+    p.406).
+
+    Asked of a rung's copy (`LevelFit.power`) or of a slot as bought, so a
+    menu that offers a share of a Multipower reserve can say what the share
+    buys without composing any of it itself. Only joins what the power
+    already says.
+    """
+    levels = getattr(power, "defence_levels_display", None)
+    parts = (power.display, power.damage_display,
+             levels() if callable(levels) else "")
+    return " ".join(p for p in parts if p)

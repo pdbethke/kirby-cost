@@ -2,7 +2,9 @@
 import pytest
 
 from kirby_cost.io.hdc_loader import HDCLoader
-from kirby_cost.engine.allocation import LevelFit, NotLadderable, ladder, levels_within
+from kirby_cost.engine.allocation import (
+    LevelFit, NotLadderable, ladder, levels_within, step_display,
+)
 from kirby_cost.services.power_builder import build_power_from_spec
 
 RE_FLIGHT = {"xmlid": "FLIGHT", "levels": 50,
@@ -220,3 +222,34 @@ def test_hkb_style_zero_level_half_die_slot_ladders_as_nothing_and_full():
     assert steps[-1].half_die and steps[-1].display.startswith("1/2d6")
     assert levels_within(p, full - 1).active_points == 0
     assert levels_within(p, full).active_points == full
+
+
+# ── what a rung reads as (6E1 p.406, Kerendor) ─────────────────────────────
+# The menu that offers a split says what each share buys in HD's own words:
+# the power's name and its damage display, and for Resistant Protection the
+# PD/ED it was bought as, which HD prints in column 2 rather than as a
+# damage display.
+
+def test_step_display_names_the_power_and_its_dice():
+    p, _, _ = build_power_from_spec({"xmlid": "ENERGYBLAST", "levels": 12, "modifiers": []})
+    assert step_display(levels_within(p, 30).power) == "Blast 6d6"
+
+
+def test_step_display_names_flight_and_its_metres():
+    p, _, _ = build_power_from_spec({"xmlid": "FLIGHT", "levels": 60, "modifiers": []})
+    assert step_display(levels_within(p, 30).power) == "Flight 30m"
+
+
+def test_step_display_of_resistant_protection_states_pd_and_ed():
+    p, _, _ = build_power_from_spec(
+        {"xmlid": "FORCEFIELD", "pd_levels": 15, "ed_levels": 15, "modifiers": []})
+    assert step_display(p) == "Resistant Protection 15 PD/15 ED"
+    assert step_display(levels_within(p, 9).power) == "Resistant Protection 3 PD/3 ED"
+
+
+def test_resistant_protection_column2_keeps_hd_wording():
+    """The PD/ED list moved into `ForceField.defence_levels_display`; column 2
+    still prints it inside HD's parentheses."""
+    p, _, _ = build_power_from_spec(
+        {"xmlid": "FORCEFIELD", "pd_levels": 15, "ed_levels": 15, "modifiers": []})
+    assert "(15 PD/15 ED)" in p.column2_output

@@ -152,6 +152,26 @@ class ForceField(Power, xmlid="FORCEFIELD"):
         """Get damage display (empty for Force Field)."""
         return ""
     
+    def defence_levels_display(self) -> str:
+        """The defences it was bought as, in HD's words: ``15 PD/15 ED``.
+
+        Lifted out of `column2_output` (which prints it inside parentheses)
+        so a share of a Multipower slot can say what it buys
+        (`engine.allocation.step_display`): HD gives this power no damage
+        display, so the split is the only thing that says how much it is.
+        Flash Defense is an adder and stays in column 2.
+        """
+        parts = []
+        if self.pd_levels > 0:
+            parts.append(f"{self.pd_levels} PD")
+        if self.ed_levels > 0:
+            parts.append(f"{self.ed_levels} ED")
+        if self.md_levels > 0:
+            parts.append(f"{self.md_levels} Mental Defense")
+        if self.powd_levels > 0:
+            parts.append(f"{self.powd_levels} Power Defense")
+        return "/".join(parts)
+
     @property
     def column2_output(self) -> str:
         """Get column 2 output with defense values."""
@@ -161,26 +181,9 @@ class ForceField(Power, xmlid="FORCEFIELD"):
             output = f"<i>{self._name}:</i>  {output}"
         
         # Add defense values
-        output += "("
-        first = True
-        if self.pd_levels > 0:
-            output += f"{self.pd_levels} PD"
-            first = False
-        if self.ed_levels > 0:
-            if not first:
-                output += "/"
-            output += f"{self.ed_levels} ED"
-            first = False
-        if self.md_levels > 0:
-            if not first:
-                output += "/"
-            output += f"{self.md_levels} Mental Defense"
-            first = False
-        if self.powd_levels > 0:
-            if not first:
-                output += "/"
-            output += f"{self.powd_levels} Power Defense"
-            first = False
+        levels = self.defence_levels_display()
+        output += "(" + levels
+        first = not levels
         
         # Flash Defense names the SENSE it protects, and that belongs inside
         # the defence list rather than trailing after it: HD writes
