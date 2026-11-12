@@ -152,6 +152,13 @@ class Power(CharAffectingObject):
         return (" (uses END Reserve)" if self.use_end_reserve
                 else " (uses Personal END)")
 
+    def defence_levels_display(self) -> str:
+        """The defences a power was bought as (``15 PD/15 ED``), for one
+        bought as a defence split; "" for every other power. Resistant
+        Protection overrides it (`ForceField`). Read by
+        `engine.allocation.step_display`."""
+        return ""
+
     @property
     def damage_display(self) -> str:
         """Get the damage display string (e.g., '8d6', '12d6+1')."""

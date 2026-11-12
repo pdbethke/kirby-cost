@@ -779,6 +779,16 @@ class Characteristic(CharAffectingObject):
         finally:
             self._assigned_modifiers = original
 
+    def levels_display(self) -> str:
+        """The levels bought, signed as HD prints them: ``+20``, ``-2``.
+
+        Lifted out of `column2_output` so a share of a Multipower slot
+        holding a characteristic can say how much it buys
+        (`engine.allocation.step_display`).
+        """
+        levels = self.levels
+        return f"{'+' if levels >= 0 else ''}{levels}"
+
     @property
     def column2_output(self) -> str:
         """What HD prints for this characteristic on the sheet.
@@ -812,10 +822,10 @@ class Characteristic(CharAffectingObject):
                     mods = f"<i>{name}:</i>  {mods}"
                 return mods
 
-        ret = "+" if levels >= 0 else ""
+        ret = self.levels_display()
         if name:
             ret = f"<i>{name}:</i>  {ret}"
-        ret += f"{levels} {alias}"
+        ret += f" {alias}"
 
         if self.input and self.input.strip():
             ret += f":  {self.input}"

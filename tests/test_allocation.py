@@ -253,3 +253,23 @@ def test_resistant_protection_column2_keeps_hd_wording():
     p, _, _ = build_power_from_spec(
         {"xmlid": "FORCEFIELD", "pd_levels": 15, "ed_levels": 15, "modifiers": []})
     assert "(15 PD/15 ED)" in p.column2_output
+
+
+def test_step_display_of_power_defense_names_each_rungs_amount():
+    p, _, _ = build_power_from_spec({"xmlid": "POWERDEFENSE", "levels": 20, "modifiers": []})
+    assert step_display(levels_within(p, 5).power) == "Power Defense 5 points"
+    assert step_display(levels_within(p, 10).power) == "Power Defense 10 points"
+
+
+def test_step_display_of_a_characteristic_bought_in_a_slot_names_its_amount():
+    """PD bought as a Multipower slot has no damage display; HD writes the
+    amount in column 2 ("+20 PD"), and a rung says the same."""
+    p, _, _ = build_power_from_spec({"xmlid": "PD", "levels": 20, "modifiers": []})
+    p.levels = 20
+    assert step_display(levels_within(p, 5).power) == "+5 PD"
+    assert step_display(p) == "+20 PD"
+
+
+def test_a_power_with_no_defence_split_says_nothing_of_one():
+    p, _, _ = build_power_from_spec({"xmlid": "ENERGYBLAST", "levels": 4, "modifiers": []})
+    assert p.defence_levels_display() == ""

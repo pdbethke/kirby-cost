@@ -144,16 +144,23 @@ def levels_within(power, active_points: int) -> LevelFit:
 
 def step_display(power) -> str:
     """What ``power`` reads as, in HD's own words: its name and its damage
-    display (``Blast 6d6``, ``Flight 30m``), and for a power bought as a
-    defence split its levels (``Resistant Protection 3 PD/3 ED``, 6E1
-    p.406).
+    display (``Blast 6d6``, ``Flight 30m``, ``Power Defense 5 points``);
+    for a power bought as a defence split its levels (``Resistant
+    Protection 3 PD/3 ED``, 6E1 p.406); for a characteristic its signed
+    levels (``+5 PD``), as HD's column 2 writes them.
 
     Asked of a rung's copy (`LevelFit.power`) or of a slot as bought, so a
     menu that offers a share of a Multipower reserve can say what the share
     buys without composing any of it itself. Only joins what the power
     already says.
     """
-    levels = getattr(power, "defence_levels_display", None)
-    parts = (power.display, power.damage_display,
-             levels() if callable(levels) else "")
+    from kirby_cost.objects.characteristics.characteristic import Characteristic
+
+    if isinstance(power, Characteristic):
+        # A characteristic bought in a slot: HD writes its amount in column 2
+        # ("+20 PD"); Running, Leaping and Swimming have a distance instead.
+        if power.damage_display:
+            return f"{power.display} {power.damage_display}"
+        return f"{power.levels_display()} {power.display}"
+    parts = (power.display, power.damage_display, power.defence_levels_display())
     return " ".join(p for p in parts if p)
