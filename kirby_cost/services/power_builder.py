@@ -51,7 +51,19 @@ def build_power_from_spec(spec: dict, *, loader: HDCLoader | None = None):
         raise ValueError(f"unknown power xmlid: {xmlid}")
     obj = cls()
     obj.xmlid = xmlid
-    obj.levels = float(spec.get("levels") or 0)
+    # Resistant Protection is bought as a PD/ED/MD/POWD split; HD writes
+    # LEVELS as the sum of the split, so a spec that gives only the split
+    # means that sum.  An explicit "levels" still wins (it may carry Flash
+    # Defense levels HD folds into the same field).
+    split = {k: int(spec.get(k) or 0)
+             for k in ("pd_levels", "ed_levels", "md_levels", "powd_levels")}
+    levels = spec.get("levels")
+    if levels is None:
+        levels = sum(split.values())
+    obj.levels = float(levels or 0)
+    for k, v in split.items():
+        if spec.get(k) is not None:
+            setattr(obj, k, v)
     loader._apply_template_defaults(obj, xmlid, spec.get("option_id") or None)
     for m in (spec.get("modifiers") or []):
         mx = (m.get("xmlid") or "").upper()

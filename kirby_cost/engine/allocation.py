@@ -41,16 +41,36 @@ def _clone(node):
     for attr in ("_assigned_modifiers", "_assigned_adders"):
         kids = getattr(node, attr, None)
         if kids is not None:
-            setattr(dup, attr, [_clone(k) for k in kids])
+            copies = [_clone(k) for k in kids]
+            for kid, kid_dup in zip(kids, copies):
+                # A child that pointed at ``node`` points at its copy; one
+                # that pointed elsewhere (or nowhere) keeps doing so.
+                if getattr(kid, "parent", None) is node:
+                    kid_dup.parent = dup
+            setattr(dup, attr, copies)
     return dup
 
 
-def _fit(power, levels: int, drop_half: bool) -> LevelFit:
+# Resistant Protection (FORCEFIELD) is bought as a split across these fields;
+# ``levels`` is their sum.  6E1 p.406 (Kerendor): 9 points into 15 PD/15 ED
+# gives 3 PD/3 ED.
+_SPLIT_FIELDS = ("pd_levels", "ed_levels", "md_levels", "powd_levels")
+
+
+def _split(power) -> dict[str, int]:
+    """The defence level fields the power was bought with (empty if none)."""
+    return {f: int(getattr(power, f, 0) or 0) for f in _SPLIT_FIELDS
+            if int(getattr(power, f, 0) or 0) > 0}
+
+
+def _fit(power, levels: int, drop_half: bool, fields: dict | None = None) -> LevelFit:
     dup = _clone(power)
     held = [a for a in dup._assigned_adders if a.xmlid in _HALF_ADDERS]
     if drop_half:
         dup._assigned_adders = [a for a in dup._assigned_adders if a not in held]
     dup.levels = levels
+    for name, value in (fields or {}).items():
+        setattr(dup, name, value)
     return LevelFit(power=dup, levels=levels,
                     half_die=bool(held) and not drop_half,
                     active_points=int(round(dup.active_cost)),
@@ -58,16 +78,36 @@ def _fit(power, levels: int, drop_half: bool) -> LevelFit:
 
 
 def _steps(power) -> list[LevelFit]:
-    if not getattr(power, "_level_cost", 0) or not (power.levels or 0) > 0:
+    if not power.level_cost or not (power.levels or 0) > 0:
         raise NotLadderable(
             f"{getattr(power, 'xmlid', power)!r} is not priced by levels")
     has_half = any(a.xmlid in _HALF_ADDERS for a in power.assigned_adders)
     top = int(power.levels)
+    bought = _split(power)
+    if bought:
+        return _split_steps(power, bought, top)
     out = [_fit(power, 0, True)]
     for n in range(1, top + 1):
         if has_half:
             out.append(_fit(power, n, True))
         out.append(_fit(power, n, False))
+    return out
+
+
+def _split_steps(power, bought: dict[str, int], top: int) -> list[LevelFit]:
+    """Steps of a multi-level defence: every field at the same fraction of
+    its bought value, floored.  Floored fields can sum to less than the
+    fraction's share of ``levels``, so ``levels`` is re-summed from the
+    fields; the engine then prices that, and ``ladder`` keeps what fits.
+    Flash Defense is an adder, not a defence field, and stays as bought."""
+    out, seen = [], set()
+    for n in range(top + 1):
+        fields = {name: v * n // top for name, v in bought.items()}
+        key = tuple(fields.values())
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(_fit(power, sum(fields.values()), True, fields))
     return out
 
 

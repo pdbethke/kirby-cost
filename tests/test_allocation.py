@@ -105,3 +105,73 @@ def test_equal_cost_steps_keep_the_most_levels():
     assert levels_within(p, 9).levels == 6
     assert levels_within(p, 11).levels == 6
     assert [s.levels for s in ladder(p)] == [0, 2, 4, 6, 8]
+
+
+# ── Task 2: multi-level defences and characteristic slots ──────────────────
+
+def _resistant(pd, ed, **extra):
+    spec = {"xmlid": "FORCEFIELD", "pd_levels": pd, "ed_levels": ed, "modifiers": []}
+    spec.update(extra)
+    return build_power_from_spec(spec)
+
+
+def test_resistant_protection_15_15_at_9_points_is_3_3():   # 6E1 p.406 Kerendor
+    p, _, _ = _resistant(15, 15)
+    fit = levels_within(p, 9)
+    assert (fit.power.pd_levels, fit.power.ed_levels, fit.active_points) == (3, 3, 9)
+
+
+def test_spec_levels_default_to_the_sum_of_the_defence_fields():
+    p, active, _ = _resistant(25, 20)
+    assert p.levels == 45 and active == 69        # HD writes LEVELS=45 for 25/20; 23 units of 3
+
+
+def test_resistant_protection_steps_the_fields_together_floored():
+    p, active, _ = _resistant(20, 10)
+    fit = levels_within(p, 9)          # 6 levels buy 2/4 of the 30: a third of each
+    assert (fit.power.pd_levels, fit.power.ed_levels) == (4, 2)
+    assert fit.power.levels == 6 and fit.active_points == 9
+
+
+def test_resistant_protection_ladder_ends_at_the_power_as_bought():
+    p, active, _ = _resistant(15, 15)
+    top = ladder(p)[-1]
+    assert (top.power.pd_levels, top.power.ed_levels, top.active_points) == (15, 15, active)
+    assert ladder(p)[0].power.pd_levels == 0
+
+
+def test_resistant_protection_ladder_leaves_the_original_untouched():
+    p, active, _ = _resistant(15, 15)
+    levels_within(p, 9)
+    assert (p.pd_levels, p.ed_levels, p.levels, p.active_cost) == (15, 15, 30, active)
+
+
+def test_resistant_protection_fields_never_exceed_what_was_bought():
+    p, _, _ = _resistant(25, 20, md_levels=5)
+    for step in ladder(p):
+        f = step.power
+        assert f.pd_levels <= 25 and f.ed_levels <= 20 and f.md_levels <= 5
+        assert f.levels == f.pd_levels + f.ed_levels + f.md_levels + f.powd_levels
+
+
+@pytest.mark.parametrize("xmlid", ["STR", "DEX", "PD", "ED", "SPD"])
+def test_characteristic_slots_ladder_by_points_of_the_characteristic(xmlid):
+    p, active, _ = build_power_from_spec({"xmlid": xmlid, "levels": 10, "modifiers": []})
+    full = levels_within(p, active)
+    assert full.levels == 10 and full.active_points == active
+    half = levels_within(p, active // 2)
+    assert 0 < half.levels < 10 and half.active_points <= active // 2
+
+
+def test_str_20_in_a_10_point_share_is_str_10():
+    p, _, _ = build_power_from_spec({"xmlid": "STR", "levels": 20, "modifiers": []})
+    assert levels_within(p, 10).levels == 10
+
+
+def test_cloned_adders_are_parented_to_the_copy():
+    p = _half_die_blast("PLUSONEHALFDIE")
+    for ad in p._assigned_adders:
+        ad.parent = p
+    fit = levels_within(p, 20)
+    assert all(a.parent is fit.power for a in fit.power._assigned_adders)
+    assert all(a.parent is p for a in p._assigned_adders)
