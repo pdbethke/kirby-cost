@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.7.0 — 2026-11-12
+
+### Added — `kirby_cost.engine.allocation`: what a share of a slot buys
+A Multipower's variable slot holds the points its owner gave it and has as many levels as fit them (6E1 p.404-406). The pricing belongs here, with the rest of the cost engine, and not in the combat engine that asks.
+
+- **`levels_within(power, active_points) -> LevelFit`**: the largest step of the power costing no more than the points, as a re-levelled, re-costed COPY (the original is never touched). Its own Advantages count: 30 points into a Flight bought at 50m with +1/4 Reduced Endurance buy 24m, not 30. Raises `ValueError` when no step fits.
+- **`ladder(power) -> list[LevelFit]`**: every breakpoint from nothing to the power as bought, ascending by Active Points, one step per distinct cost. At equal cost the step with the most levels wins (a power whose `level_value` is above 1 rounds its units up); at equal levels the whole-die step beats the half-die one. The top step is the power as bought. Resistant Protection and characteristics bought as powers ladder too.
+- **`LevelFit`** (`power`, `levels`, `half_die`, `active_points`, `display`).
+- **`NotLadderable`** (a `ValueError`): the power's cost is not driven by `levels` (Damage Reduction, Damage Negation), so it has no steps. A caller may still take it whole or not at all.
+- **`step_display(power)`**: what a power or a rung's copy reads as, in HD's own words: `Blast 6d6`, `Flight 30m`, `Power Defense 5 points`, `Resistant Protection 3 PD/3 ED`, `+5 PD`.
+- **`Power.defence_levels_display()`** (`""` for every power but one bought as a defence split; `ForceField` overrides it) and **`Characteristic.levels_display()`**, both lifted out of `column2_output`, whose output is unchanged.
+
+### Changed — `build_power_from_spec` reads a FORCEFIELD's split
+A FORCEFIELD spec may give `pd_levels` / `ed_levels` / `md_levels` / `powd_levels`; HD writes `LEVELS` as their sum, so a spec giving only the split means that sum. A field left out is not bought, and an explicit `levels` wins. A FORCEFIELD spec with neither `levels` nor any split field raises `ValueError` rather than building a zero-level field.
+
 ## 0.6.5 — 2026-11-09
 
 ### Fixed — a Compound Power's parts keep their ids through the build doc
