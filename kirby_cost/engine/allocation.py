@@ -78,6 +78,12 @@ def _fit(power, levels: int, drop_half: bool, fields: dict | None = None) -> Lev
 
 
 def _steps(power) -> list[LevelFit]:
+    if (power.level_cost and not (power.levels or 0) > 0
+            and any(a.xmlid in _HALF_ADDERS for a in power.assigned_adders)):
+        # Bought as 0 levels plus a +1/2d6 / +1 pip adder (a 1/2d6 killing
+        # attack): there is no whole die to step, so the slot is nothing or
+        # as bought (6E1 p.405: any share from 0 to its Active Points).
+        return [_fit(power, 0, True), _fit(power, 0, False)]
     if not power.level_cost or not (power.levels or 0) > 0:
         raise NotLadderable(
             f"{getattr(power, 'xmlid', power)!r} is not priced by levels")
@@ -98,7 +104,7 @@ def _split_steps(power, bought: dict[str, int], top: int) -> list[LevelFit]:
     """Steps of a multi-level defence: every field at the same fraction of
     its bought value, floored.  Floored fields can sum to less than the
     fraction's share of ``levels``, so ``levels`` is re-summed from the
-    fields; the engine then prices that, and ``ladder`` keeps what fits.
+    fields (except at the top); the engine then prices that, and ``ladder`` keeps what fits.
     Flash Defense is an adder, not a defence field, and stays as bought."""
     out, seen = [], set()
     for n in range(top + 1):
@@ -107,7 +113,10 @@ def _split_steps(power, bought: dict[str, int], top: int) -> list[LevelFit]:
         if key in seen:
             continue
         seen.add(key)
-        out.append(_fit(power, sum(fields.values()), True, fields))
+        # The top step is the power as bought: ``levels`` may differ from the
+        # field sum, so it is not re-summed there.
+        levels = int(power.levels) if n == top else sum(fields.values())
+        out.append(_fit(power, levels, True, fields))
     return out
 
 

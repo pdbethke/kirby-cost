@@ -175,3 +175,48 @@ def test_cloned_adders_are_parented_to_the_copy():
     fit = levels_within(p, 20)
     assert all(a.parent is fit.power for a in fit.power._assigned_adders)
     assert all(a.parent is p for a in p._assigned_adders)
+
+
+def test_clone_itself_reparents_adders_before_any_costing():
+    # levels_within reads active_cost, which re-parents as a side effect; the
+    # clone must be right on its own, before anything is costed.
+    from kirby_cost.engine.allocation import _clone
+    p = _half_die_blast("PLUSONEHALFDIE")
+    for ad in p._assigned_adders:
+        ad.parent = p
+    dup = _clone(p)
+    assert dup._assigned_adders and all(a.parent is dup for a in dup._assigned_adders)
+    assert all(a.parent is p for a in p._assigned_adders)
+    assert not any(a is b for a in dup._assigned_adders for b in p._assigned_adders)
+
+
+def test_forcefield_spec_with_no_levels_and_no_split_raises():
+    with pytest.raises(ValueError, match="pd_levels"):
+        build_power_from_spec({"xmlid": "FORCEFIELD", "modifiers": []})
+
+
+def test_forcefield_spec_with_one_split_field_leaves_the_rest_unbought():
+    p, _, _ = build_power_from_spec({"xmlid": "FORCEFIELD", "pd_levels": 10, "modifiers": []})
+    assert (p.levels, p.pd_levels, p.ed_levels) == (10, 10, 0)
+
+
+def test_resistant_protection_top_step_is_the_power_as_bought_even_if_levels_differ():
+    p, active, _ = _resistant(15, 15, levels=31)
+    top = ladder(p)[-1]
+    assert (top.levels, top.active_points) == (31, active)
+
+
+def test_hkb_style_zero_level_half_die_slot_ladders_as_nothing_and_full():
+    p, active, _ = build_power_from_spec({"xmlid": "HKA", "levels": 0, "modifiers": []})
+    from kirby_cost.objects.adder import Adder
+    ad = Adder(); ad.xmlid = "PLUSONEHALFDIE"; ad._selected = True
+    loader = HDCLoader(); loader._ensure_registry_loaded()
+    loader._apply_template_to_adder(ad, "HKA", "PLUSONEHALFDIE")
+    p._assigned_adders.append(ad)
+    full = int(round(p.active_cost))
+    assert full > 0
+    steps = ladder(p)
+    assert [(s.levels, s.active_points) for s in steps] == [(0, 0), (0, full)]
+    assert steps[-1].half_die and steps[-1].display.startswith("1/2d6")
+    assert levels_within(p, full - 1).active_points == 0
+    assert levels_within(p, full).active_points == full
