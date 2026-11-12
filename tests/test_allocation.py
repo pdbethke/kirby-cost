@@ -96,3 +96,12 @@ def test_half_die_slot_has_half_die_steps():
 def test_slot_without_half_die_never_gains_one():
     p, _, _ = build_power_from_spec({"xmlid": "ENERGYBLAST", "levels": 8, "modifiers": []})
     assert not any(s.half_die for s in ladder(p))
+
+
+def test_equal_cost_steps_keep_the_most_levels():
+    # Telekinesis is level_value 2: levels 5 and 6 cost the same 9 points,
+    # so the points buy 6, never 5 (cost.py rounds the unit count up).
+    p, _, _ = build_power_from_spec({"xmlid": "TELEKINESIS", "levels": 8, "modifiers": []})
+    assert levels_within(p, 9).levels == 6
+    assert levels_within(p, 11).levels == 6
+    assert [s.levels for s in ladder(p)] == [0, 2, 4, 6, 8]

@@ -74,9 +74,14 @@ def _steps(power) -> list[LevelFit]:
 def ladder(power) -> list[LevelFit]:
     """Every breakpoint from nothing to the power as bought, ascending by
     Active Points, one step per distinct cost."""
+    # At equal cost the points buy the MOST levels (a level_value > 1 power
+    # rounds its unit count up, so 5 and 6 can cost the same); at equal levels
+    # the whole-die step beats the half-die one.
     seen: dict[int, LevelFit] = {}
     for step in _steps(power):
-        seen.setdefault(step.active_points, step)
+        held = seen.get(step.active_points)
+        if held is None or (step.levels, not step.half_die) > (held.levels, not held.half_die):
+            seen[step.active_points] = step
     return [seen[ap] for ap in sorted(seen)]
 
 
