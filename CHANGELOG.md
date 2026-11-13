@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.8.0 — 2026-11-13
+
+### Fixed — Killing damage is counted in Damage Classes, not half-die steps (6E2 p.99)
+`augment_with_str` added STR to a Killing attack one half die per DC. A Killing DC is 5 Active Points: +1 pip, and 3 of them to the die. So STR 5 on a 1d6 HKA came out 1 1/2d6 where the book gives 1d6+1, STR 10 came out 2d6 where it gives 1 1/2d6, and the Doubling Rule capped a 1d6 HKA at 2 DC of STR instead of 3. A +1 pip (a 1d6+1 knife) was dropped entirely, because the function had no way to hear about it. Every HKA wielder whose STR isn't a multiple of 15 above the attack's own dice hit too hard.
+
+### Changed (breaking) — `augment_with_str(dice, damage_type, strength) -> Dice`
+It takes and returns a `Dice` rather than `(full, half)`, so the pips travel with the dice. A damage type other than `normal` or `killing` raises `ValueError` rather than being returned unchanged.
+
+### Added — `kirby_cost.engine.damage`: one home for Damage Class arithmetic
+- **`Dice(full, half, plus_one, minus_one)`**: every field required. `minus_one` is HD's MINUSONEPIP ("+1d6 -1"), whose die is already in `full`.
+- **`damage_classes(dice, damage_type) -> int`**: Normal, one per whole die (a half die is not a DC, 6E2 p.101); Killing, 3 a die, 2 a half die, 1 a pip, -1 for the "+1d6 -1" rung (the Peacemaker's 2d6-1 is 5 DC).
+- **`dice_for(dcs, damage_type) -> Dice`**: 6E2 p.99's table.
+- **`add_damage_classes(dice, damage_type, added) -> Dice`**: 6E2 p.101, whole DCs "regardless of the type of damage": a Martial Strike takes a 3d6 club to 5d6 and a 1d6 HKA sword to 1 1/2d6.
+
 ## 0.7.0 — 2026-11-12
 
 ### Added — `kirby_cost.engine.allocation`: what a share of a slot buys
