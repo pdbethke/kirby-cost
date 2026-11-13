@@ -16,6 +16,7 @@ them onto the copy.
 """
 from __future__ import annotations
 
+import contextlib
 import copy
 from dataclasses import dataclass
 
@@ -120,9 +121,38 @@ def _split_steps(power, bought: dict[str, int], top: int) -> list[LevelFit]:
     return out
 
 
-def ladder(power) -> list[LevelFit]:
+@contextlib.contextmanager
+def _bought_on(hero):
+    """Make ``hero`` the engine's active hero for the reads inside, then
+    restore whatever was active.
+
+    A display can read the hero a power is bought on (an HKA's "w/STR"
+    bracket is HD's own words, worked from his STR), and kirby-cost keeps
+    that hero process-wide (`EngineContext`). A process holding many heroes
+    (a fight) would otherwise word a rung after whichever was loaded last.
+    """
+    from kirby_cost.core.context import EngineContext
+
+    prior = EngineContext.active_hero()
+    EngineContext.set_active_hero(hero)
+    try:
+        yield
+    finally:
+        EngineContext.set_active_hero(prior)
+
+
+def ladder(power, *, hero) -> list[LevelFit]:
     """Every breakpoint from nothing to the power as bought, ascending by
-    Active Points, one step per distinct cost."""
+    Active Points, one step per distinct cost.
+
+    ``hero`` is the hero the power is bought on, or None for a power on no
+    hero; it is bound as the active hero while the steps are priced and
+    worded, so the words never depend on which hero was loaded last."""
+    with _bought_on(hero):
+        return _ladder(power)
+
+
+def _ladder(power) -> list[LevelFit]:
     # At equal cost the points buy the MOST levels (a level_value > 1 power
     # rounds its unit count up, so 5 and 6 can cost the same); at equal levels
     # the whole-die step beats the half-die one.
@@ -134,15 +164,16 @@ def ladder(power) -> list[LevelFit]:
     return [seen[ap] for ap in sorted(seen)]
 
 
-def levels_within(power, active_points: int) -> LevelFit:
-    """The largest step of ``power`` costing no more than ``active_points``."""
-    fits = [s for s in ladder(power) if s.active_points <= active_points]
+def levels_within(power, active_points: int, *, hero) -> LevelFit:
+    """The largest step of ``power`` costing no more than ``active_points``.
+    ``hero`` as for `ladder`."""
+    fits = [s for s in ladder(power, hero=hero) if s.active_points <= active_points]
     if not fits:
         raise ValueError(f"no step of the power fits {active_points} points")
     return fits[-1]
 
 
-def step_display(power) -> str:
+def step_display(power, *, hero) -> str:
     """What ``power`` reads as, in HD's own words: its name and its damage
     display (``Blast 6d6``, ``Flight 30m``, ``Power Defense 5 points``);
     for a power bought as a defence split its levels (``Resistant
@@ -152,8 +183,14 @@ def step_display(power) -> str:
     Asked of a rung's copy (`LevelFit.power`) or of a slot as bought, so a
     menu that offers a share of a Multipower reserve can say what the share
     buys without composing any of it itself. Only joins what the power
-    already says.
+    already says. ``hero`` as for `ladder`: the words are read with him as
+    the active hero, and whoever was active before is restored.
     """
+    with _bought_on(hero):
+        return _step_display(power)
+
+
+def _step_display(power) -> str:
     from kirby_cost.objects.characteristics.characteristic import Characteristic
 
     if isinstance(power, Characteristic):

@@ -36,7 +36,7 @@ def survey(paths: list[Path]):
                 if not slot_is_variable(fw, slot):
                     continue
                 try:
-                    ladder(slot)
+                    ladder(slot, hero=hero)
                     verdict = "OK"
                 except NotLadderable:
                     verdict = "NotLadderable"
