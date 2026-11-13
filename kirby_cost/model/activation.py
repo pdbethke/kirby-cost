@@ -156,3 +156,32 @@ def contribution_from_purchase(obj) -> "Contribution | None":
         source_label=name or xmlid,
         requires_hero_id=_has_hero_id_limitation(obj),
     )
+
+
+def contribution_from_held_slot(obj) -> "Contribution | None":
+    """What a characteristic bought in a power framework's slot adds while
+    the slot holds ``obj`` --- the purchase at the share of the reserve its
+    allocation gives it (6E1 p.404-406): the purchase itself at full, or the
+    re-levelled copy `engine.allocation.levels_within` priced.
+
+    The one difference from `contribution_from_purchase`: HD's
+    ``AFFECTS_TOTAL`` flag is not consulted. HD writes it "No" on a slot
+    because a slot is not always in play (Ravel's "Reinforced String", Power
+    Lad's "Just Like the Old Days..."); the allocation says when, and how
+    much, it is. Everything else --- the levels, the Hero-identity condition
+    a slot inherits from its framework --- is read exactly as for any other
+    purchase.
+    """
+    xmlid = (getattr(obj, "xmlid", None) or "").upper()
+    if not xmlid:
+        return None
+    levels = float(getattr(obj, "levels", 0) or 0)
+    if levels == 0:
+        return None
+    name = (getattr(obj, "name", None) or "").strip()
+    return Contribution(
+        xmlid=xmlid,
+        delta=levels,
+        source_label=name or xmlid,
+        requires_hero_id=_has_hero_id_limitation(obj),
+    )

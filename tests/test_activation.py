@@ -1,4 +1,5 @@
 """Activation: which purchases count right now, and why."""
+import pytest
 from kirby_cost.model.activation import (
     ActivationContext, Contribution, CharacteristicState,
 )
@@ -409,3 +410,61 @@ def test_the_build_doc_carries_hds_totals_flags():
     for xmlid in ("STR", "DEX", "SPD", "DCV"):
         assert (again.temporal_characteristic(xmlid)
                 == hero.temporal_characteristic(xmlid)), xmlid
+
+
+# --------------------------------------------------------------------------
+# A characteristic bought in a Multipower slot, at the split it holds
+# (6E1 p.404-406). HD marks such a slot AFFECTS_TOTAL="No" because it is
+# not always in play; once a split says how much of the reserve it holds,
+# that IS the situation, and it counts for what it holds.
+# --------------------------------------------------------------------------
+
+def _ravel_and_string():
+    from kirby_cost.io.hdc_loader import HDCLoader
+
+    hero = HDCLoader().load_file("tests/fixtures/authored/Ravel.hdc")
+    slot = next(p for p in hero.powers
+                if (p.name or "").strip() == "Reinforced String")
+    return hero, slot
+
+
+def test_states_with_no_slot_held_read_the_build_as_written():
+    hero, _ = _ravel_and_string()
+    st = hero.characteristic_states(["STR"], slots={})["STR"]
+    assert st.value(ActivationContext()) == st.base == 10
+
+
+def test_a_slot_holding_nothing_adds_nothing():
+    hero, slot = _ravel_and_string()
+    st = hero.characteristic_states(["STR"], slots={str(slot.id): None})["STR"]
+    assert st.value(ActivationContext()) == 10
+
+
+def test_a_slot_held_at_part_of_its_cost_adds_the_priced_amount():
+    from kirby_cost.engine.allocation import levels_within
+
+    hero, slot = _ravel_and_string()
+    held = levels_within(slot, 15, hero=hero).power
+    st = hero.characteristic_states(["STR"], slots={str(slot.id): held})["STR"]
+    assert st.value(ActivationContext()) == 10 + held.levels == 25
+    assert "Reinforced String" in st.derivation(ActivationContext())
+
+
+def test_a_slot_held_in_full_adds_as_bought():
+    hero, slot = _ravel_and_string()
+    st = hero.characteristic_states(["STR"], slots={str(slot.id): slot})["STR"]
+    assert st.value(ActivationContext()) == 40
+
+
+def test_a_held_slot_keeps_its_frameworks_hero_id_condition():
+    """The pool is bought Only In Alternate Identity, and the slot inherits
+    it: held or not, out of costume he does not have it."""
+    hero, slot = _ravel_and_string()
+    st = hero.characteristic_states(["STR"], slots={str(slot.id): slot})["STR"]
+    assert st.value(ActivationContext(in_hero_id=False)) == 10
+
+
+def test_a_slot_id_that_names_no_purchase_is_refused():
+    hero, _ = _ravel_and_string()
+    with pytest.raises(KeyError, match="no-such-slot"):
+        hero.characteristic_states(["STR"], slots={"no-such-slot": None})

@@ -16,7 +16,7 @@ import copy
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import Mapping, Optional
 from lxml import etree
 from kirby_cost.io.xml_utility import XMLUtility
 from kirby_cost.objects.base import GenericObject
@@ -431,30 +431,20 @@ class LoadedHero:
         lists those flat in ``self.powers`` (a pool holds them in
         ``objects``), so recursing into a pool would count every slot twice.
 
-        CAVEAT — a pooled purchase can OVERSTATE the character. A Power
-        Framework's slot is summed unconditionally, because slot allocation
-        is not modelled in v1: only one slot of a Multipower is allocated at
-        a time, so a characteristic bought as a slot is usually not in play.
-        Ravel's pool "Maleable Sting Body" holds 19 slots, one of them a +30
-        STR, and this reports ``STR 40 = 10 base +30 (Reinforced String)`` —
-        the right answer in one allocation of nineteen. v1 knows exactly one
-        condition (the Hero identity); allocation is a SECOND and a stateful
-        one, needing a chosen allocation rather than a context flag, so it
-        was deliberately left out. It fits the same shape when someone wants
-        it: another condition on ``Contribution``, gated on a context that
-        names which slot is up. Until then, treat a pooled contribution as an
-        upper bound, and read ``derivation()`` — it names the source, so a
-        slot is identifiable — rather than trusting the total blind.
+        A FRAMEWORK SLOT is read as written here: HD's ``AFFECTS_TOTAL``
+        decides, and HD writes "No" on a slot that is not always in play
+        (Ravel's pool "Maleable Sting Body" holds a +30 STR "Reinforced
+        String" marked so, and his STR here is 10). A reader that knows how a
+        Multipower's reserve is split asks ``characteristic_states`` with
+        ``slots`` instead, and each slot then counts for what it holds
+        (6E1 p.404-406).
         """
-        from kirby_cost.model.activation import (
-            CharacteristicState, contribution_from_purchase,
-        )
-
         want = (xmlid or "").upper()
-        return self.characteristic_states([want])[want]
+        return self.characteristic_states([want], slots={})[want]
 
     def characteristic_states(
-        self, xmlids: "list[str] | tuple[str, ...]",
+        self, xmlids: "list[str] | tuple[str, ...]", *,
+        slots: "Mapping[str, object | None]",
     ) -> "dict[str, CharacteristicState]":
         """Several characteristics' states, from ONE walk of the purchases.
 
@@ -473,16 +463,36 @@ class LoadedHero:
 
         ``characteristic_state`` is this method with one xmlid, so there is one
         walk to be correct rather than two to keep in step.
+
+        ``slots`` is how the reader's power frameworks are split, slot by
+        slot (6E1 p.404-406), keyed by the slot purchase's ``id``: the
+        purchase as the slot holds it (itself at full, or the re-levelled
+        copy ``engine.allocation.levels_within`` priced for a share) or
+        ``None`` for a slot holding nothing. A slot named there counts for
+        what it holds (``contribution_from_held_slot``), whatever HD's
+        ``AFFECTS_TOTAL`` says; one not named is read as written. ``{}`` is
+        the build as written. Required, so a caller that knows a split cannot
+        forget to pass it. A key naming no purchase on the build raises.
         """
         from kirby_cost.model.activation import (
-            CharacteristicState, contribution_from_purchase,
+            CharacteristicState, contribution_from_held_slot,
+            contribution_from_purchase,
         )
 
         wanted = [(x or "").upper() for x in xmlids]
         found: dict[str, list] = {x: [] for x in wanted}
+        named: set[str] = set()
 
         def visit(obj) -> None:
-            c = contribution_from_purchase(obj)
+            key = str(getattr(obj, "id", "") or "")
+            if key and key in slots:
+                named.add(key)
+                obj = slots[key]
+                if obj is None:
+                    return          # holds nothing: neither it nor its parts
+                c = contribution_from_held_slot(obj)
+            else:
+                c = contribution_from_purchase(obj)
             if c is not None and c.xmlid in found:
                 found[c.xmlid].append(c)
             for sub in (getattr(obj, "powers", None) or []):
@@ -490,6 +500,11 @@ class LoadedHero:
 
         for p in (self.powers or []):
             visit(p)
+        stray = sorted(set(slots) - named)
+        if stray:
+            raise KeyError(
+                f"slots {stray!r} name no purchase on {self.name!r}; a split "
+                "is keyed by each slot purchase's id")
         return {
             x: CharacteristicState(
                 xmlid=x,
@@ -504,14 +519,9 @@ class LoadedHero:
     ) -> float:
         """What this characteristic IS right now, conditions applied.
 
-        CAVEAT — this can OVERSTATE a character who buys characteristics
-        inside a Power Framework. A slot is summed unconditionally because
-        slot allocation is not modelled in v1, so a pooled purchase counts
-        even in the allocations where it is not in play. See
-        ``characteristic_state``, which this delegates to, for the worked
-        example and the shape of the eventual fix (allocation is another
-        ``Contribution`` condition). The one condition v1 does honour is the
-        Hero identity.
+        The build as written: a framework slot counts as HD's
+        ``AFFECTS_TOTAL`` says (``characteristic_state``). A split reserve is
+        read with ``characteristic_states(..., slots=...)``.
         """
         from kirby_cost.model.activation import ActivationContext
 
