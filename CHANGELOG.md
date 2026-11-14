@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.3 — 2026-11-14
+
+### Changed — no licensed character names
+Comments, docstring examples and tests no longer name licensed Hero Games characters. Tests that loaded canon `.hdc` files by machine path now use the maintainer's own characters (Ravel, Bokor, PowerLad), or a temporary copy of one with the object under test added (`tests/own_copy.py`). No behaviour change.
+
 ## 0.8.2 — 2026-11-14
 
 ### Added — `slot_words(power, *, hero) -> str`: what a slot is, to tell it from its neighbours
