@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.1 — 2026-11-14
+
+### Fixed — Skill Levels or a Talent bought in a Multipower slot no longer crash its ladder or its words
+`ladder`, `levels_within` and `step_display` read `damage_display`, which only powers and characteristics have, so a slot holding Combat Skill Levels or a Talent (Lightning Reflexes) raised `AttributeError` and a fight with such a character failed at its opening split. Such a slot is now:
+- **not laddered**: `ladder`/`levels_within` raise `NotLadderable`, so it is off or as bought, never a part-share;
+- **worded in HD's column-2 words** by `step_display`, without its name or Limitations and without the reserve's own Limitations (`+1 with Block`, `Lightning Reflexes (+2 DEX to act first with All Actions)`), read off a copy so the slot itself is untouched.
+
 ## 0.8.0 — 2026-11-13
 
 ### Fixed — Killing damage is counted in Damage Classes, not half-die steps (6E2 p.99)

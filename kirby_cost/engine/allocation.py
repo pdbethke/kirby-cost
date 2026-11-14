@@ -79,6 +79,11 @@ def _fit(power, levels: int, drop_half: bool, fields: dict | None = None) -> Lev
 
 
 def _steps(power) -> list[LevelFit]:
+    if not _is_power(power):
+        # Skill Levels or a Talent bought in a slot: no dice or distance to
+        # step through, so the slot is off or as bought.
+        raise NotLadderable(
+            f"{getattr(power, 'xmlid', power)!r} is not a power; its slot is off or as bought")
     if (power.level_cost and not (power.levels or 0) > 0
             and any(a.xmlid in _HALF_ADDERS for a in power.assigned_adders)):
         # Bought as 0 levels plus a +1/2d6 / +1 pip adder (a 1/2d6 killing
@@ -178,7 +183,9 @@ def step_display(power, *, hero) -> str:
     display (``Blast 6d6``, ``Flight 30m``, ``Power Defense 5 points``);
     for a power bought as a defence split its levels (``Resistant
     Protection 3 PD/3 ED``, 6E1 p.406); for a characteristic its signed
-    levels (``+5 PD``), as HD's column 2 writes them.
+    levels (``+5 PD``), as HD's column 2 writes them; for Skill Levels or a
+    Talent bought in a slot, HD's column-2 words without the name or
+    Limitations (``+1 with Block``).
 
     Asked of a rung's copy (`LevelFit.power`) or of a slot as bought, so a
     menu that offers a share of a Multipower reserve can say what the share
@@ -190,9 +197,32 @@ def step_display(power, *, hero) -> str:
         return _step_display(power)
 
 
+def _is_power(obj) -> bool:
+    """True for a Power or a Characteristic: the purchases a slot can step."""
+    from kirby_cost.objects.characteristics.characteristic import Characteristic
+    from kirby_cost.objects.powers.power import Power
+
+    return isinstance(obj, (Power, Characteristic))
+
+
+def _column2_words(obj) -> str:
+    """HD's column-2 words for a Skill or Talent bought in a slot, without
+    its name or Limitations (``+1 with Block``, ``Lightning Reflexes (+2 DEX
+    to act first with All Actions)``), read off a copy so the slot itself
+    is untouched. The copy is also detached from the reserve, whose own
+    Limitations column 2 would otherwise print on every slot."""
+    dup = _clone(obj)
+    dup._name = ""
+    dup._assigned_modifiers = []
+    dup.parent = None
+    return dup.column2_output.strip()
+
+
 def _step_display(power) -> str:
     from kirby_cost.objects.characteristics.characteristic import Characteristic
 
+    if not _is_power(power):
+        return _column2_words(power)
     if isinstance(power, Characteristic):
         # A characteristic bought in a slot: HD writes its amount in column 2
         # ("+20 PD"); Running, Leaping and Swimming have a distance instead.

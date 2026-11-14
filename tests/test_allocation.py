@@ -311,3 +311,80 @@ def test_hka_rung_text_is_the_same_whichever_hero_is_active():
         EngineContext.set_active_hero(prior)
     assert own == other
     assert "w/STR" in own[1]                          # his own STR, HD's words
+
+
+
+# ── Skills and Talents bought in a slot ────────────────────────────────────
+# A Multipower slot is normally a power; a character may still hold Skill
+# Levels or a Talent there. They have no dice or distance to step through,
+# so they are not laddered: the slot is off or as bought. A rung's words
+# are HD's column-2 words for the purchase, without its name or
+# Limitations, as for a power. The slots are added to a temporary copy of
+# PowerLad (one of the bundled own characters) for the test only.
+
+_MP_ID = "1727271632187"   # PowerLad's Multipower
+
+
+def _slot_xml():
+    from lxml import etree
+    return [etree.fromstring(x) for x in (
+        f'''<TALENT XMLID="LIGHTNING_REFLEXES_ALL" ID="9000000000001" BASECOST="0.0" LEVELS="2" ALIAS="Lightning Reflexes" POSITION="100" MULTIPLIER="1.0" OPTION="ALL" OPTIONID="ALL" OPTION_ALIAS="All Actions" PARENTID="{_MP_ID}" ULTRA_SLOT="Yes" NAME="Talent Slot" />''',
+        f'''<SKILL XMLID="COMBAT_LEVELS" ID="9000000000002" BASECOST="0.0" LEVELS="1" ALIAS="Combat Skill Levels" POSITION="101" MULTIPLIER="1.0" OPTION="SINGLE" OPTIONID="SINGLE" OPTION_ALIAS="with Entangle" PARENTID="{_MP_ID}" ULTRA_SLOT="Yes" NAME="Skill Slot" CHARACTERISTIC="GENERAL" FAMILIARITY="No" PROFICIENCY="No"><MODIFIER XMLID="REQUIRESASKILLROLL" ID="9000000000003" BASECOST="-0.5" LEVELS="0" ALIAS="Requires A Roll" POSITION="-1" MULTIPLIER="1.0" OPTION="CHAR" OPTIONID="CHAR" OPTION_ALIAS="DEX roll" /></SKILL>''',
+    )]
+
+
+@pytest.fixture
+def slotted(tmp_path):
+    """PowerLad with a Talent slot and a Skill Levels slot in his
+    Multipower, which is given a Limitation of its own (Costs Endurance)
+    so the test sees that the reserve's Limitations stay out of the words."""
+    from lxml import etree
+    from tests.corpus import require_authored_hdc
+
+    root = etree.parse(str(require_authored_hdc("PowerLad"))).getroot()
+    mp = root.find(f".//MULTIPOWER[@ID='{_MP_ID}']")
+    mp.append(etree.fromstring(
+        '<MODIFIER XMLID="COSTSEND" ID="9000000000004" BASECOST="-0.5" LEVELS="0" '
+        'ALIAS="Costs Endurance" POSITION="-1" MULTIPLIER="1.0" OPTION="EVERYPHASE" '
+        'OPTIONID="EVERYPHASE" OPTION_ALIAS="Costs END Every Phase" />'))
+    powers = root.find("POWERS")
+    for el in _slot_xml():
+        powers.append(el)
+    path = tmp_path / "PowerLad-slotted.hdc"
+    path.write_bytes(etree.tostring(root, xml_declaration=True, encoding="UTF-8"))
+    hero = HDCLoader().load_file(str(path))
+    slots = {o.name: o for o in hero.powers
+             if getattr(getattr(o, "parent", None), "xmlid", None) == "MULTIPOWER"
+             and o.name in ("Talent Slot", "Skill Slot")}
+    assert set(slots) == {"Talent Slot", "Skill Slot"}, slots
+    return hero, slots
+
+
+def test_a_talent_in_a_slot_reads_as_hd_writes_it(slotted):
+    hero, slots = slotted
+    assert step_display(slots["Talent Slot"], hero=hero) == (
+        "Lightning Reflexes (+2 DEX to act first with All Actions)")
+
+
+def test_skill_levels_in_a_slot_read_as_hd_writes_them(slotted):
+    hero, slots = slotted
+    words = step_display(slots["Skill Slot"], hero=hero)
+    assert words == "+1 with Entangle"
+    assert "Requires A Roll" not in words and "Skill Slot" not in words
+    # Nor the reserve's own Limitation, which the slot is bought under.
+    assert "Costs Endurance" not in words and "Active Points" not in words
+
+
+@pytest.mark.parametrize("name", ["Talent Slot", "Skill Slot"])
+def test_skills_and_talents_in_a_slot_are_not_laddered(slotted, name):
+    hero, slots = slotted
+    with pytest.raises(NotLadderable):
+        ladder(slots[name], hero=hero)
+
+
+def test_words_leave_the_slot_untouched(slotted):
+    hero, slots = slotted
+    slot = slots["Skill Slot"]
+    before = (slot.name, slot.parent, len(slot.assigned_modifiers), slot.column2_output)
+    step_display(slot, hero=hero)
+    assert (slot.name, slot.parent, len(slot.assigned_modifiers), slot.column2_output) == before
