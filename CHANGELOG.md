@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.2 — 2026-11-14
+
+### Added — `slot_words(power, *, hero) -> str`: what a slot is, to tell it from its neighbours
+HD's column-2 words for a framework slot with its Advantages kept, and without its name, its Limitations or the reserve's: `Blast 6d6, Reduced Endurance (0 END; +1/2)`, `Entangle 3d6, 6 PD/6 ED`, `+45 STR`. `step_display` says what a rung buys and leaves the Advantages out on purpose; two slots that are the same power at the same dice differ only in them, so a menu naming an unnamed slot by its alias ("Blast") could not tell them apart. Read off a copy; the slot is untouched. `hero` as for `ladder`.
+
 ## 0.8.1 — 2026-11-14
 
 ### Fixed — Skill Levels or a Talent bought in a Multipower slot no longer crash its ladder or its words

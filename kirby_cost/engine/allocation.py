@@ -205,24 +205,39 @@ def _is_power(obj) -> bool:
     return isinstance(obj, (Power, Characteristic))
 
 
-def _column2_words(obj) -> str:
-    """HD's column-2 words for a Skill or Talent bought in a slot, without
-    its name or Limitations (``+1 with Block``, ``Lightning Reflexes (+2 DEX
-    to act first with All Actions)``), read off a copy so the slot itself
-    is untouched. The copy is also detached from the reserve, whose own
-    Limitations column 2 would otherwise print on every slot."""
+def _column2_words(obj, *, advantages: bool) -> str:
+    """HD's column-2 words for a slot without its name or Limitations, and
+    with its Advantages only when ``advantages`` is set. Read off a copy,
+    so the slot itself is untouched; the copy is also detached from the
+    reserve, whose own Limitations column 2 would otherwise print on every
+    slot."""
     dup = _clone(obj)
     dup._name = ""
-    dup._assigned_modifiers = []
+    dup._assigned_modifiers = ([m for m in dup._assigned_modifiers if not m.is_limitation]
+                               if advantages else [])
     dup.parent = None
     return dup.column2_output.strip()
+
+
+def slot_words(power, *, hero) -> str:
+    """What a slot IS, in HD's own column-2 words, to tell it from the
+    slots beside it: the purchase with its Advantages, without its name,
+    its Limitations or the reserve's (``Blast 6d6, Reduced Endurance (0 END;
+    +1/2)``, ``Entangle 3d6, 6 PD/6 ED``, ``+45 STR``).
+
+    `step_display` says what a rung buys and leaves the Advantages out; two
+    slots that are the same power at the same dice differ only in them.
+    ``hero`` as for `ladder`.
+    """
+    with _bought_on(hero):
+        return _column2_words(power, advantages=True)
 
 
 def _step_display(power) -> str:
     from kirby_cost.objects.characteristics.characteristic import Characteristic
 
     if not _is_power(power):
-        return _column2_words(power)
+        return _column2_words(power, advantages=False)
     if isinstance(power, Characteristic):
         # A characteristic bought in a slot: HD writes its amount in column 2
         # ("+20 PD"); Running, Leaping and Swimming have a distance instead.

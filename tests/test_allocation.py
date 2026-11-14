@@ -3,7 +3,7 @@ import pytest
 
 from kirby_cost.io.hdc_loader import HDCLoader
 from kirby_cost.engine.allocation import (
-    LevelFit, NotLadderable, ladder, levels_within, step_display,
+    LevelFit, NotLadderable, ladder, levels_within, slot_words, step_display,
 )
 from kirby_cost.services.power_builder import build_power_from_spec
 
@@ -387,4 +387,74 @@ def test_words_leave_the_slot_untouched(slotted):
     slot = slots["Skill Slot"]
     before = (slot.name, slot.parent, len(slot.assigned_modifiers), slot.column2_output)
     step_display(slot, hero=hero)
+    assert (slot.name, slot.parent, len(slot.assigned_modifiers), slot.column2_output) == before
+
+
+# ── slot_words: what a slot is, to tell it from its neighbours ─────────────
+# Two slots can be the same power at the same dice, told apart only by their
+# Advantages (one 0 END, one Area Of Effect). `step_display` leaves those
+# out on purpose (a rung is dice or metres); `slot_words` is HD's column-2
+# words with them kept, and without the slot's name, its Limitations or the
+# reserve's. PowerLad's own Multipower supplies the slots, plus two unnamed
+# Blasts added to a temporary copy of him.
+
+def _unnamed_blasts():
+    from lxml import etree
+    mod = ('<MODIFIER XMLID="REDUCEDEND" ID="{id}" BASECOST="0.5" LEVELS="0" ALIAS="Reduced Endurance" '
+           'POSITION="-1" MULTIPLIER="1.0" OPTION="ZERO" OPTIONID="ZERO" OPTION_ALIAS="0 END" />')
+    lim = ('<MODIFIER XMLID="LIMITEDPOWER" ID="{id}" BASECOST="-1.0" LEVELS="0" ALIAS="Limited Power" '
+           'POSITION="-1" MULTIPLIER="1.0" OPTION="HALF" OPTIONID="HALF" '
+           'OPTION_ALIAS="Power loses about half of its effectiveness" COMMENTS="test only" />')
+    blast = ('<POWER XMLID="ENERGYBLAST" ID="{id}" BASECOST="0.0" LEVELS="6" ALIAS="Blast" POSITION="{pos}" '
+             'MULTIPLIER="1.0" INPUT="ED" PARENTID="' + _MP_ID + '" ULTRA_SLOT="Yes" NAME="">{mods}</POWER>')
+    return [etree.fromstring(blast.format(id="9000000000011", pos=110,
+                                          mods=mod.format(id="9000000000012") + lim.format(id="9000000000013"))),
+            etree.fromstring(blast.format(id="9000000000014", pos=111, mods=""))]
+
+
+@pytest.fixture
+def blasts(tmp_path):
+    from lxml import etree
+    from tests.corpus import require_authored_hdc
+
+    root = etree.parse(str(require_authored_hdc("PowerLad"))).getroot()
+    root.find(f".//MULTIPOWER[@ID='{_MP_ID}']").append(etree.fromstring(
+        '<MODIFIER XMLID="COSTSEND" ID="9000000000015" BASECOST="-0.5" LEVELS="0" '
+        'ALIAS="Costs Endurance" POSITION="-1" MULTIPLIER="1.0" OPTION="EVERYPHASE" '
+        'OPTIONID="EVERYPHASE" OPTION_ALIAS="Costs END Every Phase" />'))
+    for el in _unnamed_blasts():
+        root.find("POWERS").append(el)
+    path = tmp_path / "PowerLad-blasts.hdc"
+    path.write_bytes(etree.tostring(root, xml_declaration=True, encoding="UTF-8"))
+    hero = HDCLoader().load_file(str(path))
+    by_id = {str(o.id): o for o in hero.powers}
+    return hero, by_id
+
+
+def test_slot_words_drop_the_name_and_the_limitations(blasts):
+    hero, by_id = blasts
+    assert slot_words(by_id["1727355441687"], hero=hero) == "Entangle 3d6, 6 PD/6 ED"
+
+
+def test_slot_words_keep_the_advantages(blasts):
+    hero, by_id = blasts
+    assert slot_words(by_id["9000000000011"], hero=hero) == "Blast 6d6, Reduced Endurance (0 END; +1/2)"
+
+
+def test_slot_words_tell_two_blasts_apart(blasts):
+    hero, by_id = blasts
+    assert slot_words(by_id["9000000000014"], hero=hero) == "Blast 6d6"
+    assert slot_words(by_id["9000000000011"], hero=hero) != slot_words(by_id["9000000000014"], hero=hero)
+
+
+def test_slot_words_of_a_characteristic_in_a_slot(blasts):
+    hero, by_id = blasts
+    assert slot_words(by_id["1727272554833"], hero=hero) == "+45 STR"
+
+
+def test_slot_words_leave_the_slot_untouched(blasts):
+    hero, by_id = blasts
+    slot = by_id["9000000000011"]
+    before = (slot.name, slot.parent, len(slot.assigned_modifiers), slot.column2_output)
+    slot_words(slot, hero=hero)
     assert (slot.name, slot.parent, len(slot.assigned_modifiers), slot.column2_output) == before
