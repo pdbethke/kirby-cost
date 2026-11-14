@@ -84,7 +84,7 @@ class Swimming(Characteristic, xmlid="SWIMMING"):
         
         # Java is `getAlias() + " " + getDamageDisplay()`. Preferring the
         # DISPLAY silently overrode a character who renamed the movement: one
-        # NAGA calls its Running "(14m total)", and HD prints that, because
+        # bestiary creature calls its Running "(14m total)", and HD prints that, because
         # what the player typed is what the sheet says.
         alias = self.alias or ""
         string = f"{alias} {self.damage_display}"
@@ -93,7 +93,7 @@ class Swimming(Characteristic, xmlid="SWIMMING"):
         string2 = ""
         # Java's guard is indexOf("(") > 0, not >= 0 (Swimming.java:99). A
         # paren at position ZERO means the whole alias is parenthesised --
-        # one NAGA renames its Swimming "(8m total)" -- and Java leaves that
+        # one bestiary creature renames its Swimming "(8m total)" -- and Java leaves that
         # alone. Treating it as found moved the string onto a leading space:
         # "<i>Amphibious Form:</i>   (8m total)", with three.
         idx = string.find("(")

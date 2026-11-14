@@ -3,7 +3,6 @@ Metadata round-trip test: verify all character info fields survive
 load -> export -> reload cycle.
 """
 
-import json
 import tempfile
 import os
 import pytest
@@ -12,46 +11,33 @@ from lxml import etree
 
 from kirby_cost.io.hdc_loader import HDCLoader, LoadedHero
 
-# The .hdc files live outside this repo — they are published Hero Games
-# content, never vendored. Their location is already recorded once, in the
-# oracle fixtures' ``hdc_path``, written there by the fixture generator (which
-# is not public: it drives a headless HERO Designer, wrapping licensed source).
-# Read it from there rather than walking for
-# an ancestor directory by name: this file looked for one called "Champions
-# Campaign Manager", the workspace was renamed to Kirby, and the walk ran off
-# the top and produced a path anchored at "/" — 24 tests erroring
-# at setup on a path anchored at the filesystem root.
-_FIXTURES = Path(__file__).resolve().parent / "fixtures" / "oracle"
+# The .hdc files are the maintainer's own characters, bundled in
+# ``tests/fixtures/authored/``. Bokor has a written background but no other
+# prose, so the "populated biography" tests run on a temporary copy of Bokor
+# whose personality / tactics / campaign-use / appearance text is filled in.
+BOKOR_BIO = {
+    "PERSONALITY": "Patient, courtly and quietly unforgiving of broken promises.",
+    "TACTICS": "Lets the powders do the work and keeps the crowd between him and trouble.",
+    "CAMPAIGN_USE": "A contact in the Port-au-Prince underworld, or an uneasy ally.",
+    "APPEARANCE": "Very tall and very broad, bald, in a white linen suit and dark glasses.",
+}
 
 
-def _hdc_from_fixture(fixture_name: str) -> str:
-    """The .hdc path an oracle fixture was generated from, or "" if unknown."""
-    f = _FIXTURES / f"{fixture_name}.json"
-    if not f.exists():
-        return ""
-    return json.loads(f.read_text()).get("hdc_path") or ""
+def _bokor_with_bio(tmp_path: Path) -> str:
+    """A temporary copy of Bokor with the biography fields populated."""
+    from tests.corpus import require_authored_hdc
+    root = etree.parse(str(require_authored_hdc("Bokor"))).getroot()
+    info = root.find("CHARACTER_INFO")
+    for tag, text in BOKOR_BIO.items():
+        info.find(tag).text = text
+    out = tmp_path / "Bokor-bio.hdc"
+    out.write_bytes(etree.tostring(root, xml_declaration=True, encoding="UTF-8"))
+    return str(out)
 
 
-# Scorpion Man — has populated biography fields.
-SCORPION_MAN = _hdc_from_fixture(
-    "bestiary__HERO_System_Bestiary_6th_Edition_Character_Pack__"
-    "HSB HD Files__CHAPTER_2__SCORPION_MAN__SCORPION_MAN_HSB"
-)
-
-# Doctor Destroyer — superheroic template, high experience.
-DOCTOR_DESTROYER = _hdc_from_fixture(
-    "villains__CV1HDFiles__CV1 HD Files \u0192__DOCTOR_DESTROYER__"
-    "DOCTOR_DESTROYER-CV1"
-)
-
-_MISSING = "the .hdc this test reads is not on this machine"
-
-
-def _require(path: str) -> str:
-    """Skip rather than error when the licensed .hdc is absent."""
-    if not path or not Path(path).exists():
-        pytest.skip(_MISSING)
-    return path
+def _ravel() -> str:
+    from tests.corpus import require_authored_hdc
+    return str(require_authored_hdc("Ravel"))
 
 
 def _export_hero_xml(hero: LoadedHero) -> bytes:
@@ -158,124 +144,123 @@ class TestLoadMetadata:
     """Verify metadata is parsed from HDC files."""
 
     @pytest.fixture
-    def scorpion(self):
-        loader = HDCLoader()
-        return loader.load_file(_require(SCORPION_MAN))
+    def bokor(self, tmp_path):
+        return HDCLoader().load_file(_bokor_with_bio(tmp_path))
 
     @pytest.fixture
-    def destroyer(self):
-        loader = HDCLoader()
-        return loader.load_file(_require(DOCTOR_DESTROYER))
+    def ravel(self):
+        return HDCLoader().load_file(_ravel())
 
-    def test_name(self, scorpion):
-        assert scorpion.name == "Scorpion Man"
+    def test_name(self, bokor):
+        assert bokor.name == "Bokor"
 
-    def test_template_name(self, scorpion):
-        assert "Heroic6E" in scorpion.template_name
+    def test_template_name(self, bokor):
+        assert "Heroic6E" in bokor.template_name
 
-    def test_base_points(self, scorpion):
-        assert scorpion.base_points == 175
+    def test_base_points(self, bokor):
+        assert bokor.base_points == 270
 
-    def test_disad_points(self, scorpion):
-        assert scorpion.disad_points == 50
+    def test_disad_points(self, bokor):
+        assert bokor.disad_points == 40
 
-    def test_experience(self, scorpion):
-        assert scorpion.experience == 72
+    def test_experience(self, bokor):
+        assert bokor.experience == 5
 
-    def test_height_nonzero(self, scorpion):
-        assert scorpion.height > 0.0
+    def test_height_nonzero(self, bokor):
+        assert bokor.height > 0.0
 
-    def test_weight_nonzero(self, scorpion):
-        assert scorpion.weight > 0.0
+    def test_weight_nonzero(self, bokor):
+        assert bokor.weight > 0.0
 
-    def test_hair_color(self, scorpion):
-        assert scorpion.hair_color == "Brown"
+    def test_hair_color(self, bokor):
+        assert bokor.hair_color == "Bald"
 
-    def test_eye_color(self, scorpion):
-        assert scorpion.eye_color == "Brown"
+    def test_eye_color(self, bokor):
+        assert bokor.eye_color == "Brown"
 
-    def test_background_populated(self, scorpion):
-        assert "scorpion-men" in scorpion.background.lower()
+    def test_background_populated(self, bokor):
+        assert "gonaives" in bokor.background.lower()
 
-    def test_personality_populated(self, scorpion):
-        assert len(scorpion.personality) > 10
+    def test_personality_populated(self, bokor):
+        assert len(bokor.personality) > 10
 
-    def test_tactics_populated(self, scorpion):
-        assert len(scorpion.tactics) > 10
+    def test_tactics_populated(self, bokor):
+        assert len(bokor.tactics) > 10
 
-    def test_campaign_use_populated(self, scorpion):
-        assert len(scorpion.campaign_use) > 10
+    def test_campaign_use_populated(self, bokor):
+        assert len(bokor.campaign_use) > 10
 
-    def test_appearance_populated(self, scorpion):
-        assert len(scorpion.appearance) > 10
+    def test_appearance_populated(self, bokor):
+        assert len(bokor.appearance) > 10
 
-    def test_destroyer_base_points(self, destroyer):
-        assert destroyer.base_points == 400
+    def test_ravel_base_points(self, ravel):
+        assert ravel.base_points == 400
 
-    def test_destroyer_experience(self, destroyer):
-        assert destroyer.experience == 3214
+    def test_ravel_experience(self, ravel):
+        assert ravel.experience == 50
 
-    def test_empty_fields_default(self, destroyer):
-        # These are empty in Doctor Destroyer's HDC
-        assert destroyer.player_name == ""
-        assert destroyer.campaign_name == ""
+    def test_empty_fields_default(self, ravel):
+        # These are empty in Ravel's HDC
+        assert ravel.campaign_name == ""
+        assert ravel.personality == ""
+        assert ravel.background == ""
 
 
 class TestMetadataRoundtrip:
     """Verify metadata survives load -> export -> reload."""
 
     @pytest.fixture
-    def scorpion_roundtrip(self):
-        return _roundtrip(_require(SCORPION_MAN))
+    def bokor_roundtrip(self, tmp_path):
+        return _roundtrip(_bokor_with_bio(tmp_path))
 
     @pytest.fixture
-    def destroyer_roundtrip(self):
-        return _roundtrip(_require(DOCTOR_DESTROYER))
+    def ravel_roundtrip(self):
+        return _roundtrip(_ravel())
 
-    def test_str_attrs_roundtrip(self, scorpion_roundtrip):
-        hero1, hero2 = scorpion_roundtrip
+    def test_str_attrs_roundtrip(self, bokor_roundtrip):
+        hero1, hero2 = bokor_roundtrip
         for attr in _STR_ATTRS:
             assert getattr(hero2, attr) == getattr(hero1, attr), (
                 f"{attr}: {getattr(hero2, attr)!r} != {getattr(hero1, attr)!r}"
             )
 
-    def test_text_fields_roundtrip(self, scorpion_roundtrip):
-        hero1, hero2 = scorpion_roundtrip
+    def test_text_fields_roundtrip(self, bokor_roundtrip):
+        hero1, hero2 = bokor_roundtrip
         for field in _TEXT_FIELDS:
             assert getattr(hero2, field) == getattr(hero1, field), (
                 f"{field}: {getattr(hero2, field)!r} != {getattr(hero1, field)!r}"
             )
 
-    def test_int_attrs_roundtrip(self, scorpion_roundtrip):
-        hero1, hero2 = scorpion_roundtrip
+    def test_int_attrs_roundtrip(self, bokor_roundtrip):
+        hero1, hero2 = bokor_roundtrip
         for attr in _INT_ATTRS:
             assert getattr(hero2, attr) == getattr(hero1, attr), (
                 f"{attr}: {getattr(hero2, attr)} != {getattr(hero1, attr)}"
             )
 
-    def test_float_attrs_roundtrip(self, scorpion_roundtrip):
-        hero1, hero2 = scorpion_roundtrip
+    def test_float_attrs_roundtrip(self, bokor_roundtrip):
+        hero1, hero2 = bokor_roundtrip
         for attr in _FLOAT_ATTRS:
             assert abs(getattr(hero2, attr) - getattr(hero1, attr)) < 0.01, (
                 f"{attr}: {getattr(hero2, attr)} != {getattr(hero1, attr)}"
             )
 
-    def test_destroyer_str_attrs_roundtrip(self, destroyer_roundtrip):
-        hero1, hero2 = destroyer_roundtrip
+    def test_ravel_str_attrs_roundtrip(self, ravel_roundtrip):
+        hero1, hero2 = ravel_roundtrip
         for attr in _STR_ATTRS:
             assert getattr(hero2, attr) == getattr(hero1, attr), (
                 f"{attr}: {getattr(hero2, attr)!r} != {getattr(hero1, attr)!r}"
             )
 
-    def test_destroyer_int_attrs_roundtrip(self, destroyer_roundtrip):
-        hero1, hero2 = destroyer_roundtrip
+    def test_ravel_int_attrs_roundtrip(self, ravel_roundtrip):
+        hero1, hero2 = ravel_roundtrip
         for attr in _INT_ATTRS:
             assert getattr(hero2, attr) == getattr(hero1, attr), (
                 f"{attr}: {getattr(hero2, attr)} != {getattr(hero1, attr)}"
             )
 
-    def test_template_name_roundtrip(self, scorpion_roundtrip):
-        hero1, hero2 = scorpion_roundtrip
+    def test_template_name_roundtrip(self, bokor_roundtrip):
+        hero1, hero2 = bokor_roundtrip
         assert hero2.template_name == hero1.template_name
 
 

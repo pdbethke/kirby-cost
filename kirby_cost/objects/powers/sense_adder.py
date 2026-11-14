@@ -311,11 +311,11 @@ class SenseAdder(Power):
             # A *GROUP option takes the group rate, full stop. There used to
             # be an extra `and self.sense_groups_defined` here, on the theory
             # that a character declaring no TEMPLATE has no sense groups and so
-            # must fall back to the single-sense rate (UNDEAD_GHOUL). That was
+            # must fall back to the single-sense rate (one corpus character). That was
             # fitted to a broken oracle: the headless fork could not resolve
             # builtIn. template names, so even the Main6E bootstrap loaded
             # without the parent chain that registers the groups. With the
-            # oracle fixed (2026-08-17) the GHOUL takes the group rate like
+            # oracle fixed (2026-08-17) a no-template Detect takes the group rate like
             # everyone else — 3 levels x 2 = 6, not 3.
             elif adder.xmlid.endswith("GROUP") and self.group_cost > 0:
                 if self._level_value > 0.0:

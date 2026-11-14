@@ -113,9 +113,9 @@ def _affects_the_characteristic(obj) -> bool:
     This is the difference between two purchases that otherwise look
     identical to this module:
 
-      * White Wolf's +30 STR is ``AFFECTS_TOTAL="Yes"``: it is part of his
+      * A corpus hero's +30 STR is ``AFFECTS_TOTAL="Yes"``: it is part of his
         numbers, conditioned on being in costume. It contributes.
-      * Gorgon's "Tail" +20 STR is ``AFFECTS_TOTAL="No"``, and its
+      * A villain's "Tail" +20 STR is ``AFFECTS_TOTAL="No"``, and its
         limitation is aliased "Only With Tail" — a restrainable limb, not a
         general increase. HD does not add it to his STR, and neither does
         this. Same for a Multipower slot like Ravel's "Reinforced String".
@@ -123,7 +123,7 @@ def _affects_the_characteristic(obj) -> bool:
     A purchase HD excludes from the total is situational by construction,
     and the situation is exactly what v1 does not model. Counting it would
     hand every such character a permanent bonus the character sheet does
-    not give them: measured, it made Gorgon STR 80 instead of 60 in every
+    not give them: measured, it made that villain STR 80 instead of 60 in every
     calculation, thrown-object damage included.
 
     Objects with no such flags (anything that is not a

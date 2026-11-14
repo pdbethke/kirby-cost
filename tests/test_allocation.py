@@ -16,7 +16,7 @@ def test_drain_6d6_at_40_points_is_4d6():            # p.405
     assert levels_within(p, 40, hero=None).levels == 4
 
 
-def test_blast_12d6_at_20_points_is_4d6():           # p.406 Kerendor
+def test_blast_12d6_at_20_points_is_4d6():           # p.406 worked example
     p, _, _ = build_power_from_spec({"xmlid": "ENERGYBLAST", "levels": 12, "modifiers": []})
     fit = levels_within(p, 20, hero=None)
     assert (fit.levels, fit.active_points, fit.display) == (4, 20, "4d6")
@@ -117,7 +117,7 @@ def _resistant(pd, ed, **extra):
     return build_power_from_spec(spec)
 
 
-def test_resistant_protection_15_15_at_9_points_is_3_3():   # 6E1 p.406 Kerendor
+def test_resistant_protection_15_15_at_9_points_is_3_3():   # 6E1 p.406 worked example
     p, _, _ = _resistant(15, 15)
     fit = levels_within(p, 9, hero=None)
     assert (fit.power.pd_levels, fit.power.ed_levels, fit.active_points) == (3, 3, 9)
@@ -224,7 +224,7 @@ def test_hkb_style_zero_level_half_die_slot_ladders_as_nothing_and_full():
     assert levels_within(p, full, hero=None).active_points == full
 
 
-# ── what a rung reads as (6E1 p.406, Kerendor) ─────────────────────────────
+# ── what a rung reads as (6E1 p.406, the worked example) ─────────────────────────────
 # The menu that offers a split says what each share buys in HD's own words:
 # the power's name and its damage display, and for Resistant Protection the
 # PD/ED it was bought as, which HD prints in column 2 rather than as a

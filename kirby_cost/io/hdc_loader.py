@@ -576,12 +576,12 @@ class LoadedHero:
 
         This is applied here rather than in `VariablePowerPool
         .real_cost_for_child` because the two readings differ. A slot's own
-        reported cost is NOT zero — the oracle dumps MENTON's Ego Attack at 150
+        reported cost is NOT zero — the oracle dumps a pooled Ego Attack at 150
         and the engine agrees — but `real_cost` on a child delegates to the
         parent (`engine/cost.py:175`), so zeroing that method would collapse
         every slot's reported cost as well. Only the total omits them:
-        MENTON-CV1 is 841 unparented powers + 683 elsewhere = 1524, with its 13
-        slots (1313 points) appearing nowhere.
+        a pool-bearing corpus character was 841 unparented powers + 683 elsewhere
+        = 1524, with its 13 slots (1313 points) appearing nowhere.
         """
         from kirby_cost.objects.frameworks import is_vpp
 
@@ -782,7 +782,7 @@ class HDCLoader:
         # to the single-sense option; resolve it through the template's OWN "*"
         # alias rather than hardcoding a target. Measured over 655 oracle
         # fixtures: 72/72 template-bearing GROUP options take the group rate,
-        # 1/1 without a template takes the single rate (UNDEAD_GHOUL).
+        # 1/1 without a template takes the single rate (one corpus character).
         if (option_id
                 and option_id.upper().endswith("GROUP")
                 and not getattr(self, "_character_has_template", True)
@@ -1300,17 +1300,17 @@ class HDCLoader:
     #   1/1. Measured across all 655 fixtures, the oracle uses (1.0, 1.0) for
     #   every character on every template -- Automaton6E 16, Heroic6E 238,
     #   Superheroic6E 300, Vehicle6E 4, no-template 11, not one instance at
-    #   (3, 2). Honouring it broke WARLORD - THE FLYING FORTRESS. Retracted
+    #   (3, 2). Honouring it broke a corpus Vehicle6E character. Retracted
     #   earlier, leaving this function empty of cost overrides.
     #
     #   USESEND. Vehicle6E writes USESEND="No" on the movement powers where
     #   Main6E writes "Yes", and that flag was kept on the grounds that it
     #   "genuinely is No". It genuinely is -- in Vehicle6E, which is not what
     #   the oracle loaded. Forcing it made Charges.parentUsesEND() false on
-    #   THE_STARBIRD's Jet Engines, clamping a +0.25 CHARGES away and costing
+    #   a corpus vehicle's Jet Engines, clamping a +0.25 CHARGES away and costing
     #   the Flight 105 against the oracle's 131.
     #
-    # Removing the rest of it fixed THE_STARBIRD and moved no other character.
+    # Removing the rest of it fixed that vehicle and moved no other character.
     # If a consumer ever needs true per-character templates, the answer is a
     # TemplateProvider that resolves the named .hdt -- not a hand-rolled patch
     # over Main6E in the loader.
@@ -1716,7 +1716,7 @@ class HDCLoader:
                 # Java's Adder.getSelectedOption().getXMLID() is exactly this
                 # value, and rules such as DangerSense.getAssignedAdders()
                 # branch on it. Dropping it made every such check silently
-                # false (BOREALIS lost its -5 INTUITIONAL adder).
+                # false (a corpus DANGER_SENSE lost its -5 INTUITIONAL adder).
                 if adder_opt:
                     adder.option_id = adder_opt
                 self._apply_template_to_adder(adder, obj.xmlid, adder.xmlid, parent=obj,
@@ -1778,7 +1778,7 @@ class HDCLoader:
                 chosen = Adder()
                 chosen.xmlid = selected
                 # A character that names no template has no sense groups to
-                # buy — see _apply_template_defaults, and UNDEAD_GHOUL, which
+                # buy — see _apply_template_defaults, and one corpus character, who
                 # asks for the Smell/Taste Group and is charged for one sense.
                 obj.sense_groups_defined = self._character_has_template
                 obj.selected_option = chosen
@@ -1860,7 +1860,7 @@ class HDCLoader:
         # A perk with no class of its own is a Perk, for the same reason a
         # talent is a Talent. Perk.getColumn2Output brackets the adder string
         # (Perk.java:72) and _FallbackObject prints the alias alone, so
-        # Adrian Vandaleur's DEEP_COVER lost its "(Custom Adder)".
+        # a corpus DEEP_COVER perk lost its "(Custom Adder)".
         if obj_type == "perk":
             cls = self._get_power_cls(xmlid_upper)
             if cls is not None:
@@ -2028,7 +2028,7 @@ class HDCLoader:
                 # Java's Adder.getSelectedOption().getXMLID() is exactly this
                 # value, and rules such as DangerSense.getAssignedAdders()
                 # branch on it. Dropping it made every such check silently
-                # false (BOREALIS lost its -5 INTUITIONAL adder).
+                # false (a corpus DANGER_SENSE lost its -5 INTUITIONAL adder).
                 if adder_opt:
                     adder.option_id = adder_opt
                 self._apply_template_to_adder(adder, xmlid, adder.xmlid,

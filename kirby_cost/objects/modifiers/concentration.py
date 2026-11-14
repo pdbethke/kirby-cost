@@ -57,8 +57,8 @@ class Concentration(Modifier, xmlid="CONCENTRATION"):
         reach the filter at all (the rest are CONSTANT-duration or
         name-excluded), and both agree:
 
-            JOSEPH_OTANGA  TRANSFORM    INSTANT + EXTRATIME -> kept,  -1.0
-            SHADOW_COLOSSUS ENERGYBLAST INSTANT, no guard   -> kept,  -0.5
+            a TRANSFORM    INSTANT + EXTRATIME -> kept,  -1.0
+            an ENERGYBLAST INSTANT, no guard   -> kept,  -0.5
 
         The second is the one that used to be an oracle residual: a static
         read of the Java filters it to -0.25, and the oracle records -0.5.

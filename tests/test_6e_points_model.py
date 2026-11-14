@@ -14,12 +14,10 @@ implement that printed rule, alongside (never replacing) HD's own
 characters, disagree exactly the way the two rulebooks disagree.
 
 Worked examples are the three authored characters (Ravel, Bokor, Power Lad —
-see ``tests/fixtures/authored/``) plus the bestiary's Elemental - Air, which
-took NO complications against a 50-point target. The authored .hdc files are
-machine-bound (``KIRBY_COST_AUTHORED``, see ``tests/test_authored_characters.py``)
-so those three are hand-built here from the committed oracle JSON dumps
-instead of loaded live; Elemental - Air's .hdc ships in this repo's own
-oracle corpus and is loaded for real.
+see ``tests/fixtures/authored/``), plus a temporary copy of Power Lad with every
+complication removed, which took NO complications against a 120-point target.
+The three are hand-built here from the committed oracle JSON dumps; the
+complication-free copy is loaded for real.
 """
 from __future__ import annotations
 
@@ -32,11 +30,6 @@ from kirby_cost.io.hdc_loader import HDCLoader, LoadedHero
 from tests.conftest import make_object
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "authored"
-ELEMENTAL_AIR_FIXTURE = (
-    Path(__file__).parent / "fixtures" / "oracle"
-    / "bestiary__HERO_System_Bestiary_6th_Edition_Character_Pack__HSB HD Files"
-      "__CHAPTER_1__CREATURE_TEMPLATES__ELEMENTAL_AIR-HSB.json"
-)
 
 
 def _hand_built(*, base_points, disad_points, experience, taken, spent) -> LoadedHero:
@@ -94,28 +87,31 @@ def test_worked_examples_match_committed_oracle_fixture(name):
     assert sum(c.get("real_cost", 0) for c in comps) == taken
 
 
-def test_elemental_air_took_no_complications_and_loses_the_whole_target():
-    """Real corpus character, loaded live. Took 0 of a 50-point Matching
-    Complications target: the whole 50 comes off spendable_points, on top
-    of whatever total_points already spent — 6E1 p.30's "every 1 point
-    short reduces Total Points by 1" taken to its floor."""
-    if not ELEMENTAL_AIR_FIXTURE.exists():
-        pytest.skip("oracle fixture not present")
-    oracle = json.loads(ELEMENTAL_AIR_FIXTURE.read_text())
-    hdc_path = oracle["hdc_path"]
-    if not Path(hdc_path).exists():
-        pytest.skip(f"HDC file missing: {hdc_path}")
+def test_a_character_with_no_complications_loses_the_whole_target(tmp_path):
+    """Power Lad with his Complications stripped, loaded live. Took 0 of a
+    120-point Matching Complications target: the whole 120 comes off
+    spendable_points, on top of whatever total_points already spent — 6E1
+    p.30's "every 1 point short reduces Total Points by 1" taken to its
+    floor."""
+    from lxml import etree
+    from tests.corpus import require_authored_hdc
+    root = etree.parse(str(require_authored_hdc("PowerLad"))).getroot()
+    disads = root.find("DISADVANTAGES")
+    for child in list(disads):
+        disads.remove(child)
+    path = tmp_path / "PowerLad-no-complications.hdc"
+    path.write_bytes(etree.tostring(root, xml_declaration=True, encoding="UTF-8"))
 
-    hero = HDCLoader().load_file(hdc_path)
+    hero = HDCLoader().load_file(str(path))
 
-    assert hero.total_points == 200.0
-    assert hero.available_points == -25.0
+    assert hero.total_points == 399.5
+    assert hero.available_points == 0.5
     assert hero.disads_used == 0
-    assert hero.base_points == 175
-    assert hero.disad_points == 50
-    assert hero.complications_shortfall == 50.0
-    assert hero.spendable_points == 125.0  # 175 base - 50 shortfall, no exp
-    assert hero.points_unspent == -75.0
+    assert hero.base_points == 400
+    assert hero.disad_points == 120
+    assert hero.complications_shortfall == 120.0
+    assert hero.spendable_points == 280.0  # 400 base - 120 shortfall, no exp
+    assert hero.points_unspent == -119.5
 
 
 def test_shortfall_costs_one_for_one_below_the_target():

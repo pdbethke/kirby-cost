@@ -107,7 +107,7 @@ or their rebuild differs from the engine's load.
   characteristic, but the (legacy, curated) build doc did not emit them — so a
   consumer that stores the doc relationally and rebuilds from it took the class
   default of True and counted purchases HD keeps out of the character's totals.
-  Measured downstream: `Cobra.hdc` carries a +2 DCV power marked
+  Measured downstream: a corpus villain's file carries a +2 DCV power marked
   `AFFECTS_TOTAL="No"`, and the database rebuilt him at DCV 12 where the
   canonical load says 10. Emitted only when False, since True is the default on
   both, so a character with nothing situational produces the same doc as
@@ -143,7 +143,7 @@ copies of a rule the engine already owned, and each copy was quietly wrong.
 - **A purchase HD keeps out of the character's totals no longer contributes to
   a temporal characteristic.** `AFFECTS_PRIMARY` / `AFFECTS_TOTAL` is HD's own
   record of whether a purchase raises the characteristic or merely sits on the
-  sheet as a situational ability, and it was not being read. Gorgon's "Tail"
+  sheet as a situational ability, and it was not being read. A corpus villain's "Tail"
   +20 STR is `AFFECTS_TOTAL="No"` with its limitation aliased *"Only With
   Tail"* — a restrainable limb — and it was making him STR 80 instead of 60 in
   every calculation, thrown-object damage included. Ravel's pooled "Reinforced

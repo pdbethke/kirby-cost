@@ -206,7 +206,7 @@ class CustomPower(Power, xmlid="CUSTOMPOWER"):
             parent = self.main_power.parent
         # Java folds the parent List's limitations for VPP children too --
         # CustomPower.getRealCostPreList has no parent-type check. What keeps a
-        # pool like Ultrasonique's from folding is that its commons are
+        # pool like one corpus villain's from folding is that its commons are
         # PRIVATE="Yes": List.separatePrivateMods (List.java:53-60) moves
         # private modifiers OUT of getAssignedModifiers() at restore, so the
         # fold never sees them. This engine keeps both kinds in one list, so

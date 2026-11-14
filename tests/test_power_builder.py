@@ -10,6 +10,7 @@ import pytest
 from kirby_cost.services.power_builder import build_power_from_spec
 from kirby_cost.io.hdc_loader import HDCLoader
 from kirby_cost.objects.base import GenericObject
+from tests.corpus import require_authored_hdc
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -35,15 +36,11 @@ def test_unknown_xmlid_raises():
         build_power_from_spec({"xmlid": "NOTAPOWER", "levels": 1})
 
 
-@pytest.mark.skipif(
-    not (FIXTURES / "ARTHON-CV1.hdc").exists(),
-    reason="Hero Games character file not present (not shipped — see .gitignore)",
-)
 def test_matches_loader_cost_for_real_power():
     """Oracle cross-check: build a spec equivalent to a real loaded power and
     prove build_power_from_spec reproduces the loader's active_cost exactly."""
     loader = HDCLoader()
-    hero = loader.load_file(str(FIXTURES / "ARTHON-CV1.hdc"))
+    hero = loader.load_file(str(require_authored_hdc("PowerLad")))
     loader._ensure_registry_loaded()
 
     # Find a simple standalone attack power: registered xmlid, at least one

@@ -1,7 +1,8 @@
 """INTUITIONAL survives when AREA/SENSITIVITY carry their qualifying options.
 
-Root cause of the BOREALIS oracle failure (DANGER_SENSE py=36.0 vs oracle=31.0,
+Root cause of a corpus oracle failure (a villain's DANGER_SENSE py=36.0 vs oracle=31.0,
 exactly the -5 INTUITIONAL adder being dropped).
+The test below builds the same Talent on a temporary copy of PowerLad.
 
 com/hero/objects/talents/DangerSense.java getAssignedAdders():
 
@@ -13,7 +14,7 @@ com/hero/objects/talents/DangerSense.java getAssignedAdders():
         return ret;                      // KEEP intuitional
     else { ret.remove(intuitional); }    // DROP it
 
-Borealis has AREA=IMMEDIATE_VICINITY and SENSITIVITY=OUT_OF_COMBAT, so Java
+That character had AREA=IMMEDIATE_VICINITY and SENSITIVITY=OUT_OF_COMBAT, so Java
 keeps the -5: 15 base + 9 levels + (5 + 5 + 2 - 5) = 31.
 
 The Python port mirrored that structure faithfully but could never satisfy it:
@@ -23,24 +24,33 @@ both option checks were False and the -5 was always dropped. The POWER branch
 persists OPTIONID (`if option_id: obj.option_id = option_id`); the ADDER
 branches did not.
 """
-import glob
-import json
-import pathlib
-
 import pytest
 
 from kirby_cost.io.hdc_loader import HDCLoader
+from tests.own_copy import own_copy
 
-FIXTURE = glob.glob("tests/fixtures/oracle/*BOREALIS*.json")
+
+def _adder(xmlid, adder_id, base, option=None):
+    opt = f' OPTION="{option}" OPTIONID="{option}"' if option else ""
+    return (f'<ADDER XMLID="{xmlid}" ID="{adder_id}" BASECOST="{base}" LEVELS="0" '
+            f'ALIAS="{xmlid}" POSITION="-1" MULTIPLIER="1.0"{opt} SHOWALIAS="Yes" '
+            f'PRIVATE="No" REQUIRED="No" INCLUDEINBASE="No" DISPLAYINSTRING="Yes" '
+            f'GROUP="No" SELECTED="YES" />')
 
 
-@pytest.mark.skipif(not FIXTURE, reason="BOREALIS oracle fixture not present")
-def test_adder_optionid_is_persisted_and_intuitional_is_kept():
-    fx = json.load(open(FIXTURE[0]))
-    if not pathlib.Path(fx["hdc_path"]).exists():
-        pytest.skip("HDC source not present on this machine")
+_DANGER_SENSE = (
+    '<DANGER_SENSE XMLID="DANGER_SENSE" ID="9000000000100" BASECOST="15.0" LEVELS="9" '
+    'ALIAS="Danger Sense" POSITION="0" MULTIPLIER="1.0">'
+    + _adder("AREA", 9000000000101, 5.0, "IMMEDIATE_VICINITY")
+    + _adder("SENSITIVITY", 9000000000102, 5.0, "OUT_OF_COMBAT")
+    + _adder("SENSE", 9000000000103, 2.0)
+    + _adder("INTUITIONAL", 9000000000104, -5.0)
+    + "</DANGER_SENSE>")
 
-    hero = HDCLoader().load_file(fx["hdc_path"])
+
+def test_adder_optionid_is_persisted_and_intuitional_is_kept(tmp_path):
+    hero = HDCLoader().load_file(
+        own_copy(tmp_path, section_xml=[("TALENTS", _DANGER_SENSE)]))
     ds = next((t for t in hero.talents if t.xmlid == "DANGER_SENSE"), None)
     assert ds is not None, "DANGER_SENSE not loaded"
 
@@ -59,8 +69,7 @@ def test_adder_optionid_is_persisted_and_intuitional_is_kept():
         "IMMEDIATE_VICINITY and SENSITIVITY is OUT_OF_COMBAT."
     )
 
-    oracle = next(t for t in fx["talents"] if t["xmlid"] == "DANGER_SENSE")
-    assert ds.total_cost == oracle["total_cost"] == 31.0, (
-        f"DANGER_SENSE cost {ds.total_cost}, oracle {oracle['total_cost']} "
+    assert ds.total_cost == 31.0, (
+        f"DANGER_SENSE cost {ds.total_cost}, expected 31.0 "
         "(15 base + 9 levels + 5 + 5 + 2 - 5)"
     )

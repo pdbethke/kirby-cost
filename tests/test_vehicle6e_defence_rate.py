@@ -1,8 +1,8 @@
 """A Vehicle6E character's PD/ED cost the template's rate, not Main6E's.
 
 `Vehicle6E.hdt` prices PD and ED at `LVLCOST=3, LVLVAL=2` — 1.5 CP per point —
-where `Main6E.hdt` uses `1, 1`. WARLORD - THE FLYING FORTRESS buys 10 of each,
-so the template rate is 15 and the Main6E rate is 10.
+where `Main6E.hdt` uses `1, 1`. A vehicle buying 10 of each pays 15 at the
+template rate and 10 at the Main6E rate.
 
 **This file previously asserted the exact opposite**, and the reasoning is worth
 keeping because it was careful and still wrong.
@@ -19,43 +19,34 @@ wrong. The headless HD fork could not resolve any `builtIn.` template name, so
 it costed every character against its Main6E bootstrap no matter what the file
 declared — which is precisely why PD looked like `(1, 1)` everywhere, including
 on the four Vehicle6E characters. Fixed 2026-08-17; the oracle now says
-`(3.0, 2.0)` for this character, and the engine agrees because it resolves the
-declared template.
+`(3.0, 2.0)` for a Vehicle6E character, and the engine agrees because it
+resolves the declared template.
 
-The assertion below compares engine to oracle rather than to a literal, which
-is why it survived the reversal unchanged. That is the useful shape: assert the
-relationship, not the number you expect today.
+The assertion below states the template's own rate. It used to compare engine
+to a per-character oracle fixture; none of the maintainer's own characters is
+a vehicle, so it runs on a temporary Vehicle6E copy of PowerLad
+(`tests.own_copy.vehicle_copy`), which no oracle dump covers.
 """
-import json
-import glob
+import os
 
 import pytest
 
 from kirby_cost.io.hdc_loader import HDCLoader
+from tests.own_copy import vehicle_copy
 
-FIXTURE = glob.glob("tests/fixtures/oracle/*WARLORD*FLYING*.json")
+pytestmark = pytest.mark.skipif(
+    not os.environ.get("KIRBY_COST_HDT"), reason="no HERO Designer template configured")
 
 
-@pytest.mark.skipif(not FIXTURE, reason="WARLORD oracle fixture not present")
-def test_vehicle6e_pd_matches_the_oracle():
-    fx = json.load(open(FIXTURE[0]))
-    import pathlib
-    if not pathlib.Path(fx["hdc_path"]).exists():
-        pytest.skip("HDC source not present on this machine")
+def test_vehicle6e_pd_and_ed_use_the_template_rate(tmp_path):
+    hero = HDCLoader().load_file(vehicle_copy(tmp_path))
+    assert "Vehicle6E" in hero.template_name, "must be a Vehicle6E character"
 
-    hero = HDCLoader().load_file(fx["hdc_path"])
-    assert "Vehicle6E" in hero.template_name, "fixture must be a Vehicle6E character"
-
-    oracle = {o["xmlid"]: o for o in fx["characteristics"] if o["xmlid"] in ("PD", "ED")}
-    for c in hero.characteristics:
-        if c.xmlid not in oracle:
-            continue
-        o = oracle[c.xmlid]
-        assert (c._level_cost, c._level_value) == (o["level_cost"], o["level_value"]), (
-            f"{c.xmlid}: engine ({c._level_cost}, {c._level_value}) vs oracle "
-            f"({o['level_cost']}, {o['level_value']}). A character is costed "
-            "against the template it declares, and Vehicle6E prices PD/ED at 3 per 2."
-        )
-        assert c.total_cost == o["total_cost"], (
-            f"{c.xmlid}: engine {c.total_cost} vs oracle {o['total_cost']}"
+    rated = {c.xmlid: c for c in hero.characteristics if c.xmlid in ("PD", "ED")}
+    assert set(rated) == {"PD", "ED"}
+    for xmlid, c in rated.items():
+        assert (c._level_cost, c._level_value) == (3.0, 2.0), (
+            f"{xmlid}: engine ({c._level_cost}, {c._level_value}). A character is "
+            "costed against the template it declares, and Vehicle6E prices PD/ED "
+            "at 3 per 2."
         )

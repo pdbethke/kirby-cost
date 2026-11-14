@@ -1,25 +1,32 @@
 """MARTIALARTS section loading — engine side (spec 2026-06-07 §1)."""
-from tests.corpus import hero_docs_root
 from pathlib import Path
 
 import pytest
 
 from kirby_cost.io.hdc_loader import HDCLoader
+from tests.corpus import require_authored_hdc
+from tests.own_copy import MARTIAL_DODGE, EXTRA_DC_2, own_copy
 
-CHESHIRE_HDC = Path(
-    str(hero_docs_root() or "/nonexistent") + "/Docs/"
-    "Champions_Villain_Teams_Character_Pack/Champions Villains 2 6E ƒ/"
-    "GRAB/CHESHIRE_CAT-CV2.hdc"
-)
-GORGON_HDC = Path(
-    str(hero_docs_root() or "/nonexistent") + "/Docs/"
-    "CV1HDFiles/CV1 HD Files ƒ/KING_COBRA/GORGON-CV1.hdc"
-)
+# Ravel owns two maneuvers. The copy adds a style LIST ("Aikijutsu"), Martial
+# Dodge filed under it, and +2 HTH damage classes.
+_STYLE = (
+    '<LIST XMLID="GENERIC_OBJECT" ID="9000000000090" BASECOST="0.0" LEVELS="0" '
+    'ALIAS="Aikijutsu" POSITION="9" MULTIPLIER="1.0" NAME="Aikijutsu" />')
+_DODGE_IN_STYLE = MARTIAL_DODGE.replace(
+    'POSITION="2"', 'POSITION="2" PARENTID="9000000000090"')
+_SKILL_GROUP = (
+    '<LIST XMLID="GENERIC_OBJECT" ID="9000000000091" BASECOST="0.0" LEVELS="0" '
+    'ALIAS="Skill Group" POSITION="9" MULTIPLIER="1.0" NAME="Skill Group" />')
 
 
-def skip_if_hdc_missing():
-    if not CHESHIRE_HDC.exists() or not GORGON_HDC.exists():
-        pytest.skip("Machine-bound HDC corpus not present on this host")
+@pytest.fixture
+def stylist(tmp_path):
+    """Ravel plus a martial-arts style list, Martial Dodge under it, EXTRADC."""
+    return HDCLoader().load_file(own_copy(
+        tmp_path, "Ravel",
+        section_xml=[("MARTIALARTS", _STYLE), ("MARTIALARTS", _DODGE_IN_STYLE),
+                     ("MARTIALARTS", EXTRA_DC_2)],
+        filename="Ravel-style.hdc"))
 
 
 def test_maneuver_is_registered():
@@ -29,12 +36,11 @@ def test_maneuver_is_registered():
     assert isinstance(obj, Maneuver)
 
 
-def test_cheshire_maneuvers_loaded():
-    skip_if_hdc_missing()
-    hero = HDCLoader().load_file(str(CHESHIRE_HDC))
+def test_maneuvers_loaded(stylist):
+    hero = stylist
     from kirby_cost.objects.martial_arts.maneuver import Maneuver
     maneuvers = [m for m in hero.martial_arts if isinstance(m, Maneuver)]
-    assert len(maneuvers) == 7  # actual count in CHESHIRE_CAT-CV2.hdc (spec said 15, file has 7)
+    assert len(maneuvers) == 3  # Ravel's two plus Martial Dodge
 
     dodge = next((m for m in maneuvers if m.display == "Martial Dodge"), None)
     assert dodge is not None, (
@@ -53,10 +59,9 @@ def test_cheshire_maneuvers_loaded():
     assert extradc[0].levels == 2
 
 
-def test_loader_sets_active_hero_with_maneuver_contract():
-    skip_if_hdc_missing()
+def test_loader_sets_active_hero_with_maneuver_contract(stylist):
     from kirby_cost.core.context import EngineContext
-    hero = HDCLoader().load_file(str(CHESHIRE_HDC))
+    hero = stylist
     active = EngineContext.active_hero()
     assert active is hero
     # The three things Maneuver cost math dereferences:
@@ -66,11 +71,10 @@ def test_loader_sets_active_hero_with_maneuver_contract():
     assert active.rules is not None
 
 
-def test_characteristic_lookup_uses_java_constants():
-    skip_if_hdc_missing()
-    hero = HDCLoader().load_file(str(CHESHIRE_HDC))
+def test_characteristic_lookup_uses_java_constants(stylist):
+    hero = stylist
     # Java Constants contract: INT is 5, EGO is 6, SPD is 11, OCV is 30.
-    # Verified present on Cheshire: STR DEX CON INT EGO PRE OCV DCV OMCV DMCV
+    # Verified present on Ravel: STR DEX CON INT EGO PRE OCV DCV OMCV DMCV
     #   SPD PD ED REC END BODY STUN RUNNING SWIMMING LEAPING
     assert hero.characteristic(5).xmlid == "INT"
     assert hero.characteristic(6).xmlid == "EGO"
@@ -79,9 +83,8 @@ def test_characteristic_lookup_uses_java_constants():
     assert hero.characteristic(9999) is None
 
 
-def test_totals_include_martial_arts():
-    skip_if_hdc_missing()
-    hero = HDCLoader().load_file(str(CHESHIRE_HDC))
+def test_totals_include_martial_arts(stylist):
+    hero = stylist
     ma_points = sum(m.real_cost for m in hero.martial_arts)
     assert ma_points > 0
     expected = sum(
@@ -103,54 +106,43 @@ def test_unparsed_sections_visible(tmp_path):
     a synthetic unknown tag -- the point of the test is the reporting
     mechanism, not which section happens to be missing this month.
     """
-    skip_if_hdc_missing()
-    cheshire = HDCLoader().load_file(str(CHESHIRE_HDC))
-    assert "MARTIALARTS" not in cheshire.unparsed_sections
-
-    gorgon = HDCLoader().load_file(str(GORGON_HDC))
-    assert "EQUIPMENT" not in gorgon.unparsed_sections, "EQUIPMENT is parsed now"
+    ravel = HDCLoader().load_file(str(require_authored_hdc("Ravel")))
+    assert "MARTIALARTS" not in ravel.unparsed_sections
+    assert "EQUIPMENT" not in ravel.unparsed_sections, "EQUIPMENT is parsed now"
 
     # A tag the loader genuinely does not know must still be reported.
-    src = Path(GORGON_HDC).read_text(encoding="utf-8", errors="ignore")
+    src = Path(require_authored_hdc("Ravel")).read_bytes().decode("utf-16")
     doctored = src.replace("</CHARACTER>", "<SPACESHIP_BAY/></CHARACTER>", 1)
     p = tmp_path / "doctored.hdc"
     p.write_text(doctored, encoding="utf-8")
     assert "SPACESHIP_BAY" in HDCLoader().load_file(str(p)).unparsed_sections
 
 
-def test_martial_arts_list_builds_as_real_list():
-    skip_if_hdc_missing()
-    hero = HDCLoader().load_file(str(CHESHIRE_HDC))
+def test_martial_arts_list_builds_as_real_list(stylist):
+    hero = stylist
     from kirby_cost.objects.list import List as HDList
     lists = [o for o in hero.martial_arts if isinstance(o, HDList)]
     assert len(lists) == 1
     assert lists[0].alias == "Aikijutsu"
 
 
-FIREWING_HDC = Path(
-    str(hero_docs_root() or "/nonexistent") + "/Old School Enemies/"
-    "Old School Enemies HD Files/Firewing.hdc"
-)
-
-
-def test_skills_list_container_costs_zero():
+def test_skills_list_container_costs_zero(tmp_path):
     # Java builds SKILLS-section LIST containers as real List (real_cost 0.0);
     # the old _FallbackObject path cost them 1.0 (oracle corpus: unanimous 0.0).
-    if not FIREWING_HDC.exists():
-        pytest.skip("Firewing HDC not present")
-    hero = HDCLoader().load_file(str(FIREWING_HDC))
+    hero = HDCLoader().load_file(own_copy(
+        tmp_path, section_xml=[("SKILLS", _SKILL_GROUP)]))
     from kirby_cost.objects.list import List as HDList
     skill_lists = [o for o in hero.skills if isinstance(o, HDList)]
     assert skill_lists, "expected at least one LIST container in SKILLS"
     assert all(lst.real_cost == 0.0 for lst in skill_lists)
 
 
-def test_maneuvers_link_to_style_list():
-    skip_if_hdc_missing()
-    hero = HDCLoader().load_file(str(CHESHIRE_HDC))
+def test_maneuvers_link_to_style_list(stylist):
+    hero = stylist
     from kirby_cost.objects.martial_arts.maneuver import Maneuver
     maneuvers = [m for m in hero.martial_arts if isinstance(m, Maneuver)]
     linked = [m for m in maneuvers if m.parent is not None]
-    # All 7 of Cheshire's maneuvers carry PARENTID pointing at the Aikijutsu list
-    assert len(linked) == 7
+    # Martial Dodge carries PARENTID pointing at the Aikijutsu list; Ravel's own
+    # two maneuvers are filed under no style
+    assert len(linked) == 1
     assert all(m.parent.alias == "Aikijutsu" for m in linked)

@@ -1,4 +1,4 @@
-from tests.corpus import corpus_root, hero_docs_root
+from tests.corpus import hero_docs_root, require_authored_hdc
 import os
 from pathlib import Path
 import pytest
@@ -33,15 +33,13 @@ def test_ose_json_roundtrip_is_lossless(hdc):
 
 from kirby_cost.io.build_cost import cost_build  # noqa: E402
 
-FIREWING = OSE_DIR / "Firewing.hdc"
-
-@pytest.mark.skipif(not FIREWING.exists(), reason="Firewing not present")
-def test_firewing_str_edit_in_json_recosts_to_819():
-    doc = to_build_json(HDCLoader().load_file(str(FIREWING)))
+def test_powerlad_str_edit_in_json_recosts():
+    doc = to_build_json(HDCLoader().load_file(str(require_authored_hdc("PowerLad"))))
+    assert round(cost_build(doc).total_cost) == 400
     for c in doc["characteristics"]:
         if c["xmlid"] == "STR":
-            c["levels"] = 90    # STR base 10 + 90 = 100
-    assert round(cost_build(doc).total_cost) == 818
+            c["levels"] = 90    # 30 -> 90 levels at 1 point each: +60
+    assert round(cost_build(doc).total_cost) == 460
 
 
 def test_fractional_preview_not_prerounded():
@@ -58,10 +56,8 @@ def test_fractional_preview_not_prerounded():
         sum(v["real_cost"] for v in r.per_object.values()))
 
 
-VEHICLE = (corpus_root() or Path("/nonexistent")) / "villains/CV1HDFiles/CV1 HD Files ƒ/WARLORD/WARLORD_-_THE_FLYING_FORTRESS-CV1.hdc"
-
-@pytest.mark.skipif(not VEHICLE.exists(), reason="no Vehicle6E HDC provided")
-def test_vehicle6e_json_roundtrip():
-    ref = HDCLoader().load_file(str(VEHICLE))
+def test_vehicle6e_json_roundtrip(tmp_path):
+    from tests.own_copy import vehicle_copy
+    ref = HDCLoader().load_file(vehicle_copy(tmp_path))
     again = build_from_json(to_build_json(ref))
     assert round(_total(again)) == round(_total(ref))

@@ -81,7 +81,7 @@ def test_the_child_wins_where_it_overrides():
 
 
 def test_automaton_overrides_a_characteristic_rate():
-    """Automaton6E prices EGO at 2/level against Main6E's 1 — the GOLEM case."""
+    """Automaton6E prices EGO at 2/level against Main6E's 1."""
     main = HDTTemplateProvider(TEMPLATE_DIR / "Main6E.hdt")
     automaton = HDTTemplateProvider(TEMPLATE_DIR / "Automaton6E.hdt")
 

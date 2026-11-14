@@ -45,7 +45,7 @@ class CustomSkill(Skill, xmlid="CUSTOMSKILL"):
         roll against the secondary and prints both when they differ --
         "15- (14-)" -- but a custom skill's roll is a number the player typed,
         so there is no secondary to disagree with it. Inheriting Skill's
-        version printed a computed 14- beside Necrull's stated 15-.
+        version printed a computed 14- beside the stated 15-.
 
         An unstated roll (0) prints nothing at all.
         """

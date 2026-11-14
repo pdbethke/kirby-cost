@@ -26,7 +26,7 @@ define is still never loaded, which is what the synthetic case below pins: the
 same `<SIZE>` element on a character that declares no template resolves against
 Main6E, which has no SIZE, and is dropped.
 """
-from tests.corpus import corpus_root
+from tests.own_copy import vehicle_copy
 import os
 import textwrap
 from pathlib import Path
@@ -36,9 +36,6 @@ import pytest
 from kirby_cost.io.hdc_loader import HDCLoader
 from kirby_cost.template.hdt_provider import HDTTemplateProvider
 
-_ROOT = (corpus_root() or Path("/nonexistent"))
-HOVERTANK = (_ROOT / "villains/CV1HDFiles/CV1 HD Files ƒ/ISTVATHA_V'HAN"
-             / "V'HANIAN_HOVERTANK-CV1.hdc")
 
 STANDARD_6E = [
     "STR", "DEX", "CON", "INT", "EGO", "PRE", "OCV", "DCV", "OMCV", "DMCV",
@@ -90,10 +87,9 @@ def test_a_characteristic_the_resolved_template_lacks_is_not_loaded(tmp_path):
     assert "STR" in loaded, "the gate must not drop what the template DOES define"
 
 
-@pytest.mark.skipif(not HOVERTANK.exists(), reason="machine-bound HDC corpus absent")
-def test_a_characteristic_the_resolved_template_defines_is_loaded():
+def test_a_characteristic_the_resolved_template_defines_is_loaded(tmp_path):
     """The same element on a Vehicle6E character, which does define SIZE."""
-    hero = HDCLoader().load_file(str(HOVERTANK))
+    hero = HDCLoader().load_file(vehicle_copy(tmp_path))
 
     assert hero.template_name == "builtIn.Vehicle6E.hdt"
     size = next((c for c in hero.characteristics if c.xmlid == "SIZE"), None)

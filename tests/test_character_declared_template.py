@@ -21,59 +21,56 @@ Resolution follows HD: `builtIn.X.hdt` names one of the templates shipped with
 the application, which live together in one directory, so it resolves to the
 file of that name beside the configured template.
 """
-from tests.corpus import corpus_root
 import os
 from pathlib import Path
 
 import pytest
 
 from kirby_cost.io.hdc_loader import HDCLoader
+from tests.own_copy import vehicle_copy
 
-_ROOT = (corpus_root() or Path("/nonexistent"))
-HOVERTANK = (_ROOT / "villains/CV1HDFiles/CV1 HD Files ƒ/ISTVATHA_V'HAN"
-             / "V'HANIAN_HOVERTANK-CV1.hdc")
-GRAVITAR = _ROOT / "villains/CV1HDFiles/CV1 HD Files ƒ/GRAVITAR-CV1.hdc"
 TEMPLATE_DIR = Path(os.environ["KIRBY_COST_HDT"]).parent if os.environ.get(
     "KIRBY_COST_HDT") else None
 
 pytestmark = pytest.mark.skipif(
-    not HOVERTANK.exists() or TEMPLATE_DIR is None
-    or not (TEMPLATE_DIR / "Vehicle6E.hdt").is_file(),
-    reason="machine-bound HDC corpus or template directory absent",
+    TEMPLATE_DIR is None or not (TEMPLATE_DIR / "Vehicle6E.hdt").is_file(),
+    reason="template directory absent",
 )
 
 
-def test_a_vehicle_resolves_its_own_template():
+@pytest.fixture
+def vehicle(tmp_path):
+    return HDCLoader().load_file(vehicle_copy(tmp_path))
+
+
+def test_a_vehicle_resolves_its_own_template(vehicle):
     """SIZE exists only in Vehicle6E, so resolving it is observable."""
-    hero = HDCLoader().load_file(str(HOVERTANK))
-
-    assert hero.template_name == "builtIn.Vehicle6E.hdt"
-    assert "SIZE" in [c.xmlid for c in hero.characteristics]
+    assert vehicle.template_name == "builtIn.Vehicle6E.hdt"
+    assert "SIZE" in [c.xmlid for c in vehicle.characteristics]
 
 
-def test_the_vehicle_movement_powers_do_not_use_end():
+def test_the_vehicle_movement_powers_do_not_use_end(vehicle):
     """Vehicle6E states USESEND="No" on FLIGHT where Main6E says "Yes"."""
-    hero = HDCLoader().load_file(str(HOVERTANK))
-    flight = next(p for p in hero.powers if p.xmlid == "FLIGHT")
+    flight = next(p for p in vehicle.powers if p.xmlid == "FLIGHT")
 
     assert flight.uses_end is False
 
 
-def test_the_vehicle_total_matches_the_oracle():
-    """237 under the old Main6E-for-everything oracle; 270 against Vehicle6E."""
-    hero = HDCLoader().load_file(str(HOVERTANK))
-    assert hero.total_points == 270.0
+def test_the_vehicle_total_prices_size_at_the_vehicle_rate(vehicle, tmp_path):
+    """Costed against Vehicle6E, SIZE 4 at 5/level adds 20 to the character;
+    the same character declaring a template without SIZE drops it."""
+    other = HDCLoader().load_file(
+        vehicle_copy(tmp_path, "builtIn.Superheroic6E.hdt"))
+    assert vehicle.total_points - other.total_points == 4 * 5.0
 
 
 def test_a_main6e_character_is_unaffected():
-    """647 of 655 corpus characters never move; this guards that."""
-    hero = HDCLoader().load_file(str(GRAVITAR))
-    assert hero.total_points == 1456.0
+    """A character on a non-vehicle template never moves; this guards that."""
+    from tests.corpus import require_authored_hdc
+    hero = HDCLoader().load_file(str(require_authored_hdc("PowerLad")))
+    assert hero.template_name == "builtIn.Superheroic6E.hdt"
+    assert hero.total_points == 399.5
     flight = next((p for p in hero.powers if p.xmlid == "FLIGHT"), None)
     if flight is not None:
-        # This Flight carries REDUCEDEND (ZERO END): the raw field stays True,
-        # and the COMPUTED uses_end -- Java's usesEND(), GenericObject.java
-        # :4295-4328, where only HALFEND keeps END -- is False. The old
-        # `uses_end is True` assertion encoded the raw-field era.
         assert flight.orig_uses_end is True
         assert flight.uses_end is False

@@ -10,7 +10,7 @@ backed by a corpus measurement that looked decisive:
     has TEMPLATE + *GROUP option  ->  group rate   (72 of 72)
     no  TEMPLATE + *GROUP option  ->  single rate  ( 1 of  1)
 
-and it made UNDEAD_GHOUL match. The reasoning about HD is even correct as far
+and it made that one corpus character match. The reasoning about HD is even correct as far
 as it goes — ``SenseGroup.clear()`` really does populate the group registry
 during a template load.
 
@@ -21,7 +21,7 @@ bootstrap, and Main6E itself loaded *without the parent chain that registers
 the sense groups*. The oracle's "no template" reading was really "template
 loaded incompletely", and a rule was written into the engine to reproduce it.
 
-With the oracle fixed, UNDEAD_GHOUL takes the group rate like the other 72:
+With the oracle fixed, that character takes the group rate like the other 72:
 3 levels x 2 = 6, not 3. ``SenseAdder.sense_groups_defined`` no longer gates
 the group rate.
 

@@ -45,7 +45,7 @@ class Summon(Power, xmlid="SUMMON"):
 
     @property
     def column2_output(self) -> str:
-        """``Summon 298-point Treeman``.
+        """``Summon 298-point Guardian``.
 
         Ported from ``Summon.getColumn2Output``. What is summoned is measured
         in POINTS — the levels are the creature's point total, not a die count

@@ -53,7 +53,7 @@ def _clone(node):
 
 
 # Resistant Protection (FORCEFIELD) is bought as a split across these fields;
-# ``levels`` is their sum.  6E1 p.406 (Kerendor): 9 points into 15 PD/15 ED
+# ``levels`` is their sum.  6E1 p.406 (the worked example): 9 points into 15 PD/15 ED
 # gives 3 PD/3 ED.
 _SPLIT_FIELDS = ("pd_levels", "ed_levels", "md_levels", "powd_levels")
 

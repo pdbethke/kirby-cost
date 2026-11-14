@@ -97,7 +97,7 @@ class Running(Characteristic, xmlid="RUNNING"):
         
         # Java is `getAlias() + " " + getDamageDisplay()`. Preferring the
         # DISPLAY silently overrode a character who renamed the movement: one
-        # NAGA calls its Running "(14m total)", and HD prints that, because
+        # bestiary creature calls its Running "(14m total)", and HD prints that, because
         # what the player typed is what the sheet says.
         alias = self.alias or ""
         string = f"{alias} {self.damage_display}"

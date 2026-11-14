@@ -1,10 +1,9 @@
-from tests.corpus import hero_docs_root
-from pathlib import Path
+from tests.corpus import require_authored_hdc
 import pytest
 from lxml import etree
 from kirby_cost.io.hdc_loader import HDCLoader, BuildNode
 
-FIREWING = (hero_docs_root() or Path("/nonexistent")) / "Old School Enemies/Old School Enemies HD Files/Firewing.hdc"
+POWERLAD = require_authored_hdc("PowerLad")
 
 def _total(h):
     return sum((getattr(o, "real_cost", 0) or 0)
@@ -27,15 +26,14 @@ def _lxml_to_buildnode(el):
     return BuildNode(el.tag, dict(el.attrib),
                      [_lxml_to_buildnode(c) for c in el], el.text)
 
-@pytest.mark.skipif(not FIREWING.exists(), reason="Firewing HDC not present")
 def test_buildnode_root_reproduces_load_file():
     loader = HDCLoader()
-    ref = loader.load_file(str(FIREWING))
-    with open(FIREWING, "rb") as f:
+    ref = loader.load_file(str(POWERLAD))
+    with open(POWERLAD, "rb") as f:
         raw = f.read()
     text = raw.decode("utf-16") if raw[:2] in (b"\xff\xfe", b"\xfe\xff") else raw.decode("utf-8")
     if text.startswith("<?xml"):
         text = text[text.index("?>") + 2:].lstrip()
     root = etree.fromstring(text.encode("utf-8"))
     via_bn = loader._build_hero_from_root(_lxml_to_buildnode(root))
-    assert round(_total(via_bn)) == round(_total(ref)) == 758
+    assert round(_total(via_bn)) == round(_total(ref)) == 400

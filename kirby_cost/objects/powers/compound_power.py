@@ -131,7 +131,7 @@ class CompoundPower(Power, xmlid="COMPOUNDPOWER"):
                     # list (List.separatePrivateMods) -- so they are not there
                     # to borrow. This engine keeps both in one list and skips
                     # at the point of use, as modifier_string and both cost
-                    # borrow loops already do. Without it, Doctor Yin Wu's
+                    # borrow loops already do. Without it, a corpus villain's
                     # pool-private "Only For Chinese Magic" was applied to the
                     # sub-powers of every Compound Power in the pool, and it
                     # divided their printed Real Cost: 13 for HD's 17.

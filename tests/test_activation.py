@@ -383,7 +383,7 @@ def test_the_build_doc_carries_hds_totals_flags():
 
     kirby-api stores the build doc relationally and rebuilds from it. The flags
     were not in the doc, so a rebuilt object took the class default (True) and
-    counted a purchase HD keeps out of the totals: `Cobra.hdc` has a +2 DCV
+    counted a purchase HD keeps out of the totals: one corpus villain's file has a +2 DCV
     power marked AFFECTS_TOTAL="No", and the database came back DCV 12 where
     the canonical load says 10.
 

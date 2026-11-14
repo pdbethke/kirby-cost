@@ -19,10 +19,6 @@ import pytest
 from kirby_cost.io.hdc_loader import HDCLoader, _KNOWN_SECTIONS
 
 HSEG = str(hero_docs_root() or "/nonexistent") + "/Docs/6E_HSEG_HD/HSEG HD Files"
-DEMONOLOGIST = (
-    str(hero_docs_root() or "/nonexistent") + "/Docs/Champions_Villain_Teams_Character_Pack"
-    "/Champions Villains 2 6E ƒ/THE_DEVIL'S_ADVOCATES/THE_DEMONOLOGIST-CV2.hdc"
-)
 
 
 def _prefab(stem: str) -> str:
@@ -83,23 +79,30 @@ def test_equipment_does_not_leak_into_total_points() -> None:
     assert hero.total_points == expected
 
 
-def test_the_one_corpus_character_with_equipment_keeps_its_total() -> None:
-    """The Demonologist (CV2) is the only file in 1,130 corpus .hdc with a
-    non-empty <EQUIPMENT> section -- 20KB of it. His oracle total was
-    established while EQUIPMENT was unparsed, so loading it must not move
-    a single point."""
-    if not os.path.exists(DEMONOLOGIST):
-        pytest.skip("corpus HDC not available")
-    hero = HDCLoader().load_file(DEMONOLOGIST)
-    assert hero.equipment, "the 20KB EQUIPMENT section must now load"
-    assert len(hero.powers) == 10, "powers must be untouched by the new section"
+_GEAR = (
+    '<POWER XMLID="HANDTOHANDATTACK" ID="9000000000110" BASECOST="0.0" LEVELS="4" '
+    'ALIAS="Hand-To-Hand Attack" POSITION="0" MULTIPLIER="1.0" NAME="Probe Cudgel" '
+    'QUANTITY="1" AFFECTS_PRIMARY="Yes" AFFECTS_TOTAL="Yes" INPUT="STR" />')
+
+
+def test_a_character_with_equipment_keeps_its_total(tmp_path) -> None:
+    """A character whose <EQUIPMENT> section is non-empty. Loading the gear
+    must not move a single point: PowerLad's total is the same with a piece of
+    gear in his Equipment section as without it."""
+    from tests.corpus import require_authored_hdc
+    from tests.own_copy import own_copy
+    plain = HDCLoader().load_file(str(require_authored_hdc("PowerLad")))
+    hero = HDCLoader().load_file(
+        own_copy(tmp_path, section_xml=[("EQUIPMENT", _GEAR)]))
+    assert hero.equipment, "the EQUIPMENT section must load"
+    assert len(hero.powers) == len(plain.powers), "powers must be untouched by the section"
     expected = sum(
         o.real_cost
         for lst in (hero.characteristics, hero.skills, hero.perks,
                     hero.talents, hero.martial_arts, hero.powers)
         for o in lst
     )
-    assert hero.total_points == expected
+    assert hero.total_points == expected == plain.total_points
 
 
 def test_a_prefab_with_gear_in_POWERS_is_unaffected() -> None:

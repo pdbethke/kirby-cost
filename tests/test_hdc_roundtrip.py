@@ -6,7 +6,7 @@ This is the definitive test — if this passes, the Python port matches
 Hero Designer exactly.
 """
 
-from tests.corpus import hd6cli, corpus_root, roundtrip_hdc
+from tests.corpus import hd6cli, require_authored_hdc, roundtrip_hdc
 import json
 import subprocess
 import pytest
@@ -56,24 +56,17 @@ def load_python(hdc_path: str):
 # sufficiently gnarly build of your own satisfies it.
 COMPLEX = str(roundtrip_hdc() or "/nonexistent/roundtrip.hdc")
 
-_CORPUS = corpus_root() or Path("/nonexistent")
-HORSE = str(_CORPUS / "bestiary"
-            / "HERO_System_Bestiary_6th_Edition_Character_Pack"
-            / "HSB HD Files" / "CHAPTER_6" / "HORSES"
-            / "RIDING_HORSE_HSB.hdc")
-
-CROC = str(_CORPUS / "bestiary"
-           / "HERO_System_Bestiary_6th_Edition_Character_Pack"
-           / "HSB HD Files" / "CHAPTER_6"
-           / "CROCODILE_ALLIGATOR_HSB.hdc")
+# The maintainer's own characters, bundled in tests/fixtures/authored/.
+BOKOR = str(require_authored_hdc("Bokor"))
+POWERLAD = str(require_authored_hdc("PowerLad"))
 
 
 class TestHDCLoader:
     """Basic loader tests."""
 
-    def test_load_horse(self):
-        hero = load_python(HORSE)
-        assert hero.name == "Horse, Riding"
+    def test_load_bokor(self):
+        hero = load_python(BOKOR)
+        assert hero.name == "Bokor"
         assert len(hero.characteristics) > 0
         assert len(hero.powers) > 0
 
@@ -185,9 +178,9 @@ class TestHDCRoundtrip:
 
         return issues
 
-    def test_horse_roundtrip(self):
-        oracle = load_oracle(HORSE)
-        hero = load_python(HORSE)
+    def test_bokor_roundtrip(self):
+        oracle = load_oracle(BOKOR)
+        hero = load_python(BOKOR)
 
         issues = []
         issues.extend(self._compare_section(hero.characteristics, oracle["characteristics"], "char"))
@@ -199,9 +192,9 @@ class TestHDCRoundtrip:
             msg = f"\n{len(issues)} cost mismatches:\n" + "\n".join(f"  {i}" for i in issues[:20])
             pytest.fail(msg)
 
-    def test_croc_roundtrip(self):
-        oracle = load_oracle(CROC)
-        hero = load_python(CROC)
+    def test_powerlad_roundtrip(self):
+        oracle = load_oracle(POWERLAD)
+        hero = load_python(POWERLAD)
 
         issues = []
         issues.extend(self._compare_section(hero.characteristics, oracle["characteristics"], "char"))

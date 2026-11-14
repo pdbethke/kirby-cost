@@ -5,7 +5,7 @@ total/active/real cost, never the strings. So `damage_display` — the "3d6" a
 character sheet or VTT actually renders — was never executed by anything.
 
 Calling every zero-argument public method on every object of one loaded
-character (GRAVITAR-CV1) raised 14 distinct exceptions. Twelve are these four
+character raised 14 distinct exceptions. Twelve are these four
 defects; the other two are `dialog()` on KnowledgeSkill and Language, which
 raise NotImplementedError on purpose because the UI was not ported.
 
@@ -40,19 +40,38 @@ from pathlib import Path
 import pytest
 
 from kirby_cost.io import HDCLoader
-from tests.corpus import corpus_root
-
-GRAVITAR = (corpus_root() or Path("/nonexistent")) / "villains/CV1HDFiles/CV1 HD Files ƒ/GRAVITAR-CV1.hdc"
+from tests.own_copy import own_copy
 
 pytestmark = pytest.mark.skipif(
-    not os.environ.get("KIRBY_COST_HDT") or not GRAVITAR.exists(),
-    reason="needs a template and the machine-bound corpus",
+    not os.environ.get("KIRBY_COST_HDT"),
+    reason="needs a template",
 )
 
 
+_DETECT = ('<POWER XMLID="DETECT" ID="9000000000051" BASECOST="10.0" LEVELS="0" '
+           'ALIAS="Detect Life" POSITION="99" MULTIPLIER="1.0" OPTION="LARGECLASS" '
+           'OPTIONID="LARGECLASS" OPTION_ALIAS="A Large Class Of Things" '
+           'NAME="Probe Detect" QUANTITY="1" AFFECTS_PRIMARY="Yes" AFFECTS_TOTAL="Yes" '
+           'GROUP="SIGHTGROUP" ACTIVE="Yes">'
+           '<ADDER XMLID="DISCRIMINATORY" ID="9000000000052" BASECOST="5.0" LEVELS="0" '
+           'ALIAS="Discriminatory" POSITION="-1" MULTIPLIER="1.0" NAME="" SHOWALIAS="Yes" '
+           'PRIVATE="No" REQUIRED="No" INCLUDEINBASE="No" DISPLAYINSTRING="Yes" GROUP="No" '
+           'SELECTED="YES" />'
+           '<ADDER XMLID="PENETRATIVE" ID="9000000000053" BASECOST="10.0" LEVELS="0" '
+           'ALIAS="Penetrative" POSITION="-1" MULTIPLIER="1.0" NAME="" SHOWALIAS="Yes" '
+           'PRIVATE="No" REQUIRED="No" INCLUDEINBASE="No" DISPLAYINSTRING="Yes" GROUP="No" '
+           'SELECTED="YES" /></POWER>')
+_BLAST = ('<POWER XMLID="ENERGYBLAST" ID="9000000000050" BASECOST="0.0" LEVELS="8" '
+          'ALIAS="Energy Blast" POSITION="99" MULTIPLIER="1.0" NAME="Probe Blast" '
+          'QUANTITY="1" AFFECTS_PRIMARY="Yes" AFFECTS_TOTAL="Yes" INPUT="ED" />')
+
+
 @pytest.fixture(scope="module")
-def hero():
-    return HDCLoader().load_file(str(GRAVITAR))
+def hero(tmp_path_factory):
+    """PowerLad plus a Detect and an Energy Blast, on a temporary copy."""
+    path = own_copy(tmp_path_factory.mktemp("display"),
+                    section_xml=[("POWERS", _DETECT), ("POWERS", _BLAST)])
+    return HDCLoader().load_file(path)
 
 
 def _by_class(hero, name):

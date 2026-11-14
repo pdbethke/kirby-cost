@@ -166,7 +166,7 @@ class SerializationMixin:
         # characteristic (kirby_cost.model.activation), so a consumer that
         # rebuilds from this doc and does not carry these two flags gets a
         # DIFFERENT CHARACTER: measured on kirby-api, a +2 DCV power marked
-        # AFFECTS_TOTAL="No" was counted, and Cobra came back DCV 12 where the
+        # AFFECTS_TOTAL="No" was counted, and the character came back DCV 12 where the
         # canonical load says 10.
         #
         # Emitted only when False, because True is the class default on both —

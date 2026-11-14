@@ -1,4 +1,4 @@
-from tests.corpus import hero_docs_root
+from tests.corpus import require_authored_hdc
 import pytest
 from pathlib import Path
 from kirby_cost.io.build_json import build_from_json, BuildDocError
@@ -38,7 +38,7 @@ def test_build_from_json_rejects_missing_xmlid():
 from kirby_cost.io.build_json import to_build_json
 from kirby_cost.io.hdc_loader import HDCLoader
 
-FIREWING = (hero_docs_root() or Path("/nonexistent")) / "Old School Enemies/Old School Enemies HD Files/Firewing.hdc"
+POWERLAD = require_authored_hdc("PowerLad")
 
 
 def _total(h):
@@ -56,11 +56,10 @@ def test_to_build_json_shape():
                                               for k in ("xmlid", "levels")}
 
 
-@pytest.mark.skipif(not FIREWING.exists(), reason="Firewing HDC not present")
-def test_firewing_json_roundtrip_is_lossless():
-    ref = HDCLoader().load_file(str(FIREWING))
+def test_powerlad_json_roundtrip_is_lossless():
+    ref = HDCLoader().load_file(str(POWERLAD))
     again = build_from_json(to_build_json(ref))
-    assert round(_total(again)) == round(_total(ref)) == 758
+    assert round(_total(again)) == round(_total(ref)) == 400
 
 
 # ── Sub-power round-trip (synthetic, not relying on the OSE corpus) ──────────

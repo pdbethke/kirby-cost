@@ -27,8 +27,8 @@ unfiltered one.
 Only two of those 8 reach the filter at all — the rest are CONSTANT-duration or
 name-excluded — and they are the two asserted here:
 
-  JOSEPH_OTANGA  TRANSFORM    INSTANT, has EXTRATIME  -> guard keeps it, -1.0
-  SHADOW_COLOSSUS ENERGYBLAST INSTANT, no EXTRATIME   -> guard keeps it, -0.5
+  a TRANSFORM       INSTANT, has EXTRATIME  -> guard keeps it, -1.0
+  an ENERGYBLAST    INSTANT, no EXTRATIME   -> guard keeps it, -0.5
 
 The second line used to read "Java filters on a static read, yet the oracle
 records -0.5", an unexplained anomaly. It is explained: the guard reads
@@ -37,19 +37,39 @@ so its effective duration is CONSTANT (GenericObject.java:1723-1725) and the
 filter is never reached. Both assertions are kept -- the field says INSTANT,
 the effective duration says CONSTANT.
 """
-from tests.corpus import corpus_root
-from pathlib import Path
-
 import pytest
 
 from kirby_cost.io.hdc_loader import HDCLoader
-
-_ROOT = (corpus_root() or Path("/nonexistent"))
-COLOSSUS = _ROOT / "villains/CV1HDFiles/CV1 HD Files ƒ/SHADOW_DESTROYER/SHADOW_COLOSSUS-CV1.hdc"
-OTANGA = _ROOT / "villains/CV1HDFiles/CV1 HD Files ƒ/JOSEPH_OTANGA-CV1.hdc"
+from tests.own_copy import own_copy
 
 
-def _concentration(power):
+def _mod(xmlid, mod_id, base, option=None, inner="", alias=None):
+    opt = f' OPTION="{option}" OPTIONID="{option}"' if option else ""
+    return (f'<MODIFIER XMLID="{xmlid}" ID="{mod_id}" BASECOST="{base}" LEVELS="0" '
+            f'ALIAS="{alias or xmlid}" POSITION="-1" MULTIPLIER="1.0"{opt} '
+            f'PRIVATE="No" FORCEALLOW="No">{inner}</MODIFIER>')
+
+
+def _concentration(option, base, mod_id):
+    """CONCENTRATION with the nested "throughout" sub-modifier."""
+    throughout = _mod("CONTINUOUSCONCENTRATION", mod_id + 1, 1.0, alias="throughout")
+    return _mod("CONCENTRATION", mod_id, base, option, throughout)
+
+
+def _blast(*modifiers):
+    return ('<POWER XMLID="ENERGYBLAST" ID="9000000000020" BASECOST="0.0" LEVELS="10" '
+            'ALIAS="Energy Blast" POSITION="99" MULTIPLIER="1.0" NAME="Probe" '
+            'QUANTITY="1" AFFECTS_PRIMARY="Yes" AFFECTS_TOTAL="Yes" INPUT="ED">'
+            + "".join(modifiers) + "</POWER>")
+
+
+def _hero_with(tmp_path, power_xml):
+    """PowerLad plus one Energy Blast, named "Probe", carrying ``power_xml``."""
+    return HDCLoader().load_file(
+        own_copy(tmp_path, section_xml=[("POWERS", power_xml)]))
+
+
+def _concentration_of(power):
     for m in power.assigned_modifiers:
         if m.xmlid == "CONCENTRATION":
             return m
@@ -63,31 +83,36 @@ def _power(hero, xmlid, name):
     pytest.fail(f"{xmlid} {name!r} not loaded")
 
 
-@pytest.mark.skipif(not COLOSSUS.exists(), reason="machine-bound HDC corpus absent")
-def test_continuous_concentration_still_counts_on_an_instant_power():
+@pytest.fixture
+def constant_blast(tmp_path):
+    """An INSTANT-duration blast that CONTINUOUS rewrites to CONSTANT."""
+    hero = _hero_with(tmp_path, _blast(
+        _mod("CONTINUOUS", 9000000000021, 0.5),
+        _concentration("HALF", -0.25, 9000000000022)))
+    return _power(hero, "ENERGYBLAST", "Probe")
+
+
+def test_continuous_concentration_still_counts_on_an_instant_power(constant_blast):
     """base -0.25 doubled by a +1.0 sub-modifier = -0.5, not the bare -0.25."""
-    hero = HDCLoader().load_file(str(COLOSSUS))
-    blast = _power(hero, "ENERGYBLAST", "Qliphothic Overload")
+    blast = constant_blast
 
     assert blast.orig_duration == "INSTANT"       # the DURATION field
     assert blast.duration == "CONSTANT"           # CONTINUOUS rewrites it
-    assert _concentration(blast).total_value == -0.5
+    assert _concentration_of(blast).total_value == -0.5
 
 
-@pytest.mark.skipif(not COLOSSUS.exists(), reason="machine-bound HDC corpus absent")
-def test_the_blast_real_cost_matches_the_oracle():
-    """195 active / (1 + 0.5 + 0.5) = 97.5, round-half-down to 97."""
-    hero = HDCLoader().load_file(str(COLOSSUS))
-    blast = _power(hero, "ENERGYBLAST", "Qliphothic Overload")
-
-    assert blast.active_cost == 195
-    assert blast.real_cost == 97
+def test_the_blast_real_cost_follows_the_unfiltered_value(constant_blast):
+    """75 active / (1 + 0.5) = 50 -- the Concentration counts at -0.5, not -0.25."""
+    assert constant_blast.active_cost == 75
+    assert constant_blast.real_cost == 50
 
 
-@pytest.mark.skipif(not OTANGA.exists(), reason="machine-bound HDC corpus absent")
-def test_the_extratime_case_is_unchanged():
+def test_the_extratime_case_is_unchanged(tmp_path):
     """Already correct via the EXTRATIME guard — it must stay correct."""
-    hero = HDCLoader().load_file(str(OTANGA))
-    transform = _power(hero, "TRANSFORM", "Transform Others Into Animals")
+    hero = _hero_with(tmp_path, _blast(
+        _mod("EXTRATIME", 9000000000021, -1.25, "TURN"),
+        _concentration("ZERO", -0.5, 9000000000022)))
+    blast = _power(hero, "ENERGYBLAST", "Probe")
 
-    assert _concentration(transform).total_value == -1.0
+    assert blast.orig_duration == "INSTANT" and blast.duration == "INSTANT"
+    assert _concentration_of(blast).total_value == -1.0
