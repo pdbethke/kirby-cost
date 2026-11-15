@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.4 — 2026-11-15
+
+### Fixed — `CompoundPower.affects_characteristics()` no longer raises AttributeError
+It called Java-style getters (`get_dex_increase()` and friends) that no Python object has, so asking any Compound Power with a part whether it is summable raised AttributeError (Ravel's "Wrap 'em and Nap 'em", Bokor's "Green Fungus Powder"). It now reads the parts' `*_increase` attributes, checking exactly the fields HD's CompoundPower.java does: STR through Leaping, not OCV/DCV/OMCV/DMCV or the custom slots.
+
 ## 0.8.3 — 2026-11-14
 
 ### Changed — no licensed character names

@@ -250,30 +250,22 @@ class CompoundPower(Power, xmlid="COMPOUNDPOWER"):
                 element.append(sub_elem)
         return element
 
+    # CompoundPower.java:64-128 checks these and only these: not OCV/DCV/
+    # OMCV/DMCV, not the custom characteristic slots.
+    _COMPOUND_SUMMED_INCREASES = (
+        "str_increase", "dex_increase", "con_increase", "body_increase",
+        "int_increase", "ego_increase", "pre_increase", "com_increase",
+        "pd_increase", "ed_increase", "spd_increase", "rec_increase",
+        "end_increase", "stun_increase", "def_increase", "size_increase",
+        "running_increase", "swimming_increase", "leaping_increase",
+    )
+
     def affects_characteristics(self) -> bool:
-        """Check if any combined power affects characteristics."""
-        for power in self.powers:
-            if isinstance(power, CharAffectingObject):
-                cao = power
-                if (cao.str_increase != 0.0 or
-                    cao.get_dex_increase() != 0.0 or
-                    cao.get_con_increase() != 0.0 or
-                    cao.get_body_increase() != 0.0 or
-                    cao.get_int_increase() != 0.0 or
-                    cao.get_ego_increase() != 0.0 or
-                    cao.get_pre_increase() != 0.0 or
-                    cao.get_com_increase() != 0.0 or
-                    cao.pd_increase != 0.0 or
-                    cao.ed_increase != 0.0 or
-                    cao.get_spd_increase() != 0.0 or
-                    cao.get_rec_increase() != 0.0 or
-                    cao.get_end_increase() != 0.0 or
-                    cao.get_stun_increase() != 0.0 or
-                    cao.get_def_increase() != 0.0 or
-                    cao.get_size_increase() != 0.0 or
-                    cao.get_running_increase() != 0.0 or
-                    cao.get_swimming_increase() != 0.0 or
-                    cao.get_leaping_increase() != 0.0):
-                    return True
-        return False
+        """Whether any part raises a characteristic (CompoundPower.java:64)."""
+        return any(
+            getattr(part, field) != 0
+            for part in self.powers
+            if isinstance(part, CharAffectingObject)
+            for field in self._COMPOUND_SUMMED_INCREASES
+        )
 
