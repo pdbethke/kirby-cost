@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.9.0 — 2026-11-24
+
+### Added — `kirby_cost.builder`: make and change builds through the engine
+For a campaign blending its changes over a codex base, and for an AI building NPCs, bases, vehicles and equipment (two-databases spec §4a). Four layers, each usable alone:
+- **Edits** (`apply(doc, [Replace | Add | Remove])`) on the JSON build doc, by HD's own `ID`; a slot names its framework with `PARENTID`. Anything that does not fit is refused by name (`EditConflict`): an unknown ID, a replacement that changes its ID, a taken ID, a `PARENTID` naming nothing, a missing section, a framework removed with slots still in it. The input doc is never changed.
+- **Purchases by XMLID** (`buy(doc, Purchase(kind, xmlid, levels, name, option, adders, modifiers), template=...)`): the element states only what was chosen, every name checked against the template (`NotInTemplate`); costs come from the template when the build loads. A picked adder states `SELECTED="YES"`, as HD saves it.
+- **A new build** (`new_build(Template.VEHICLE, ...)`) holding exactly what HD gives a new character on that template, pinned to the headless oracle for seven templates.
+- **A verdict** (`judge(doc)`): total and available points, and every problem in HD's words: a modifier `verifyModifiers()` refuses, or points over budget.
+
+### Added — `HDTTemplateProvider.characteristics()`
+The characteristics a new character on the template has, in HD's order: the template chain's own, after REMOVEs, by POSITION; never the earlier-edition fallback's (Main.hdt's COM, Vehicle.hdt's DEF).
+
+### Fixed — a template's `<REMOVE>` is honoured
+`Template.java` deletes each section's `<REMOVE>` ids from what the template inherited. The parser skipped them (and in CHARACTERISTICS and POWERS read `REMOVE` as an entry), so every specialised template kept all of Main6E: a Vehicle6E character carried CON, INT, EGO, PRE, OMCV, DMCV, REC, END and STUN. The provider now skips, in ancestors and fallbacks, what a descendant removed. A characteristic bought as a power is gated like every power (Hero.java:2856 restores it only for the template's characteristics). **Behaviour change:** a character on Vehicle6E, Base6E, Computer6E or AI6E holding a characteristic its template removes no longer pays for it; the own-character Vehicle6E copy in `tests/own_copy.py` now totals HD's 377.5 (was 429.5). Parity over the 655 oracle fixtures is unchanged.
+
 ## 0.8.4 — 2026-11-15
 
 ### Fixed — `CompoundPower.affects_characteristics()` no longer raises AttributeError
