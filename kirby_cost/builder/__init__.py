@@ -10,15 +10,20 @@ Two-databases spec §4a. Layered so each layer is usable on its own:
    modifiers) made into an element, every name checked against the
    template; costs come from the template when the build is loaded.
 
-Later layers (a new build from any template, a verdict with costs and
-validation findings) build on these.
+3. `new` — a new, empty build on any HD template (an NPC, a base, a
+   vehicle), holding exactly the characteristics HD gives it.
+
+A later layer (a verdict with costs and validation findings) builds on
+these.
 """
 from kirby_cost.builder.edits import Add, Edit, EditConflict, Remove, Replace, apply
+from kirby_cost.builder.new import Template, new_build
 from kirby_cost.builder.purchases import (
     Kind, NotInTemplate, Pick, Purchase, buy, element,
 )
 
 __all__ = [
     "Add", "Edit", "EditConflict", "Kind", "NotInTemplate", "Pick",
-    "Purchase", "Remove", "Replace", "apply", "buy", "element",
+    "Purchase", "Remove", "Replace", "Template", "apply", "buy", "element",
+    "new_build",
 ]

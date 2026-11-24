@@ -416,6 +416,10 @@ class HDTTemplateProvider:
         #: the file being loaded took away (Template.java: each section's
         #: <REMOVE> deletes from what that section inherited).
         self._removed: dict[str, set[str]] = {}
+        #: The characteristics the template CHAIN defines (never a fallback),
+        #: each with the POSITION its nearest template states. See
+        #: `characteristics()`.
+        self._chain_characteristics: dict[str, int] = {}
         # Load order is child-before-parent throughout, because indexing is
         # first-wins: whatever is loaded first owns the xmlid.
         #
@@ -569,6 +573,12 @@ class HDTTemplateProvider:
                     if xmlid in self._removed.get(section, ()):
                         # A template nearer the character REMOVEd it.
                         continue
+                    if (section == "characteristics" and not fallback
+                            and xmlid not in self._chain_characteristics):
+                        position = (entry.get("attributes") or {}).get("POSITION", "")
+                        self._chain_characteristics[xmlid] = (
+                            int(position) if str(position).lstrip("-").isdigit()
+                            else len(self._chain_characteristics) + 1000)
                     if entry.get("xmlid") == "SENSE":
                         self._sense_xmlids.add(xmlid)
                     if xmlid in self._index:
@@ -842,6 +852,16 @@ class HDTTemplateProvider:
             data for (section, _xmlid), data in self._by_section.items()
             if section == "modifiers"
         ]
+
+    def characteristics(self) -> list[str]:
+        """The characteristics a new character on this template has, in HD's
+        order (Template.java builds them from the template chain after its
+        REMOVEs; the earlier-edition fallback supplies definitions for old
+        purchases, never a new character's characteristics). Ordered by the
+        POSITION the nearest template states, which is the order HD lists
+        them in (checked against the headless oracle, 2026-11-24)."""
+        return sorted(self._chain_characteristics,
+                      key=lambda x: self._chain_characteristics[x])
 
     def get_template_data(self, xmlid: str,
                           section: str | None = None) -> Optional[TemplateData]:
