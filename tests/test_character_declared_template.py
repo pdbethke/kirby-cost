@@ -56,12 +56,23 @@ def test_the_vehicle_movement_powers_do_not_use_end(vehicle):
     assert flight.uses_end is False
 
 
-def test_the_vehicle_total_prices_size_at_the_vehicle_rate(vehicle, tmp_path):
-    """Costed against Vehicle6E, SIZE 4 at 5/level adds 20 to the character;
-    the same character declaring a template without SIZE drops it."""
-    other = HDCLoader().load_file(
-        vehicle_copy(tmp_path, "builtIn.Superheroic6E.hdt"))
-    assert vehicle.total_points - other.total_points == 4 * 5.0
+def test_the_vehicle_prices_size_at_the_vehicle_rate(vehicle):
+    """Costed against Vehicle6E, SIZE 4 at 5/level costs 20."""
+    size = next(c for c in vehicle.characteristics if c.xmlid == "SIZE")
+    assert size.real_cost == 4 * 5.0
+
+
+def test_the_vehicle_total_is_what_hd_says(vehicle):
+    """The whole vehicle against HD's own answer for this file (the headless
+    oracle, 2026-11-24): 377.5. Vehicle6E REMOVEs CON, INT, EGO, PRE, OMCV,
+    DMCV, REC, END and STUN, so the 45 points this character had in them, and
+    the 7 in its PRE power, are not a vehicle's. This test used to compare
+    against the same character on Superheroic6E and expected only SIZE to
+    differ, which was true only while no template's REMOVE was honoured
+    (engine 429.5, HD 377.5)."""
+    assert vehicle.total_points == 377.5
+    assert not {"CON", "INT", "EGO", "PRE", "OMCV", "DMCV", "REC", "END",
+                "STUN"} & {c.xmlid for c in vehicle.characteristics}
 
 
 def test_a_main6e_character_is_unaffected():

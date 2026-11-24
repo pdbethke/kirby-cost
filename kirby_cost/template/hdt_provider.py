@@ -411,6 +411,11 @@ class HDTTemplateProvider:
         # for_template().
         self._peers: dict[str, "HDTTemplateProvider"] = {}
         self._languages: Optional[list[dict]] = None
+        #: Per section, the ids a template already loaded has REMOVEd. The
+        #: load order is child-first, so this holds what every DESCENDANT of
+        #: the file being loaded took away (Template.java: each section's
+        #: <REMOVE> deletes from what that section inherited).
+        self._removed: dict[str, set[str]] = {}
         # Load order is child-before-parent throughout, because indexing is
         # first-wins: whatever is loaded first owns the xmlid.
         #
@@ -561,6 +566,9 @@ class HDTTemplateProvider:
                     xmlid = _identity(entry)
                     if not xmlid:
                         continue
+                    if xmlid in self._removed.get(section, ()):
+                        # A template nearer the character REMOVEd it.
+                        continue
                     if entry.get("xmlid") == "SENSE":
                         self._sense_xmlids.add(xmlid)
                     if xmlid in self._index:
@@ -579,6 +587,10 @@ class HDTTemplateProvider:
                     self._by_section.setdefault((section, xmlid), data)
                     nested_later.append((entry, is_power))
                     self._index_adder_types(_all_adders(entry))
+        # This file's own removals apply to everything loaded after it: its
+        # ancestors and the earlier-edition fallbacks.
+        for section, ids in (parsed.get("removed") or {}).items():
+            self._removed.setdefault(section, set()).update(ids)
         # Nested definitions are indexed LAST, so a top-level one always wins.
         #
         # A template can define the same xmlid twice: <MODIFIER XMLID="COSTSEND">

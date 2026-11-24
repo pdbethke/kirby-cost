@@ -1457,11 +1457,15 @@ class HDCLoader:
                     obj_type = "skill"
 
                 # Java gates the POWERS restore on powerHash/skillHash the same
-                # way it gates the other sections (Hero.java:2803, 2818).
-                # Characteristics appearing in POWERS are exempt for the same
-                # reason as the CHARACTERISTICS section.
-                obj = self._build_object(elem, obj_type,
-                                         gate_on_template=not is_char_in_powers)
+                # way it gates the other sections (Hero.java:2803, 2818), and
+                # restores a characteristic bought as a power only when it is
+                # one of the character's characteristics (Hero.java:2856,
+                # "restore the Power Chars": a loop over the template's
+                # characteristics). So a template that REMOVEs a
+                # characteristic (Vehicle6E removes PRE) drops a PRE power
+                # too. Gated like every other power; this was exempt while
+                # no template's REMOVE was honoured (2026-11-24).
+                obj = self._build_object(elem, obj_type, gate_on_template=True)
                 if obj is not None:
                     # Characteristics in the powers section are power-based
                     if is_char_in_powers and hasattr(obj, '_is_power'):

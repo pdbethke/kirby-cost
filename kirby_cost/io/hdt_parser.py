@@ -73,8 +73,28 @@ class HDTParser:
             'powers': self._parse_powers(root.find('POWERS')),
             'modifiers': self._parse_modifiers(root.find('MODIFIERS')),
             'disadvantages': self._parse_disadvantages(root.find('DISADVANTAGES')),
+            # <REMOVE>id</REMOVE>, per section: what this template takes away
+            # from the sections it inherits (Template.java, every section).
+            'removed': {
+                key: self._parse_removes(root.find(tag))
+                for key, tag in (
+                    ('characteristics', 'CHARACTERISTICS'), ('skills', 'SKILLS'),
+                    ('skill_enhancers', 'SKILL_ENHANCERS'),
+                    ('martial_arts', 'MARTIAL_ARTS'), ('perks', 'PERKS'),
+                    ('talents', 'TALENTS'), ('powers', 'POWERS'),
+                    ('modifiers', 'MODIFIERS'), ('disadvantages', 'DISADVANTAGES'),
+                )
+            },
         }
         return template_data
+
+    @staticmethod
+    def _parse_removes(elem: Optional[etree.Element]) -> List[str]:
+        """The ids a section's <REMOVE> elements name, in order."""
+        if elem is None:
+            return []
+        return [(child.text or '').strip() for child in elem
+                if child.tag == 'REMOVE' and (child.text or '').strip()]
     
     def _parse_mainapp(self, elem: Optional[etree.Element]) -> Dict[str, Any]:
         """Parse MAINAPP section containing template settings."""
@@ -122,6 +142,8 @@ class HDTParser:
         
         characteristics = []
         for child in elem:
+            if child.tag == 'REMOVE':
+                continue  # a removal, not a characteristic: see 'removed'
             char_data = self._parse_generic_object(child)
             char_data['xmlid'] = child.tag  # STR, DEX, CON, etc.
             characteristics.append(char_data)
@@ -252,6 +274,8 @@ class HDTParser:
         
         powers = []
         for child in elem:
+            if child.tag == 'REMOVE':
+                continue  # a removal, not a power: see 'removed'
             # Each power has its own tag (ABSORPTION, AID, FORCEWALL, etc.)
             power_data = self._parse_generic_object(child)
             power_data['xmlid'] = child.tag
