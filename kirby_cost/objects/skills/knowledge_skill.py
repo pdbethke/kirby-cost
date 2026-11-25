@@ -60,6 +60,16 @@ class KnowledgeSkill(Skill, xmlid="KNOWLEDGE_SKILL"):
         self._minimum_level = 8
         self.characteristic = 0
     
+    def to_build_dict(self) -> dict:
+        """A Knowledge Skill states its TYPE (General, Cultural, Area, City),
+        as HD writes it on the element. HD decides the skill's type, and
+        with it whether a stated alias stands, from TYPE (`_init`), so a doc
+        without it rebuilt a General KS whose ALIAS="" became "KS".
+        tests/test_build_doc_is_a_fixed_point.py"""
+        d = super().to_build_dict()
+        d["knowledge_type"] = self.selected_display
+        return d
+
     def _init(self, element) -> None:
         """Initialize from XML element, including TYPE for selected_type."""
         super()._init(element)

@@ -9,6 +9,16 @@ For a campaign blending its changes over a codex base, and for an AI building NP
 - **A new build** (`new_build(Template.VEHICLE, ...)`) holding exactly what HD gives a new character on that template, pinned to the headless oracle for seven templates.
 - **A verdict** (`judge(doc)`): total and available points, and every problem in HD's words: a modifier `verifyModifiers()` refuses, or points over budget.
 
+### Changed — a build doc states its header: no defaults (**breaking**)
+`build_from_json` refuses a doc that does not state `name`, `template`, `base_points`, `disad_points` and `experience` (`BuildDocError` naming them). A missing one used to become 400 / 75 / 0, a Superheroic budget, silently, and `to_build_json` read them with the same fallbacks. `template: ""` stays a statement (no TEMPLATE). Surveyed 2026-11-25: kirby-combat (4216 passed), kirby-ai's fixtures and kirby-api's stored docs all state theirs; only kirby-cost's own oracle-dump tests did not, and now state the header they were always costed on (`tests.corpus.ORACLE_DUMP_HEADER`).
+
+### Fixed — a build doc rebuilt through the engine is the same doc
+`to_build_json(build_from_json(doc)) == doc` (`tests/test_build_doc_is_a_fixed_point.py`), found by kirby-build-store's round trip:
+- `affects_primary` / `affects_total` are stated on every object, as HD writes them. They were emitted only when False, "because True is the class default"; for a Power it is not, so a power HD marks `AFFECTS_PRIMARY="Yes"` was rebuilt as one that does not raise its characteristic (Bokor's and PowerLad's Resistant Protection). **Behaviour change** for any consumer rebuilding from a stored doc written before this: such powers now count.
+- `alias` is stated whenever the object has one, `""` included.
+- A Knowledge Skill states its TYPE as `knowledge_type` (General, Cultural, Area, City); HD decides from it whether a stated alias stands. Consumers persisting the doc need a column for it.
+- Still open, pinned as a strict xfail: a stated `ALIAS=""` reads as absent on the curated path (`BuildNode.stated` is None there), so two of Bokor's Knowledge Skills come back "KS". Display only.
+
 ### Added — `HDTTemplateProvider.characteristics()`
 The characteristics a new character on the template has, in HD's order: the template chain's own, after REMOVEs, by POSITION; never the earlier-edition fallback's (Main.hdt's COM, Vehicle.hdt's DEF).
 

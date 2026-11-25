@@ -133,8 +133,13 @@ class SerializationMixin:
         framework_tag = getattr(self, "_framework_tag", "")
         if framework_tag and framework_tag != self.xmlid:
             d["framework_tag"] = framework_tag
-        if getattr(self, "_alias", ""):
-            d["alias"] = self._alias
+        # Stated whenever the object has one, "" included: HD writes ALIAS on
+        # every element, and a stated ALIAS="" left out came back as the
+        # class's own alias (a Knowledge Skill's "KS").
+        # tests/test_build_doc_is_a_fixed_point.py
+        alias = getattr(self, "_alias", None)
+        if alias is not None:
+            d["alias"] = alias
         # The player's OWN name for the power — the only thing distinguishing
         # two ENERGYBLASTs in a UI, an AI action menu or an exported .hdc.
         if getattr(self, "_name", ""):
@@ -169,15 +174,19 @@ class SerializationMixin:
         # AFFECTS_TOTAL="No" was counted, and the character came back DCV 12 where the
         # canonical load says 10.
         #
-        # Emitted only when False, because True is the class default on both —
-        # so a doc for a character with nothing situational is unchanged.
+        # Stated on every object that has them, as HD writes them on every
+        # element. They used to be emitted only when False, "because True is
+        # the class default on both"; it is not for a Power (`Power.__init__`
+        # sets affects_primary False), so a power HD marks AFFECTS_PRIMARY="Yes"
+        # was rebuilt as one that does not raise the characteristic.
+        # tests/test_build_doc_is_a_fixed_point.py
         # Read from the raw attributes, NOT the affect_* properties:
         # `affect_total`'s getter WRITES to affects_total when affects_primary
         # is set, and serialising a character is not allowed to change it.
-        if getattr(self, "affects_primary", True) is False:
-            d["affects_primary"] = False
-        if getattr(self, "affects_total", True) is False:
-            d["affects_total"] = False
+        for flag in ("affects_primary", "affects_total"):
+            value = getattr(self, flag, None)
+            if value is not None:
+                d[flag] = bool(value)
         # Which pool the power draws END from (6E1 p.207). HD writes
         # USE_END_RESERVE="Yes" only on a power that runs off a Reserve, so
         # it is emitted only when True. It was dropped here while the .hdc

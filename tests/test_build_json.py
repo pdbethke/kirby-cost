@@ -3,6 +3,11 @@ import pytest
 from pathlib import Path
 from kirby_cost.io.build_json import build_from_json, BuildDocError
 
+#: The header the hand-written docs below were costed on before a build doc
+#: had to state its own (2026-11-25): what the loader filled in silently.
+UNSTATED = {"name": "", "template": "", "base_points": 400, "disad_points": 75,
+            "experience": 0}
+
 MINIMAL = {
     "name": "Brick", "template": "Main6E",
     "base_points": 400, "disad_points": 75, "experience": 0,
@@ -119,6 +124,7 @@ def test_user_wording_and_notes_survive_the_build_doc():
     delete.
     """
     doc = {
+        **UNSTATED,
         "powers": [{
             "id": 1,
             "xmlid": "ENERGYBLAST",
@@ -280,6 +286,7 @@ def test_a_custom_modifiers_name_survives_the_build_doc():
     noticed.
     """
     doc = {
+        **UNSTATED,
         "powers": [{
             "id": 1,
             "xmlid": "RKA",

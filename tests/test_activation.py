@@ -1,5 +1,7 @@
 """Activation: which purchases count right now, and why."""
 import pytest
+
+from tests.corpus import oracle_dump_doc
 from kirby_cost.model.activation import (
     ActivationContext, Contribution, CharacteristicState,
 )
@@ -69,8 +71,7 @@ def test_a_purchase_carrying_the_hero_id_limitation_is_conditional():
     from kirby_cost.io.build_json import build_from_json
     from kirby_cost.model.activation import contribution_from_purchase
 
-    hero = build_from_json(json.load(
-        open("tests/fixtures/authored/Ravel.json")))
+    hero = build_from_json(oracle_dump_doc("Ravel"))
     pre_powers = [p for p in hero.powers
                   if (getattr(p, "xmlid", "") or "").upper() == "PRE"]
     assert pre_powers, "Ravel should buy PRE as a power"
@@ -87,8 +88,7 @@ def test_a_plain_purchase_is_unconditional():
     from kirby_cost.io.build_json import build_from_json
     from kirby_cost.model.activation import contribution_from_purchase
 
-    hero = build_from_json(json.load(
-        open("tests/fixtures/authored/Ravel.json")))
+    hero = build_from_json(oracle_dump_doc("Ravel"))
     section_int = [c for c in hero.characteristics
                    if (getattr(c, "xmlid", "") or "").upper() == "INT"][0]
     c = contribution_from_purchase(section_int)
@@ -206,8 +206,7 @@ def test_ravel_is_two_different_characters():
     from kirby_cost.io.build_json import build_from_json
     from kirby_cost.model.activation import ActivationContext
 
-    hero = build_from_json(json.load(
-        open("tests/fixtures/authored/Ravel.json")))
+    hero = build_from_json(oracle_dump_doc("Ravel"))
 
     # The base is untouched — this is what costs derive from.
     assert hero.characteristic_value("DEX") == 10.0
@@ -228,8 +227,7 @@ def test_an_unconditional_characteristic_is_the_same_either_way():
     from kirby_cost.io.build_json import build_from_json
     from kirby_cost.model.activation import ActivationContext
 
-    hero = build_from_json(json.load(
-        open("tests/fixtures/authored/Ravel.json")))
+    hero = build_from_json(oracle_dump_doc("Ravel"))
     assert hero.temporal_characteristic("INT",
                                         ActivationContext(in_hero_id=True)) == 23.0
     assert hero.temporal_characteristic("INT",
@@ -241,8 +239,7 @@ def test_the_state_explains_itself():
     from kirby_cost.io.build_json import build_from_json
     from kirby_cost.model.activation import ActivationContext
 
-    hero = build_from_json(json.load(
-        open("tests/fixtures/authored/Ravel.json")))
+    hero = build_from_json(oracle_dump_doc("Ravel"))
     d = hero.characteristic_state("DEX").derivation(ActivationContext())
     assert d == "DEX 19 = 10 base +9 (Enhanced Reflexes)"
 
@@ -251,8 +248,7 @@ def test_the_default_context_is_hero_id():
     import json
     from kirby_cost.io.build_json import build_from_json
 
-    hero = build_from_json(json.load(
-        open("tests/fixtures/authored/Ravel.json")))
+    hero = build_from_json(oracle_dump_doc("Ravel"))
     assert hero.temporal_characteristic("DEX") == 19.0
 
 
@@ -260,8 +256,7 @@ def test_the_temporal_value_reads_the_xmlid_case_insensitively():
     import json
     from kirby_cost.io.build_json import build_from_json
 
-    hero = build_from_json(json.load(
-        open("tests/fixtures/authored/Ravel.json")))
+    hero = build_from_json(oracle_dump_doc("Ravel"))
     assert hero.temporal_characteristic("dex") == 19.0
 
 
@@ -269,8 +264,7 @@ def test_a_characteristic_nobody_bought_as_a_power_is_just_its_base():
     import json
     from kirby_cost.io.build_json import build_from_json
 
-    hero = build_from_json(json.load(
-        open("tests/fixtures/authored/Ravel.json")))
+    hero = build_from_json(oracle_dump_doc("Ravel"))
     st = hero.characteristic_state("EGO")
     assert st.contributions == ()
     assert hero.temporal_characteristic("EGO") == hero.characteristic_value("EGO")
@@ -387,8 +381,10 @@ def test_the_build_doc_carries_hds_totals_flags():
     power marked AFFECTS_TOTAL="No", and the database came back DCV 12 where
     the canonical load says 10.
 
-    Emitted only when False, since True is the default on both — a character
-    with nothing situational produces the same doc as before.
+    Stated on every object, as HD writes them on every element (2026-11-25).
+    They used to be emitted only when False, "since True is the default on
+    both"; a Power's default is False, so a power HD marks "Yes" lost it
+    (tests/test_build_doc_is_a_fixed_point.py).
     """
     from kirby_cost.io.build_json import build_from_json, to_build_json
     from kirby_cost.io.formats import load_build
@@ -400,10 +396,12 @@ def test_the_build_doc_carries_hds_totals_flags():
                 if (o.get("name") or "").strip() == "Reinforced String")
     assert slot["affects_primary"] is False
     assert slot["affects_total"] is False
-    # Unremarkable purchases stay quiet.
+    # An unremarkable purchase states what the .hdc says, too.
     plain = next(o for o in doc["powers"]
                  if (o.get("name") or "").strip() == "Enhanced Reflexes")
-    assert "affects_total" not in plain and "affects_primary" not in plain
+    (obj,) = [p for p in hero.powers if (p.name or "").strip() == "Enhanced Reflexes"]
+    assert plain["affects_primary"] is obj.affects_primary
+    assert plain["affects_total"] is obj.affects_total
 
     # And the rebuild agrees with the original about what counts.
     again = build_from_json(doc)

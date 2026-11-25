@@ -58,6 +58,7 @@ from pathlib import Path
 import pytest
 
 from kirby_cost.io.build_json import build_from_json
+from tests.corpus import oracle_dump_doc
 from kirby_cost.io.hdc_loader import HDCLoader
 from kirby_cost.util.rounder import round_half_up
 from tests.corpus import require_authored_hdc
@@ -122,7 +123,7 @@ def ravel_dump(provider):  # noqa: ARG001
     exists for. It is not a substitute for the .hdc and must never be used to
     judge the engine's numbers.
     """
-    return build_from_json(json.loads(DUMP.read_text()))
+    return build_from_json(oracle_dump_doc("Ravel"))
 
 
 def _skill(hero, xmlid):
@@ -289,7 +290,7 @@ def test_a_multi_item_skill_keeps_the_item_the_character_bought(ravel):
 
 
 def _ravel_doc():
-    return json.loads(DUMP.read_text())
+    return oracle_dump_doc("Ravel")
 
 
 def test_the_dump_states_no_characteristic_at_all(ravel_dump):

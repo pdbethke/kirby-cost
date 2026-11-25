@@ -59,7 +59,9 @@ _ATTR = {"levels": "LEVELS", "alias": "ALIAS",
          "id": "ID", "parent": "PARENTID", "base_cost": "BASECOST",
          "level_cost": "LVLCOST", "level_value": "LVLVAL",
          "min_cost": "MINCOST", "max_cost": "MAXCOST",
-         "characteristic": "CHARACTERISTIC"}
+         "characteristic": "CHARACTERISTIC",
+         # A Knowledge Skill's TYPE (KnowledgeSkill.to_build_dict).
+         "knowledge_type": "TYPE"}
 _BOOL = {"ultra_slot": "ULTRA_SLOT", "add_modifiers_to_base": "ADD_MODIFIERS_TO_BASE",
          # See SerializationMixin.to_build_dict: these decide whether a
          # purchase contributes to a temporal characteristic, so a rebuild
@@ -232,15 +234,24 @@ def _obj_node(o: dict, child_tag: str | None = None) -> BuildNode:
         tag = "POWER"
     return BuildNode(tag, attrs, kids)
 
+#: What every build doc states about the whole character. NO DEFAULTS: a
+#: missing one used to become 400 / 75 / 0, a Superheroic hero's budget,
+#: silently (tests/test_build_doc_states_its_points.py).
+_REQUIRED = ("name", "template", "base_points", "disad_points", "experience")
+
+
 def _root_from_doc(doc: dict[str, Any]) -> BuildNode:
     if not isinstance(doc, dict):
         raise BuildDocError("build doc must be a dict")
+    missing = [k for k in _REQUIRED if doc.get(k) is None]
+    if missing:
+        raise BuildDocError(f"build doc does not state {', '.join(missing)}")
     children = [
-        BuildNode("CHARACTER_INFO", {"CHARACTER_NAME": str(doc.get("name", ""))}),
+        BuildNode("CHARACTER_INFO", {"CHARACTER_NAME": str(doc["name"])}),
         BuildNode("BASIC_CONFIGURATION", {
-            "BASE_POINTS": str(doc.get("base_points", 400)),
-            "DISAD_POINTS": str(doc.get("disad_points", 75)),
-            "EXPERIENCE": str(doc.get("experience", 0)),
+            "BASE_POINTS": str(doc["base_points"]),
+            "DISAD_POINTS": str(doc["disad_points"]),
+            "EXPERIENCE": str(doc["experience"]),
         }),
     ]
     for key, sec_tag in _SECTION_TAG.items():
@@ -248,7 +259,7 @@ def _root_from_doc(doc: dict[str, Any]) -> BuildNode:
         if not isinstance(items, list):
             raise BuildDocError(f"build-doc '{key}' must be a list")
         children.append(BuildNode(sec_tag, {}, [_obj_node(o) for o in items]))
-    return BuildNode("CHARACTER", {"TEMPLATE": str(doc.get("template", ""))}, children)
+    return BuildNode("CHARACTER", {"TEMPLATE": str(doc["template"])}, children)
 
 def build_from_json(doc: dict[str, Any]) -> LoadedHero:
     """Build doc -> loaded build (live cost properties)."""
@@ -297,11 +308,11 @@ def to_build_json(hero: LoadedHero) -> dict[str, Any]:
     """Loaded build -> canonical build doc. Reads the loaded build (full structure:
     frameworks, all modifiers, adders), so the doc is complete + round-trippable."""
     doc: dict[str, Any] = {
-        "name": getattr(hero, "name", ""),
-        "template": getattr(hero, "template_name", "") or "",
-        "base_points": getattr(hero, "base_points", 400),
-        "disad_points": getattr(hero, "disad_points", 75),
-        "experience": getattr(hero, "experience", 0),
+        "name": hero.name,
+        "template": hero.template_name,
+        "base_points": hero.base_points,
+        "disad_points": hero.disad_points,
+        "experience": hero.experience,
     }
     ids: dict[int, str] = {}
     counter = 0

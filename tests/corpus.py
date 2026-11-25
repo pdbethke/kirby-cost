@@ -310,3 +310,21 @@ def missing_inputs() -> "list[str]":
          if _from_env(var) is None and not _satisfied_by_bundle(var)]
         + [name for name in GENERATED if not _generated_present(name)]
     )
+
+
+#: The header every oracle-dump test was costed on before build docs had to
+#: state theirs (2026-11-25): no template, and the 400 / 75 / 0 the loader
+#: used to fill in silently. The oracle's JSON dump states none of it.
+#: Stated here so those tests keep exactly the character they always had,
+#: and say so.
+ORACLE_DUMP_HEADER = {"template": "", "base_points": 400, "disad_points": 75,
+                      "experience": 0}
+
+
+def oracle_dump_doc(name: str) -> dict:
+    """``tests/fixtures/authored/<name>.json`` (an hd6cli dump, the DEGRADED
+    path) as a build doc, with `ORACLE_DUMP_HEADER` stated over it."""
+    import json
+    doc = json.loads((Path(__file__).parent / "fixtures" / "authored"
+                      / f"{name}.json").read_text())
+    return {**doc, **ORACLE_DUMP_HEADER}
