@@ -200,8 +200,15 @@ def pytest_report_header(config):
     return lines
 
 
+def _counts_as_skip(report) -> bool:
+    """A skip the guard must answer for. pytest reports an xfail as skipped
+    too (with ``wasxfail``); an expected failure is pinned on purpose, not
+    coverage gone missing."""
+    return bool(report.skipped) and not hasattr(report, "wasxfail")
+
+
 def pytest_runtest_logreport(report):
-    if report.skipped:
+    if _counts_as_skip(report):
         _SKIPPED.setdefault(report.nodeid, _skip_reason(report))
 
 
