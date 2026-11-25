@@ -23,7 +23,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
-from kirby_cost.io.formats import load_build
+from kirby_cost.io.build_json import build_from_json
 
 
 @dataclass(frozen=True)
@@ -60,10 +60,10 @@ def _purchases(hero):
 
 
 def judge(doc: dict) -> BuildVerdict:
-    """Cost ``doc`` (a JSON build doc) and report every problem with it."""
+    """Cost ``doc`` (a curated build doc) and report every problem with it."""
     from kirby_cost.validation import verify
 
-    hero = load_build(doc, format="json")
+    hero = build_from_json(doc)
     problems: list[Problem] = []
     for obj in _purchases(hero):
         for finding in verify(obj):

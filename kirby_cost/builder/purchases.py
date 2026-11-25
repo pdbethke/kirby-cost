@@ -2,7 +2,8 @@
 
 The builder's second layer (two-databases spec §4a). An AI building an NPC,
 a base or equipment (Peter, 2026-11-24) names what it wants — "Energy
-Blast, 8 levels, 0 END" — and never writes HD's XML. The element made here
+Blast, 8 levels, 0 END" — and never writes a build doc by hand. The
+purchase made here (a curated build-doc object, see `edits`)
 states only what the purchase CHOSE: XMLID, levels, name, option, and its
 adders and modifiers. Every cost is left to the template, which the loader
 merges in exactly as it does for an HD-saved file (HDC stores only
@@ -24,7 +25,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
-from kirby_cost.builder.edits import Add, EditConflict, Node, _ids
+from kirby_cost.builder.edits import Add, EditConflict, Obj, ids
+from kirby_cost.io.build_json import Section
 
 
 class NotInTemplate(EditConflict):
@@ -32,26 +34,23 @@ class NotInTemplate(EditConflict):
 
 
 class Kind(Enum):
-    """Where a purchase goes: its template section, build section and tag."""
+    """What a purchase is: where the template defines it, and the build
+    section it goes in."""
 
-    POWER = ("powers", "POWERS", "POWER")
-    EQUIPMENT = ("powers", "EQUIPMENT", "POWER")
-    SKILL = ("skills", "SKILLS", "SKILL")
-    PERK = ("perks", "PERKS", "PERK")
-    TALENT = ("talents", "TALENTS", "TALENT")
-    COMPLICATION = ("disadvantages", "DISADVANTAGES", "DISAD")
+    POWER = ("powers", Section.POWERS)
+    EQUIPMENT = ("powers", Section.EQUIPMENT)
+    SKILL = ("skills", Section.SKILLS)
+    PERK = ("perks", Section.PERKS)
+    TALENT = ("talents", Section.TALENTS)
+    COMPLICATION = ("disadvantages", Section.COMPLICATIONS)
 
     @property
     def template_section(self) -> str:
         return self.value[0]
 
     @property
-    def build_section(self) -> str:
+    def build_section(self) -> Section:
         return self.value[1]
-
-    @property
-    def tag(self) -> str:
-        return self.value[2]
 
 
 @dataclass(frozen=True)
@@ -82,7 +81,7 @@ class _IdMint:
     timestamps, numeric)."""
 
     def __init__(self, doc: dict) -> None:
-        numeric = [int(i) for i in _ids(doc["document"]) if str(i).isdigit()]
+        numeric = [int(i) for i in ids(doc) if str(i).isdigit()]
         self._next = (max(numeric) if numeric else 0) + 1
 
     def __call__(self) -> str:
@@ -90,25 +89,24 @@ class _IdMint:
         return out
 
 
-def _option_attrs(owner: str, what: str, option: str | None,
-                  options: Any) -> dict[str, str]:
+def _option(owner: str, what: str, option: str | None,
+            options: Any) -> dict[str, str]:
     if option is None:
         return {}
     if option not in (options or {}):
         raise NotInTemplate(
             f"{owner}: the template has no option {option!r} for {what} "
             f"(it has {sorted(options or {})})")
-    return {"OPTION": option, "OPTIONID": option}
+    return {"option_id": option}
 
 
-def _pick_node(owner: str, tag: str, pick: Pick, entry: Any, mint) -> Node:
-    attrs = {"XMLID": pick.xmlid, "ID": mint(), "LEVELS": str(pick.levels),
-             **_option_attrs(owner, pick.xmlid, pick.option,
-                             getattr(entry, "options", None))}
-    return {"tag": tag, "attrs": attrs, "children": []}
+def _pick(owner: str, pick: Pick, entry: Any) -> Obj:
+    return {"xmlid": pick.xmlid, "levels": pick.levels,
+            **_option(owner, pick.xmlid, pick.option,
+                      getattr(entry, "options", None))}
 
 
-def element(purchase: Purchase, *, template, mint, position: int) -> Node:
+def element(purchase: Purchase, *, template, mint) -> Obj:
     """The build element for ``purchase``, every name checked against
     ``template`` (a `TemplateProvider`)."""
     kind = purchase.kind
@@ -116,40 +114,44 @@ def element(purchase: Purchase, *, template, mint, position: int) -> Node:
     if entry is None or entry.xmlid != purchase.xmlid:
         raise NotInTemplate(
             f"{purchase.xmlid}: not a {kind.template_section[:-1]} in the template")
-    attrs = {"XMLID": purchase.xmlid, "ID": mint(),
-             "LEVELS": str(purchase.levels), "NAME": purchase.name,
-             "POSITION": str(position),
-             **_option_attrs(purchase.xmlid, purchase.xmlid, purchase.option,
-                             entry.options)}
-    children: list[Node] = []
+    obj: Obj = {"id": mint(), "xmlid": purchase.xmlid,
+                "levels": purchase.levels, "name": purchase.name,
+                **_option(purchase.xmlid, purchase.xmlid, purchase.option,
+                          entry.options)}
+    if kind is Kind.SKILL:
+        # The doc's own marker (`Skill.to_build_dict`): the rebuild writes a
+        # SKILL element, so the loader dispatches through the skill registry.
+        obj["skill"] = True
+    adders: list[Obj] = []
     for pick in purchase.adders:
-        adders = entry.adders or {}
-        if pick.xmlid not in adders:
+        offered = entry.adders or {}
+        if pick.xmlid not in offered:
             raise NotInTemplate(
                 f"{purchase.xmlid}: the template gives it no adder {pick.xmlid!r}")
-        node = _pick_node(purchase.xmlid, "ADDER", pick, adders[pick.xmlid], mint)
+        adder = _pick(purchase.xmlid, pick, offered[pick.xmlid])
         # A template adder is a CHOICE in HD, counted only when selected
         # (every HD-saved adder states SELECTED="YES"). Stating it is the
         # purchase's choice, not a cost.
-        node["attrs"]["SELECTED"] = "YES"
-        children.append(node)
+        adder["selected"] = True
+        adders.append(adder)
+    modifiers: list[Obj] = []
     for pick in purchase.modifiers:
         mod = template.get_template_data(pick.xmlid, "modifiers")
         if mod is None or mod.xmlid != pick.xmlid:
             raise NotInTemplate(f"{pick.xmlid}: not a modifier in the template")
-        children.append(_pick_node(purchase.xmlid, "MODIFIER", pick, mod, mint))
-    return {"tag": kind.tag, "attrs": attrs, "children": children}
+        modifiers.append(_pick(purchase.xmlid, pick, mod))
+    if adders:
+        obj["adders"] = adders
+    if modifiers:
+        obj["modifiers"] = modifiers
+    return obj
 
 
 def buy(doc: dict, purchase: Purchase, *, template) -> Add:
-    """The `Add` edit that buys ``purchase`` into ``doc``'s build, with IDs
+    """The `Add` edit that buys ``purchase`` into ``doc``'s build, with an ID
     new to it. Apply it with `apply` (alone or among other edits)."""
-    section = next((c for c in doc["document"].get("children", [])
-                    if c.get("tag") == purchase.kind.build_section), None)
-    position = len(section.get("children", [])) if section is not None else 0
-    node = element(purchase, template=template, mint=_IdMint(doc),
-                   position=position)
-    return Add(purchase.kind.build_section, node)
+    return Add(purchase.kind.build_section,
+               element(purchase, template=template, mint=_IdMint(doc)))
 
 
 __all__ = ["Kind", "NotInTemplate", "Pick", "Purchase", "buy", "element"]

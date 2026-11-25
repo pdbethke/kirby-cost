@@ -14,12 +14,7 @@ from __future__ import annotations
 
 from enum import Enum
 
-from kirby_cost.builder.edits import Node
-
-#: The sections an HD character file carries, in HD's order.
-_SECTIONS = ("BASIC_CONFIGURATION", "CHARACTER_INFO", "CHARACTERISTICS",
-             "SKILLS", "PERKS", "TALENTS", "MARTIALARTS", "POWERS",
-             "DISADVANTAGES", "EQUIPMENT")
+from kirby_cost.io.build_json import Section
 
 
 class Template(Enum):
@@ -37,30 +32,20 @@ class Template(Enum):
 
 def new_build(template: Template, *, template_provider, name: str,
               base_points: int, disad_points: int, experience: int) -> dict:
-    """A build doc for a new character on ``template``, costed against the
-    template files ``template_provider`` reads (an `HDTTemplateProvider`)."""
+    """A curated build doc for a new character on ``template``, costed
+    against the template files ``template_provider`` reads (an
+    `HDTTemplateProvider`)."""
     chain = template_provider.for_template(template.value)
-    characteristics: list[Node] = [
-        {"tag": xmlid,
-         "attrs": {"XMLID": xmlid, "ID": str(n), "LEVELS": "0",
-                   "POSITION": str(n)},
-         "children": []}
+    doc: dict = {"name": name, "template": template.value,
+                 "base_points": base_points, "disad_points": disad_points,
+                 "experience": experience}
+    for section in Section:
+        doc[section.key] = []
+    doc[Section.CHARACTERISTICS.key] = [
+        {"id": str(n), "xmlid": xmlid, "levels": 0}
         for n, xmlid in enumerate(chain.characteristics(), start=1)
     ]
-    attrs = {
-        "BASIC_CONFIGURATION": {"BASE_POINTS": str(base_points),
-                                "DISAD_POINTS": str(disad_points),
-                                "EXPERIENCE": str(experience),
-                                "RULES": "Default"},
-        "CHARACTER_INFO": {"CHARACTER_NAME": name},
-    }
-    sections = [{"tag": tag, "attrs": attrs.get(tag, {}),
-                 "children": characteristics if tag == "CHARACTERISTICS" else []}
-                for tag in _SECTIONS]
-    return {"document": {"tag": "CHARACTER",
-                         "attrs": {"version": "6.0", "TEMPLATE": template.value},
-                         "children": sections},
-            "encoding": "utf-16"}
+    return doc
 
 
 __all__ = ["Template", "new_build"]

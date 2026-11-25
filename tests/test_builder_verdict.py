@@ -53,8 +53,8 @@ def test_a_modifier_hd_refuses_is_a_problem_in_hds_words(provider):
     assert problem.kind is Problem.Kind.ILLEGAL_MODIFIER
     assert problem.xmlid == "AOE"
     assert "targeted on others" in problem.detail
-    flight = next(c for c in doc["document"]["children"] if c["tag"] == "POWERS")
-    assert problem.hd_id == flight["children"][0]["attrs"]["ID"]
+    (flight,) = doc["powers"]
+    assert problem.hd_id == flight["id"]
 
 
 def test_spending_more_than_the_build_has_is_a_problem(provider):

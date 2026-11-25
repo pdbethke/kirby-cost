@@ -2,7 +2,11 @@
 
 Two-databases spec §4a. Layered so each layer is usable on its own:
 
-1. `edits` — add, replace or remove an element of a build doc by HD ``ID``,
+All four work on the CURATED build doc (`kirby_cost.io.build_json`), the
+shape a relational store keeps, so a stored row and an edit's payload are
+the same thing (Peter, 2026-11-25).
+
+1. `edits` — add, replace or remove a purchase in a build doc by HD ``ID``,
    refusing by name anything that does not fit (a campaign's overrides over
    a codex base; an AI's proposed changes).
 
@@ -16,7 +20,10 @@ Two-databases spec §4a. Layered so each layer is usable on its own:
 4. `verdict` — `judge(doc)`: the build costed, and every problem in the
    engine's own words (a modifier HD refuses; points over budget).
 """
-from kirby_cost.builder.edits import Add, Edit, EditConflict, Remove, Replace, apply
+from kirby_cost.builder.edits import (
+    Add, Edit, EditConflict, Remove, Replace, apply, ids, purchases,
+)
+from kirby_cost.io.build_json import Section
 from kirby_cost.builder.new import Template, new_build
 from kirby_cost.builder.verdict import BuildVerdict, Problem, judge
 from kirby_cost.builder.purchases import (
@@ -25,6 +32,6 @@ from kirby_cost.builder.purchases import (
 
 __all__ = [
     "Add", "BuildVerdict", "Edit", "EditConflict", "Kind", "Problem", "judge", "NotInTemplate", "Pick",
-    "Purchase", "Remove", "Replace", "Template", "apply", "buy", "element",
-    "new_build",
+    "Purchase", "Remove", "Replace", "Section", "Template", "apply", "buy",
+    "element", "ids", "new_build", "purchases",
 ]

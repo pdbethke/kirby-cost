@@ -2,24 +2,44 @@
 HDC-structured-but-not-XML description of any point-built entity. This module
 turns it into BuildNode trees the loader's construct-and-cost core consumes."""
 from __future__ import annotations
+from enum import Enum
 from typing import Any
 from kirby_cost.io.hdc_loader import HDCLoader, BuildNode, LoadedHero
 
 class BuildDocError(ValueError):
     """Malformed build doc."""
 
-_SECTION_TAG = {
-    "characteristics": "CHARACTERISTICS", "powers": "POWERS", "skills": "SKILLS",
-    "perks": "PERKS", "talents": "TALENTS", "martial_arts": "MARTIALARTS",
-    "disadvantages": "DISADVANTAGES",
+class Section(Enum):
+    """A section of the build doc, in the doc's own order, with the HDC tag
+    it is written under. Disadvantages are HD's name for complications."""
+
+    CHARACTERISTICS = ("characteristics", "CHARACTERISTICS")
+    POWERS = ("powers", "POWERS")
+    SKILLS = ("skills", "SKILLS")
+    PERKS = ("perks", "PERKS")
+    TALENTS = ("talents", "TALENTS")
+    MARTIAL_ARTS = ("martial_arts", "MARTIALARTS")
+    COMPLICATIONS = ("disadvantages", "DISADVANTAGES")
     # Carried gear. Shaped exactly like POWERS -- the loader builds it with
     # the same `_load_powers_section` -- and 6E2 p.182 says why: "Most
     # equipment is built with Powers". Missing here, a character whose
     # weapon is carried rather than innate round-tripped UNARMED, silently,
     # and kirby-combat has read `hero.equipment` for its attacks since
     # 2026-09-07. Last of the seven sections to be written down.
-    "equipment": "EQUIPMENT",
-}
+    EQUIPMENT = ("equipment", "EQUIPMENT")
+
+    @property
+    def key(self) -> str:
+        """The section's key in the build doc."""
+        return self.value[0]
+
+    @property
+    def tag(self) -> str:
+        """The HDC element the section is written as."""
+        return self.value[1]
+
+
+_SECTION_TAG = {s.key: s.tag for s in Section}
 # Cost-driving fields the loader's _init() reads off every element (power,
 # modifier, adder). Emitting the EFFECTIVE values back as their HDC attributes
 # makes the build doc fully self-describing so the rebuild reproduces the cost

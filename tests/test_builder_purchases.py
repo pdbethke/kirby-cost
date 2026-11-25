@@ -1,8 +1,8 @@
 """The builder's second layer: a purchase named by XMLID, filled from the template.
 
 An AI building an NPC, a base or a piece of equipment (Peter, 2026-11-24)
-asks for "Energy Blast, 8 levels, 0 END" and never writes HD's XML: the
-builder makes the element, stating only what the purchase chose (XMLID,
+asks for "Energy Blast, 8 levels, 0 END" and never writes a build doc by
+hand: the builder makes the purchase (a curated build-doc object), stating only what the purchase chose (XMLID,
 levels, name, option, its adders and modifiers), and the loader fills every
 cost from the character's template exactly as it does for an HD-saved file.
 
@@ -15,8 +15,9 @@ from __future__ import annotations
 import pytest
 
 from kirby_cost.builder import (
-    Kind, NotInTemplate, Pick, Purchase, apply, buy,
+    Kind, NotInTemplate, Pick, Purchase, Section, apply, buy,
 )
+from kirby_cost.io.build_json import build_from_json, to_build_json
 from kirby_cost.io.formats import load_build
 from kirby_cost.template.hdt_provider import HDTTemplateProvider
 from tests.corpus import require_authored_hdc
@@ -29,7 +30,7 @@ def template():
 
 @pytest.fixture(scope="module")
 def ravel():
-    return load_build(str(require_authored_hdc("Ravel")), format="hdc").export(format="json")
+    return to_build_json(load_build(str(require_authored_hdc("Ravel")), format="hdc"))
 
 
 def _blast(**over):
@@ -42,8 +43,8 @@ def _blast(**over):
 def _bought(doc, purchase, template):
     edit = buy(doc, purchase, template=template)
     out = apply(doc, [edit])
-    hero = load_build(out, format="json")
-    new_id = edit.node["attrs"]["ID"]
+    hero = build_from_json(out)
+    new_id = edit.obj["id"]
     every = (list(hero.powers) + list(hero.skills) + list(hero.perks)
              + list(hero.talents) + list(hero.equipment) + list(hero.complications))
     (obj,) = [o for o in every if str(o.id) == new_id]
@@ -71,13 +72,13 @@ def test_a_skill(ravel, template):
     out, _ = _bought(ravel, Purchase(kind=Kind.SKILL, xmlid="CONCEALMENT", levels=0,
                                      name="", option=None, adders=(), modifiers=()),
                      template)
-    assert load_build(out, format="json").total_points > load_build(ravel, format="json").total_points
+    assert build_from_json(out).total_points > build_from_json(ravel).total_points
 
 
 def test_new_ids_are_new(ravel, template):
     one = buy(ravel, _blast(modifiers=(Pick("REDUCEDEND", 0, "ZERO"),)), template=template)
-    ids = [n["attrs"]["ID"] for n in [one.node, *one.node["children"]]]
-    assert len(set(ids)) == len(ids)
+    two = buy(apply(ravel, [one]), _blast(), template=template)
+    assert one.obj["id"] != two.obj["id"]
     apply(ravel, [one])                         # no ID collides with the build
 
 
@@ -103,4 +104,6 @@ def test_an_adder_the_power_does_not_have_is_refused(ravel, template):
 
 def test_equipment_goes_in_the_equipment_section(ravel, template):
     edit = buy(ravel, _blast(kind=Kind.EQUIPMENT), template=template)
-    assert edit.section == "EQUIPMENT" and edit.node["tag"] == "POWER"
+    assert edit.section is Section.EQUIPMENT
+    out = apply(ravel, [edit])
+    assert edit.obj["id"] in {str(o.id) for o in build_from_json(out).equipment}

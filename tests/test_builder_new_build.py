@@ -14,7 +14,7 @@ from __future__ import annotations
 import pytest
 
 from kirby_cost.builder import Template, new_build
-from kirby_cost.io.formats import load_build
+from kirby_cost.io.build_json import build_from_json
 from kirby_cost.template.hdt_provider import HDTTemplateProvider
 
 MAIN = ["STR", "DEX", "CON", "INT", "EGO", "PRE", "OCV", "DCV", "OMCV", "DMCV",
@@ -47,23 +47,19 @@ def _new(template, provider, **over):
 
 @pytest.mark.parametrize("template", list(HD_SAYS))
 def test_a_new_build_has_what_hd_gives_its_template(template, provider):
-    hero = load_build(_new(template, provider), format="json")
+    hero = build_from_json(_new(template, provider))
     assert [c.xmlid for c in hero.characteristics] == HD_SAYS[template]
 
 
 @pytest.mark.parametrize("template", list(HD_SAYS))
 def test_a_new_build_costs_nothing(template, provider):
-    assert load_build(_new(template, provider), format="json").total_points == 0
+    assert build_from_json(_new(template, provider)).total_points == 0
 
 
 def test_a_new_build_declares_its_template_and_its_points(provider):
     doc = _new(Template.VEHICLE, provider, name="The Ramblin' Wreck",
                base_points=200, disad_points=0, experience=5)
-    hero = load_build(doc, format="json")
+    hero = build_from_json(doc)
     assert hero.template_name == "builtIn.Vehicle6E.hdt"
-    root = doc["document"]
-    config = next(c for c in root["children"] if c["tag"] == "BASIC_CONFIGURATION")
-    info = next(c for c in root["children"] if c["tag"] == "CHARACTER_INFO")
-    assert config["attrs"]["BASE_POINTS"] == "200"
-    assert config["attrs"]["EXPERIENCE"] == "5"
-    assert info["attrs"]["CHARACTER_NAME"] == "The Ramblin' Wreck"
+    assert (hero.name, hero.base_points, hero.disad_points, hero.experience) == (
+        "The Ramblin' Wreck", 200, 0, 5)

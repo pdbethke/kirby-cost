@@ -1,11 +1,14 @@
-"""Edits on a build doc: add, replace or remove an element, by HD's ``ID``.
+"""Edits on a build doc: add, replace or remove a purchase, by HD's ``ID``.
 
-The builder's first layer (two-databases spec §4a). It works on the JSON
-build doc `LoadedHero.export(format="json")` writes: a transport encoding of
-the HDC element tree (``{tag, attrs, children}``) in which HD's element IDs
-survive. Editing that tree, rather than a second model of a character, means
-there is no field list here to drift from the loader: `load_build(doc,
-format="json")` costs the result exactly as it costs any other build.
+The builder's first layer (two-databases spec §4a). It works on the CURATED
+build doc (`kirby_cost.io.build_json`: `to_build_json` writes it,
+`build_from_json` costs it), the shape a relational store keeps: one object
+per purchase, with HD's own ``id``, its framework named by ``parent``, and
+its modifiers and adders nested inside it. So an edit's payload is exactly
+what a store keeps as one purchase's rows, and blending a campaign's edits
+over a codex base never converts between shapes (Peter, 2026-11-25, option
+A). The HDC element tree (`export(format="json")`) stays kirby-cost's
+import/export transport; it is not edited here.
 
 Two callers, one function:
 
@@ -13,26 +16,33 @@ Two callers, one function:
   changes, then blends them over the base (`apply`);
 * an AI builds NPCs, bases and equipment by proposing the same edits.
 
-TARGETING. Every element that can be bought carries ``ID``; framework slots
-are siblings in their section pointing at the framework with ``PARENTID``
-(HD's own layout). So an edit needs only an ``ID`` to replace or remove, and
-a section tag (``"POWERS"``, ``"SKILLS"`` ...) to add into.
+TARGETING. Every purchase carries ``id``; framework slots are siblings in
+their section naming the framework in ``parent`` (HD's own layout). An edit
+needs only an id to replace or remove, and a `Section` to add into. A
+purchase is edited WHOLE: changing a modifier is a `Replace` of the
+purchase that carries it.
 
 NOTHING IS PATCHED OVER. An edit that does not fit the doc is refused by
-name (`EditConflict`), never skipped: a replace or remove of an ID the doc
-lacks, a replacement that changes its own ID, an add whose ID (or any ID
-inside it) is taken, an add whose ``PARENTID`` names nothing, an add into a
-section the build lacks, and a remove that would leave slots pointing at a
-framework that is gone. A campaign that hits one of these resolves it as a
-new version; an AI that hits one is told what it got wrong.
+name (`EditConflict`), never skipped: a replace or remove of an id the doc
+lacks, a replacement that changes its own id, an add whose id (or any id
+inside it) is taken, an add whose ``parent`` names nothing, and a remove
+that would leave slots pointing at a framework that is gone. A campaign
+that hits one of these resolves it as a new version; an AI that hits one is
+told what it got wrong.
 """
 from __future__ import annotations
 
 import copy
 from dataclasses import dataclass
-from typing import Any, Iterable, Union
+from typing import Any, Iterable, Iterator, Union
 
-Node = dict[str, Any]
+from kirby_cost.io.build_json import Section
+
+#: One purchase in the curated build doc.
+Obj = dict[str, Any]
+
+#: Where a purchase carries other objects that may have ids of their own.
+_NESTED = ("sub_powers", "modifiers", "adders")
 
 
 class EditConflict(Exception):
@@ -41,25 +51,25 @@ class EditConflict(Exception):
 
 @dataclass(frozen=True)
 class Replace:
-    """Put ``node`` where the element with ``hd_id`` is. ``node`` keeps that
-    ``ID``: a replacement is the same purchase, changed."""
+    """Put ``obj`` where the purchase with ``hd_id`` is. ``obj`` keeps that
+    ``id``: a replacement is the same purchase, changed."""
 
     hd_id: str
-    node: Node
+    obj: Obj
 
 
 @dataclass(frozen=True)
 class Add:
-    """Append ``node`` to the build's ``section`` (``"POWERS"``, ...). A slot
-    states its framework in its own ``PARENTID``."""
+    """Append ``obj`` to the build's ``section``. A slot names its framework
+    in its own ``parent``."""
 
-    section: str
-    node: Node
+    section: Section
+    obj: Obj
 
 
 @dataclass(frozen=True)
 class Remove:
-    """Take the element with ``hd_id`` off the build."""
+    """Take the purchase with ``hd_id`` off the build."""
 
     hd_id: str
 
@@ -67,77 +77,91 @@ class Remove:
 Edit = Union[Replace, Add, Remove]
 
 
-def _id(node: Node) -> str | None:
-    return node.get("attrs", {}).get("ID")
+def _walk(obj: Obj) -> Iterator[Obj]:
+    yield obj
+    for key in _NESTED:
+        for child in obj.get(key) or []:
+            yield from _walk(child)
+    rec = obj.get("endurance_reserve_rec")
+    if rec is not None:
+        yield from _walk(rec)
 
 
-def _walk(node: Node):
-    yield node
-    for child in node.get("children", []) or []:
-        yield from _walk(child)
+def _ids_in(obj: Obj) -> set[str]:
+    return {str(o["id"]) for o in _walk(obj) if o.get("id") is not None}
 
 
-def _ids(root: Node) -> set[str]:
-    return {i for n in _walk(root) if (i := _id(n)) is not None}
+def purchases(doc: dict) -> Iterator[tuple[Section, Obj]]:
+    """Every purchase in ``doc``, with its section, in the doc's order."""
+    for section in Section:
+        for obj in doc.get(section.key) or []:
+            yield section, obj
 
 
-def _locate(root: Node, hd_id: str) -> tuple[Node, int] | None:
-    """(parent, index) of the element with ``hd_id``."""
-    for parent in _walk(root):
-        for i, child in enumerate(parent.get("children", []) or []):
-            if _id(child) == hd_id:
-                return parent, i
+def ids(doc: dict) -> set[str]:
+    """Every id ``doc`` holds, nested ones included."""
+    out: set[str] = set()
+    for _, obj in purchases(doc):
+        out |= _ids_in(obj)
+    return out
+
+
+def _locate(doc: dict, hd_id: str) -> tuple[list, int] | None:
+    """(section list, index) of the purchase with ``hd_id``."""
+    for section in Section:
+        objs = doc.get(section.key) or []
+        for i, obj in enumerate(objs):
+            if str(obj.get("id")) == hd_id:
+                return objs, i
     return None
 
 
-def _apply_one(root: Node, edit: Edit) -> None:
+def _apply_one(doc: dict, edit: Edit) -> None:
     if isinstance(edit, Replace):
-        where = _locate(root, edit.hd_id)
+        where = _locate(doc, edit.hd_id)
         if where is None:
-            raise EditConflict(f"replace {edit.hd_id}: the build has no element with that ID")
-        if _id(edit.node) != edit.hd_id:
+            raise EditConflict(f"replace {edit.hd_id}: the build has no purchase with that ID")
+        if str(edit.obj.get("id")) != edit.hd_id:
             raise EditConflict(
                 f"replace {edit.hd_id}: a replacement keeps its ID, and this one "
-                f"has {_id(edit.node)!r}")
-        inner = _ids(edit.node) - {edit.hd_id}
-        taken = inner & (_ids(root) - _ids(where[0]["children"][where[1]]))
+                f"has {edit.obj.get('id')!r}")
+        objs, i = where
+        inner = _ids_in(edit.obj) - {edit.hd_id}
+        taken = inner & (ids(doc) - _ids_in(objs[i]))
         if taken:
             raise EditConflict(f"replace {edit.hd_id}: IDs already in the build: {sorted(taken)}")
-        parent, i = where
-        parent["children"][i] = copy.deepcopy(edit.node)
+        objs[i] = copy.deepcopy(edit.obj)
         return
 
     if isinstance(edit, Add):
-        section = next((c for c in root.get("children", []) or []
-                        if c.get("tag") == edit.section), None)
-        if section is None:
-            raise EditConflict(f"add to {edit.section}: the build has no such section")
-        new = _ids(edit.node)
-        if _id(edit.node) is None:
-            raise EditConflict(f"add to {edit.section}: the element has no ID")
-        taken = new & _ids(root)
+        if not isinstance(edit.section, Section):
+            raise TypeError(f"add: section must be a Section, not {edit.section!r}")
+        if edit.obj.get("id") is None:
+            raise EditConflict(f"add to {edit.section.key}: the purchase has no ID")
+        taken = _ids_in(edit.obj) & ids(doc)
         if taken:
-            raise EditConflict(f"add to {edit.section}: IDs already in the build: {sorted(taken)}")
-        parent_id = edit.node.get("attrs", {}).get("PARENTID")
-        if parent_id and parent_id not in _ids(root):
             raise EditConflict(
-                f"add {_id(edit.node)}: its PARENTID {parent_id!r} names no "
+                f"add to {edit.section.key}: IDs already in the build: {sorted(taken)}")
+        parent = edit.obj.get("parent")
+        if parent is not None and _locate(doc, str(parent)) is None:
+            raise EditConflict(
+                f"add {edit.obj['id']}: its parent {parent!r} names no "
                 "framework in the build")
-        section.setdefault("children", []).append(copy.deepcopy(edit.node))
+        doc.setdefault(edit.section.key, []).append(copy.deepcopy(edit.obj))
         return
 
     if isinstance(edit, Remove):
-        where = _locate(root, edit.hd_id)
+        where = _locate(doc, edit.hd_id)
         if where is None:
-            raise EditConflict(f"remove {edit.hd_id}: the build has no element with that ID")
-        slots = sorted(_id(n) for n in _walk(root)
-                       if n.get("attrs", {}).get("PARENTID") == edit.hd_id)
+            raise EditConflict(f"remove {edit.hd_id}: the build has no purchase with that ID")
+        slots = sorted(str(o["id"]) for _, o in purchases(doc)
+                       if str(o.get("parent")) == edit.hd_id)
         if slots:
             raise EditConflict(
                 f"remove {edit.hd_id}: slots still name it as their framework: "
                 f"{slots}; remove them first")
-        parent, i = where
-        del parent["children"][i]
+        objs, i = where
+        del objs[i]
         return
 
     raise TypeError(f"not a builder edit: {edit!r}")
@@ -148,10 +172,10 @@ def apply(doc: dict, edits: Iterable[Edit]) -> dict:
     not changed. Raises `EditConflict` naming the first edit that does not
     fit."""
     out = copy.deepcopy(doc)
-    root = out["document"]
     for edit in edits:
-        _apply_one(root, edit)
+        _apply_one(out, edit)
     return out
 
 
-__all__ = ["Add", "Edit", "EditConflict", "Remove", "Replace", "apply"]
+__all__ = ["Add", "Edit", "EditConflict", "Obj", "Remove", "Replace", "apply",
+           "ids", "purchases"]
