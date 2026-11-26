@@ -109,8 +109,8 @@ def test_a_kind_nothing_yet_measures_is_refused_not_skipped(provider):
     """Temporary until every kind is measured: an unmeasured kind must
     never pass a build by being ignored."""
     doc = _empty(provider)
-    with pytest.raises(LimitError, match="RESISTANT_ED"):
-        judge(doc, limits=(Limit(Limit.Kind.RESISTANT_ED, 10, None),),
+    with pytest.raises(LimitError, match="DAMAGE_CLASSES"):
+        judge(doc, limits=(Limit(Limit.Kind.DAMAGE_CLASSES, 10, None),),
               template_provider=provider)
 
 
@@ -159,3 +159,66 @@ def test_the_cap_binds_the_character_in_hero_identity(provider):
     assert not [p for p in judge(ravel, limits=(CH("DEX", 19),),
                                  template_provider=provider).problems
                 if p.kind is Problem.Kind.OVER_LIMIT]
+
+
+# -- Defences ----------------------------------------------------------------
+
+def D(kind, n):
+    return Limit(kind, n, None)
+
+
+def _armoured(provider, pd_levels, ed_levels):
+    """An invented build with Resistant Protection split pd/ed. `Purchase`
+    states one `levels`, so the split is written on the row the way the
+    build doc carries it (``pd_levels``/``ed_levels``)."""
+    from kirby_cost.builder import Replace
+    doc = _with(_empty(provider), provider,
+                _power("FORCEFIELD", pd_levels + ed_levels))
+    row = doc["powers"][0]
+    return apply(doc, [Replace(row["id"], {**row, "pd_levels": pd_levels,
+                                          "ed_levels": ed_levels})])
+
+
+def _over(doc, provider, *limits):
+    return [p for p in judge(doc, limits=limits,
+                             template_provider=provider).problems
+            if p.kind is Problem.Kind.OVER_LIMIT]
+
+
+def test_resistant_defence_over_its_cap_is_over_limit(provider):
+    doc = _armoured(provider, 10, 10)
+    (p,) = _over(doc, provider, D(Limit.Kind.RESISTANT_PD, 9))
+    assert p.hd_id is None
+    assert p.detail == "resistant PD 10; the limit is 9"
+    assert not _over(doc, provider, D(Limit.Kind.RESISTANT_PD, 10))
+
+
+def test_total_defence_counts_the_resistant_part_once(provider):
+    """HD's PD figure already includes Resistant Protection: Superheroic
+    base PD 2, plus 5 bought, plus 10 resistant, is 17 -- not 27."""
+    doc = _set(_armoured(provider, 10, 10), "PD", 5)
+    (p,) = _over(doc, provider, D(Limit.Kind.PD, 16))
+    assert p.detail == "PD 17; the limit is 16"
+    assert not _over(doc, provider, D(Limit.Kind.PD, 17))
+
+
+def test_bokors_defences(provider):
+    """Bokor (Heroic6E): PD and ED at base 2, nothing bought, and Resistant
+    Protection 10 PD / 10 ED, all read off his build doc. So 12 PD / 12 ED,
+    10 of each resistant."""
+    bokor = _authored("Bokor")
+    for kind, value in ((Limit.Kind.PD, 12), (Limit.Kind.ED, 12),
+                        (Limit.Kind.RESISTANT_PD, 10),
+                        (Limit.Kind.RESISTANT_ED, 10)):
+        assert not _over(bokor, provider, D(kind, value)), kind
+        assert len(_over(bokor, provider, D(kind, value - 1))) == 1, kind
+
+
+def test_the_larger_of_hds_two_figures_is_capped(provider):
+    """Ravel's large Resistant Protection does not affect his primary
+    figure: HD shows 7/27 PD and 0/20 rPD. A cap binds his best defence."""
+    ravel = _authored("Ravel")
+    (p,) = _over(ravel, provider, D(Limit.Kind.RESISTANT_PD, 19))
+    assert p.detail == "resistant PD 20; the limit is 19"
+    (p,) = _over(ravel, provider, D(Limit.Kind.PD, 26))
+    assert p.detail == "PD 27; the limit is 26"

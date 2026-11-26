@@ -163,9 +163,40 @@ def _characteristic(hero, limit, doc, template_provider):
         limit.characteristic, ActivationContext(in_hero_id=True))
 
 
+def _defence(xmlid, resistant):
+    """A defence measure: a character's PD (or ED) is his natural defence
+    supplemented by defences bought as Powers, Resistant Protection among
+    them; Resistant Defense is the part of it that also stops Killing BODY
+    (6E2 105; 6E1 26).
+
+    Read through the functions HD's own sheet is rendered from
+    (`DefenseCharacteristic.nonresistant_total` -- HD's name for the WHOLE
+    figure, resistant part included -- and ``resistant_total``), so the cap
+    and the sheet cannot disagree. HD gives each a primary and a secondary
+    figure (a purchase may affect only the secondary); a cap binds the
+    character's best defence, so the larger is measured."""
+    label = f"resistant {xmlid}" if resistant else xmlid
+
+    def measure_(hero, limit, doc, template_provider):
+        found = [c for c in hero.characteristics if c.xmlid == xmlid]
+        if not found:
+            raise LimitError(
+                f"{label} is limited, but a build on {doc['template']} "
+                f"has no {xmlid}")
+        (ch,) = found
+        read = ch.resistant_total if resistant else ch.nonresistant_total
+        yield None, label, max(read(True, hero), read(False, hero))
+
+    return measure_
+
+
 _MEASURES = {
     Limit.Kind.ACTIVE_POINTS: _active_points,
     Limit.Kind.CHARACTERISTIC_MAX: _characteristic,
+    Limit.Kind.PD: _defence("PD", False),
+    Limit.Kind.ED: _defence("ED", False),
+    Limit.Kind.RESISTANT_PD: _defence("PD", True),
+    Limit.Kind.RESISTANT_ED: _defence("ED", True),
 }
 
 
