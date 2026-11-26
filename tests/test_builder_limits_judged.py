@@ -112,3 +112,50 @@ def test_a_kind_nothing_yet_measures_is_refused_not_skipped(provider):
     with pytest.raises(LimitError, match="RESISTANT_ED"):
         judge(doc, limits=(Limit(Limit.Kind.RESISTANT_ED, 10, None),),
               template_provider=provider)
+
+
+# -- Characteristic maxima (OCV, DCV, SPD, ...) -------------------------------
+
+def CH(xmlid, n):
+    return Limit(Limit.Kind.CHARACTERISTIC_MAX, n, xmlid)
+
+
+def _set(doc, xmlid, levels):
+    from kirby_cost.builder import Replace
+    (row,) = [c for c in doc["characteristics"] if c["xmlid"] == xmlid]
+    return apply(doc, [Replace(row["id"], {**row, "levels": levels})])
+
+
+def test_a_characteristic_over_its_maximum_is_over_limit(provider):
+    doc = _set(_empty(provider), "SPD", 4)            # Superheroic base 2 + 4
+    (p,) = judge(doc, limits=(CH("SPD", 5),), template_provider=provider).problems
+    assert p.kind is Problem.Kind.OVER_LIMIT and p.hd_id is None
+    assert p.detail == "SPD 6; the limit is 5"
+
+
+def test_ocv_is_a_characteristic_limit(provider):
+    doc = _set(_empty(provider), "OCV", 5)            # 3 + 5 = 8
+    assert judge(doc, limits=(CH("OCV", 8),), template_provider=provider).sound
+    assert not judge(doc, limits=(CH("OCV", 7),),
+                     template_provider=provider).sound
+
+
+def test_a_limit_on_a_characteristic_the_template_removed_is_refused(provider):
+    """Review Focus 1: Base6E has no SPD; never a silent 0 that passes."""
+    doc = _empty(provider, Template.BASE)
+    with pytest.raises(LimitError, match="SPD.*builtIn.Base6E.hdt"):
+        judge(doc, limits=(CH("SPD", 6),), template_provider=provider)
+
+
+def test_the_cap_binds_the_character_in_hero_identity(provider):
+    """Ravel's DEX is 10 out of costume and 19 in it (pinned by
+    test_activation.test_ravel_is_two_different_characters). A power level
+    caps the character at full strength."""
+    ravel = _authored("Ravel")
+    (p,) = [p for p in judge(ravel, limits=(CH("DEX", 18),),
+                             template_provider=provider).problems
+            if p.kind is Problem.Kind.OVER_LIMIT]
+    assert p.detail == "DEX 19; the limit is 18"
+    assert not [p for p in judge(ravel, limits=(CH("DEX", 19),),
+                                 template_provider=provider).problems
+                if p.kind is Problem.Kind.OVER_LIMIT]

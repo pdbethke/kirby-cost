@@ -143,8 +143,29 @@ def _active_points(hero, limit, doc, template_provider):
         yield str(obj.id), "Active Points", obj.active_cost
 
 
+def _characteristic(hero, limit, doc, template_provider):
+    """A characteristic's value as the character fights: in his Hero
+    identity, so a purchase bought Only In Hero ID counts (`model.activation`).
+    OCV, DCV and SPD are 6E characteristics and are capped this way (6E2 273
+    names Combat Values, DEX, INT and SPD among the things a GM limits).
+
+    A characteristic the build's template does not have (SPD on a Base6E)
+    is refused by name: measuring it as 0 would pass any cap."""
+    from kirby_cost.model.activation import ActivationContext
+
+    template = doc["template"]
+    held = template_provider.for_template(template).characteristics()
+    if limit.characteristic not in held:
+        raise LimitError(
+            f"{limit.characteristic} is limited, but a build on {template} "
+            f"has no {limit.characteristic}")
+    yield None, limit.characteristic, hero.temporal_characteristic(
+        limit.characteristic, ActivationContext(in_hero_id=True))
+
+
 _MEASURES = {
     Limit.Kind.ACTIVE_POINTS: _active_points,
+    Limit.Kind.CHARACTERISTIC_MAX: _characteristic,
 }
 
 
