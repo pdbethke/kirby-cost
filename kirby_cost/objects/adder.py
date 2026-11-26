@@ -25,6 +25,10 @@ class Adder(GenericObject):
         # all (Reputation skips required HOWWELL/HOWWIDE).
         if getattr(self, "_required", False):
             d["required"] = True
+        # INCLUDEINBASE decides whether the adder's cost counts toward a 6E
+        # power's range (`range_value`): dropped, a rebuilt power reached 0m.
+        if getattr(self, "included_in_base", False):
+            d["include_in_base"] = True
         nested = [a.to_build_dict() for a in self.assigned_adders]
         if nested:
             d["adders"] = nested

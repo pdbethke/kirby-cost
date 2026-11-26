@@ -73,6 +73,9 @@ _BOOL = {"ultra_slot": "ULTRA_SLOT", "add_modifiers_to_base": "ADD_MODIFIERS_TO_
          "is_power": "ISPOWER",
          "selected": "SELECTED", "private": "PRIVATE",
          "required": "REQUIRED",
+         # An adder whose cost counts toward a 6E power's range (Adder.
+         # include_in_base); see Adder.to_build_dict.
+         "include_in_base": "INCLUDEINBASE",
          # Which pool a power draws END from (6E1 p.207). See
          # SerializationMixin.to_build_dict.
          "use_end_reserve": "USE_END_RESERVE"}
