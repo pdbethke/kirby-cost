@@ -37,6 +37,10 @@ class Problem:
         ILLEGAL_MODIFIER = "illegal_modifier"
         OVER_POINTS = "over_points"
         OVER_LIMIT = "over_limit"
+        #: A limit the build's own words cannot settle: a narrow CSL, a
+        #: Weapon Element or a Deadly Blow whose reach is not stated
+        #: (workshop plan 1b, R14). Reported, never guessed.
+        UNMEASURED = "unmeasured"
 
     kind: "Problem.Kind"
     #: The purchase it is about (its HD ``ID``), or None for the whole build.

@@ -29,6 +29,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from kirby_cost.builder.new import Template
+from kirby_cost.builder.reachable import AddedDamage
 from kirby_cost.engine.damage import (
     BOOK_DAMAGE_ADVANTAGES, DamageAdvantage, damage_classes_of,
 )
@@ -60,6 +61,14 @@ class Limit:
     #: -- the GM's call (6E2 100); `BOOK_DAMAGE_ADVANTAGES` is the book's
     #: typical list, () counts none. None for any other kind.
     counts: tuple[DamageAdvantage, ...] | None
+    #: For DAMAGE_CLASSES, whether 6E2 101's doubling guideline binds ("unless
+    #: he rules otherwise, a character cannot more than double the Damage
+    #: Classes of his base attack") -- the GM's call. None for any other kind.
+    doubling: bool | None
+    #: For DAMAGE_CLASSES, the Adding Damage methods the ceiling counts
+    #: (6E2 101; 6E2 285 leaves it to the GM); () counts none, which measures
+    #: each purchase by itself. None for any other kind.
+    adders: tuple[AddedDamage, ...] | None
 
     def __post_init__(self) -> None:
         if not isinstance(self.kind, Limit.Kind):
@@ -87,9 +96,23 @@ class Limit:
                     "DAMAGE_CLASSES needs the Advantages that count toward "
                     "DCs, a tuple of DamageAdvantage (BOOK_DAMAGE_ADVANTAGES "
                     "is 6E2 100's typical list; () counts none)")
-        elif self.counts is not None:
-            raise LimitError(
-                f"{self.kind.name} takes no Advantages, got {self.counts!r}")
+            if not isinstance(self.doubling, bool):
+                raise LimitError(
+                    "DAMAGE_CLASSES needs doubling stated, True or False: "
+                    "whether 6E2 101's doubling guideline binds")
+            if not isinstance(self.adders, tuple) or not all(
+                    isinstance(a, AddedDamage) for a in self.adders):
+                raise LimitError(
+                    "DAMAGE_CLASSES needs the Adding Damage methods it counts, "
+                    "a tuple of AddedDamage (6E2 101; () counts none)")
+            if len(set(self.adders)) != len(self.adders):
+                raise LimitError("an Adding Damage method is named twice")
+        else:
+            for field in ("counts", "doubling", "adders"):
+                if getattr(self, field) is not None:
+                    raise LimitError(
+                        f"{self.kind.name} takes no {field}, got "
+                        f"{getattr(self, field)!r}")
 
     @property
     def key(self) -> tuple["Limit.Kind", str | None]:
@@ -220,73 +243,17 @@ def _parts(obj):
         yield obj
 
 
-#: The tokens a maneuver's effect prints its damage through
-#: (`Maneuver._substitute_dc`). A maneuver whose effect names one is an
-#: attack; HD's own DAMAGETYPE is not enough, as it is 0 on Joint Lock/Throw,
-#: whose effect prints "1d6 NND".
-_DAMAGE_TOKENS = ("[NORMALDC]", "[WEAPONDC]", "[FLASHDC]", "[NNDDC]",
-                  "[STRDC]", "[KILLINGDC]", "[WEAPONKILLINGDC]", "[DAMAGE]")
-
-
-def _maneuver_does_damage(maneuver) -> bool:
-    effect = (maneuver.weapon_effect if maneuver.use_weapon
-              else maneuver.effect) or ""
-    return maneuver.does_damage or any(t in effect for t in _DAMAGE_TOKENS)
-
-
-def _maneuvers(hero, limit, doc, template_provider):
-    """Damage Classes per Martial Arts maneuver: the maneuver's own DCs,
-    the Extra DCs bought with the art (Hand-to-Hand, or Ranged for a ranged
-    maneuver), and STR/5 when the maneuver adds STR (6E2 99-101) -- the
-    figure HD prints in the maneuver's effect (`Maneuver.total_dc`), so the
-    cap and the sheet cannot disagree. HD gives a primary and a secondary
-    figure; the larger is measured, as for defences.
-
-    A maneuver that does no damage (a Block, a Grab) is not an attack and
-    is not measured, even when it adds STR to the grab. A maneuver used
-    with a weapon is measured as HD totals it, which leaves the weapon's
-    own DCs out: the weapon is measured by itself as a purchase, and the
-    pair is not (an open question, 2026-11-26)."""
-    from kirby_cost.engine.allocation import _bought_on
-    from kirby_cost.objects.martial_arts.maneuver import Maneuver
-
-    with _bought_on(hero):
-        for obj in getattr(hero, "maneuvers", None) or []:
-            if isinstance(obj, Maneuver) and _maneuver_does_damage(obj):
-                yield (str(obj.id), "Damage Classes",
-                       max(obj.total_dc(True, False), obj.total_dc(False, False)))
-
-
-def _strength(hero, limit, doc, template_provider):
-    """A character's STR is an attack: 1d6 of Normal Damage per 5 STR, a
-    Damage Class each (6E1 137). Measured as he fights, in his Hero
-    identity (`model.activation`), at 5 points a DC like every other
-    attack here, so STR 13's 2 1/2d6 is 2.6. A build with no STR (a Base6E
-    vehicle) has no STR attack, and nothing is measured."""
-    from kirby_cost.model.activation import ActivationContext
-
-    if "STR" not in {c.xmlid for c in hero.characteristics}:
-        return
-    strength = hero.temporal_characteristic(
-        "STR", ActivationContext(in_hero_id=True))
-    yield None, "STR Damage Classes", max(strength, 0) / 5.0
-
-
 def _damage_classes(hero, limit, doc, template_provider):
-    """Damage Classes per attack (6E2 98-99, `engine.damage.
-    damage_classes_of`), counting the Advantages the limit names. Each
-    framework slot and each part of a Compound Power by its own id; a
-    purchase that does no damage is not measured. Martial Arts maneuvers
-    and STR bought as a characteristic are attacks too (Peter, 2026-11-26),
-    measured by `_maneuvers` and `_strength`; STR bought as a POWER is a
-    purchase (HD marks it DOESDAMAGE) and is measured with the rest."""
-    for obj in _measured_purchases(hero):
-        for part in _parts(obj):
-            if getattr(part, "does_damage", False):
-                yield (str(part.id), "Damage Classes",
-                       damage_classes_of(part, limit.counts))
-    yield from _maneuvers(hero, limit, doc, template_provider)
-    yield from _strength(hero, limit, doc, template_provider)
+    """Damage Classes per attack, at the most each can reach under the
+    Adding Damage methods the limit counts (6E2 101-104;
+    `builder.reachable`, workshop spec §5.2.1). Measured in
+    `measure_all`, which also reports what the build's words cannot
+    settle; this entry keeps the kind in `_MEASURES`."""
+    from kirby_cost.builder.reachable import reach
+
+    reached, _ = reach(hero, limit)
+    for r in reached:
+        yield r.hd_id, r.describe(), r.dcs
 
 
 _MEASURES = {
@@ -324,6 +291,18 @@ def measure_all(hero, doc: dict, limits: tuple, *, template_provider):
     for limit in limits:
         if not isinstance(limit, Limit):
             raise LimitError(f"not a Limit: {limit!r}")
+        if limit.kind is Limit.Kind.DAMAGE_CLASSES:
+            from kirby_cost.builder.reachable import reach
+
+            reached, unmeasured = reach(hero, limit)
+            for r in reached:
+                if r.dcs > limit.maximum:
+                    problems.append(Problem(
+                        Problem.Kind.OVER_LIMIT, r.hd_id, None,
+                        f"{r.describe()}; the limit is {limit.maximum}"))
+            problems.extend(Problem(Problem.Kind.UNMEASURED, u.hd_id, None, u.detail)
+                            for u in unmeasured)
+            continue
         for hd_id, what, measured in measure(
                 hero, limit, doc, template_provider=template_provider):
             if measured > limit.maximum:
@@ -333,5 +312,5 @@ def measure_all(hero, doc: dict, limits: tuple, *, template_provider):
     return problems
 
 
-__all__ = ["BOOK_DAMAGE_ADVANTAGES", "DamageAdvantage", "Limit", "LimitError",
+__all__ = ["AddedDamage", "BOOK_DAMAGE_ADVANTAGES", "DamageAdvantage", "Limit", "LimitError",
            "PowerLevel", "measure", "measure_all"]
