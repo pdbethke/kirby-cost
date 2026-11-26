@@ -19,6 +19,9 @@ the same thing (Peter, 2026-11-25).
 
 4. `verdict` — `judge(doc)`: the build costed, and every problem in the
    engine's own words (a modifier HD refuses; points over budget).
+
+5. `limits` — `PowerLevel` and `Limit`: a campaign's power level, the
+   ceilings `judge` holds a build to (character-workshop spec §5.2).
 """
 from kirby_cost.builder.edits import (
     Add, Edit, EditConflict, Remove, Replace, apply, ids, purchases,
@@ -26,12 +29,13 @@ from kirby_cost.builder.edits import (
 from kirby_cost.io.build_json import Section
 from kirby_cost.builder.new import Template, new_build
 from kirby_cost.builder.verdict import BuildVerdict, Problem, judge
+from kirby_cost.builder.limits import Limit, LimitError, PowerLevel
 from kirby_cost.builder.purchases import (
     Kind, NotInTemplate, Pick, Purchase, buy, element,
 )
 
 __all__ = [
-    "Add", "BuildVerdict", "Edit", "EditConflict", "Kind", "Problem", "judge", "NotInTemplate", "Pick",
+    "Add", "BuildVerdict", "Edit", "EditConflict", "Kind", "Limit", "LimitError", "PowerLevel", "Problem", "judge", "NotInTemplate", "Pick",
     "Purchase", "Remove", "Replace", "Section", "Template", "apply", "buy",
     "element", "ids", "new_build", "purchases",
 ]
