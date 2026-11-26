@@ -1,7 +1,7 @@
 """A campaign's power level, as an object the engine can hold a build to.
 
 Character-workshop spec §5.2: "is this inside the power level" is a rule, so
-it lives in the engine and not in a critic's prompt. These tests pin the
+it lives in the engine, not with whoever reviews a build. These tests pin the
 objects alone; `test_builder_limits_judged.py` pins what `judge` makes of
 them.
 """

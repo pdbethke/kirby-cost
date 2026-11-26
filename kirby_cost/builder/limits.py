@@ -3,9 +3,9 @@
 The builder's fifth layer (character-workshop spec §5.2). A GM sets a power
 level: the template, the points, and a few ceilings -- Active Points per
 power, Damage Classes, SPD, defences. Whether a build is inside them is a
-RULE, so it lives here, measured by the engine, and not in a critic's prompt:
-a model checking "is 75 AP under 60" is the stale-number failure the
-workshop exists to end.
+RULE, so it lives here, measured by the engine, and is never left to whoever
+reviews the build: a reviewer judging "is 75 AP under 60" by eye is the
+stale-number failure the engine exists to end.
 
 The limit VALUES are the GM's, not the book's. What each kind measures is the
 book's, and each measurement cites the passage defining its quantity.
