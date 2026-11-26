@@ -287,7 +287,8 @@ def test_a_weapon_bought_as_equipment_is_an_attack(provider):
 
 def test_a_power_that_does_no_damage_has_no_damage_classes(provider):
     doc = _with(_empty(provider), provider, _power("FLIGHT", 20))
-    assert not _over(doc, provider, DC(0))
+    flight = doc["powers"][0]["id"]
+    assert flight not in _by_id(_over(doc, provider, DC(0)))
 
 
 # -- Final review fixes --------------------------------------------------------
@@ -326,7 +327,8 @@ def test_a_characteristic_bought_as_a_power_is_priced_as_the_engine_prices_it(pr
     doc = _str_power_on_base(provider)
     (power,) = build_from_json(doc).powers
     assert power.active_cost > 0
-    (p,) = _over(doc, provider, DC(0, counts=(DamageAdvantage("PENETRATING", None, None),)))
+    (p,) = [p for p in _over(doc, provider, DC(0, counts=(
+        DamageAdvantage("PENETRATING", None, None),))) if p.hd_id == str(power.id)]
     assert p.detail == f"Damage Classes {power.active_cost / 5:g}; the limit is 0"
 
 
@@ -364,3 +366,82 @@ def test_a_purchase_priced_by_its_own_rule_and_not_the_core_is_refused():
 
     with pytest.raises(TypeError, match="ODD"):
         damage_classes_of(OwnPricing(), BOOK_DAMAGE_ADVANTAGES)
+
+
+# -- Martial Arts and STR count toward a DC ceiling (Peter, 2026-11-26) -------
+#
+# A maneuver's Damage Classes are the ones HD itself totals and prints in its
+# effect: the maneuver's own DCs, plus Extra DCs, plus STR/5 when it adds STR
+# (6E2 99-101). A character's STR is an attack of STR/5 DCs (6E1 137).
+
+RAVEL_JOINT_LOCK = "1648502990626"          # DC 2: "1d6 NND"
+RAVEL_GRAPPLING_BLOCK = "1648370660426"     # adds STR, but a Block does no damage
+
+
+def _maneuver_row(hd_id, display, dc, effect, add_str, use_weapon=False):
+    """A maneuver row as a build doc carries one, the way Ravel's are
+    written; only the damage fields vary."""
+    return {"id": hd_id, "xmlid": "MANEUVER", "base_cost": 4.0,
+            "alias": display, "maneuver": True, "category": "Hand To Hand",
+            "display": display, "ocv": "+0", "dcv": "+2", "dc": dc,
+            "phase": "1/2", "effect": effect, "add_str": add_str,
+            "maneuver_active_cost": 20, "damage_type": 0, "max_str": 0,
+            "str_multiplier": 1, "use_weapon": use_weapon,
+            "weapon_effect": "Weapon [WEAPONDC] Strike"}
+
+
+def _with_martial(doc, *rows):
+    return {**doc, "martial_arts": [*doc["martial_arts"], *rows]}
+
+
+def _by_id(problems):
+    return {p.hd_id: p.detail for p in problems}
+
+
+def test_a_maneuver_that_does_damage_is_measured(provider):
+    """Ravel's Joint Lock/Throw is 2 DCs (HD prints 1d6 NND); his
+    Grappling Block adds STR to the grab but does no damage, so is not an
+    attack at all."""
+    ravel = _authored("Ravel")
+    over = _by_id(_over(ravel, provider, DC(1)))
+    assert over[RAVEL_JOINT_LOCK] == "Damage Classes 2; the limit is 1"
+    assert RAVEL_GRAPPLING_BLOCK not in over
+    assert RAVEL_JOINT_LOCK not in _by_id(_over(ravel, provider, DC(2)))
+
+
+def test_a_maneuver_that_adds_str_counts_the_str(provider):
+    """6E2 101: a Martial Strike adds its +2 DC to the character's STR.
+    Ravel's STR 10 is 2 DCs, so the Strike is 4."""
+    doc = _with_martial(_authored("Ravel"), _maneuver_row(
+        "9000000000001", "Martial Strike", 2, "[NORMALDC] Strike", True))
+    over = _by_id(_over(doc, provider, DC(3)))
+    assert over["9000000000001"] == "Damage Classes 4; the limit is 3"
+    assert "9000000000001" not in _by_id(_over(doc, provider, DC(4)))
+
+
+def test_extra_damage_classes_count_on_every_hand_to_hand_maneuver(provider):
+    """Extra DCs bought with the art add to each Hand-to-Hand maneuver."""
+    doc = _with_martial(
+        _authored("Ravel"),
+        _maneuver_row("9000000000001", "Martial Strike", 2,
+                      "[NORMALDC] Strike", True),
+        {"id": "9000000000002", "xmlid": "EXTRADC", "levels": 2,
+         "alias": "+2 HTH Damage Class(es)"})
+    over = _by_id(_over(doc, provider, DC(3)))
+    assert over["9000000000001"] == "Damage Classes 6; the limit is 3"
+    assert over[RAVEL_JOINT_LOCK] == "Damage Classes 4; the limit is 3"
+
+
+def test_str_bought_as_a_characteristic_is_an_attack(provider):
+    """6E1 137: 1d6 of damage per 5 STR. STR 50 is a 10 DC punch."""
+    doc = _set(_empty(provider), "STR", 40)
+    (p,) = [p for p in _over(doc, provider, DC(9)) if p.hd_id is None]
+    assert p.detail == "STR Damage Classes 10; the limit is 9"
+    assert not [p for p in _over(doc, provider, DC(10)) if p.hd_id is None]
+
+
+def test_an_authored_characters_str_is_measured(provider):
+    """PowerLad's STR 40 is 8 DCs."""
+    powerlad = _authored("PowerLad")
+    assert _by_id(_over(powerlad, provider, DC(7)))[None] \
+        == "STR Damage Classes 8; the limit is 7"

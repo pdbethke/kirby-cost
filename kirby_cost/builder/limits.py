@@ -220,20 +220,73 @@ def _parts(obj):
         yield obj
 
 
+#: The tokens a maneuver's effect prints its damage through
+#: (`Maneuver._substitute_dc`). A maneuver whose effect names one is an
+#: attack; HD's own DAMAGETYPE is not enough, as it is 0 on Joint Lock/Throw,
+#: whose effect prints "1d6 NND".
+_DAMAGE_TOKENS = ("[NORMALDC]", "[WEAPONDC]", "[FLASHDC]", "[NNDDC]",
+                  "[STRDC]", "[KILLINGDC]", "[WEAPONKILLINGDC]", "[DAMAGE]")
+
+
+def _maneuver_does_damage(maneuver) -> bool:
+    effect = (maneuver.weapon_effect if maneuver.use_weapon
+              else maneuver.effect) or ""
+    return maneuver.does_damage or any(t in effect for t in _DAMAGE_TOKENS)
+
+
+def _maneuvers(hero, limit, doc, template_provider):
+    """Damage Classes per Martial Arts maneuver: the maneuver's own DCs,
+    the Extra DCs bought with the art (Hand-to-Hand, or Ranged for a ranged
+    maneuver), and STR/5 when the maneuver adds STR (6E2 99-101) -- the
+    figure HD prints in the maneuver's effect (`Maneuver.total_dc`), so the
+    cap and the sheet cannot disagree. HD gives a primary and a secondary
+    figure; the larger is measured, as for defences.
+
+    A maneuver that does no damage (a Block, a Grab) is not an attack and
+    is not measured, even when it adds STR to the grab. A maneuver used
+    with a weapon is measured as HD totals it, which leaves the weapon's
+    own DCs out: the weapon is measured by itself as a purchase, and the
+    pair is not (an open question, 2026-11-26)."""
+    from kirby_cost.engine.allocation import _bought_on
+    from kirby_cost.objects.martial_arts.maneuver import Maneuver
+
+    with _bought_on(hero):
+        for obj in getattr(hero, "maneuvers", None) or []:
+            if isinstance(obj, Maneuver) and _maneuver_does_damage(obj):
+                yield (str(obj.id), "Damage Classes",
+                       max(obj.total_dc(True, False), obj.total_dc(False, False)))
+
+
+def _strength(hero, limit, doc, template_provider):
+    """A character's STR is an attack: 1d6 of Normal Damage per 5 STR, a
+    Damage Class each (6E1 137). Measured as he fights, in his Hero
+    identity (`model.activation`), at 5 points a DC like every other
+    attack here, so STR 13's 2 1/2d6 is 2.6. A build with no STR (a Base6E
+    vehicle) has no STR attack, and nothing is measured."""
+    from kirby_cost.model.activation import ActivationContext
+
+    if "STR" not in {c.xmlid for c in hero.characteristics}:
+        return
+    strength = hero.temporal_characteristic(
+        "STR", ActivationContext(in_hero_id=True))
+    yield None, "STR Damage Classes", max(strength, 0) / 5.0
+
+
 def _damage_classes(hero, limit, doc, template_provider):
     """Damage Classes per attack (6E2 98-99, `engine.damage.
     damage_classes_of`), counting the Advantages the limit names. Each
     framework slot and each part of a Compound Power by its own id; a
-    purchase that does no damage is not measured.
-
-    NOT YET MEASURED (pending Peter's ruling, 2026-11-26): Martial Arts
-    maneuvers, and STR bought as a characteristic (STR bought as a POWER is
-    measured, as HD marks it DOESDAMAGE). A DC ceiling does not see them."""
+    purchase that does no damage is not measured. Martial Arts maneuvers
+    and STR bought as a characteristic are attacks too (Peter, 2026-11-26),
+    measured by `_maneuvers` and `_strength`; STR bought as a POWER is a
+    purchase (HD marks it DOESDAMAGE) and is measured with the rest."""
     for obj in _measured_purchases(hero):
         for part in _parts(obj):
             if getattr(part, "does_damage", False):
                 yield (str(part.id), "Damage Classes",
                        damage_classes_of(part, limit.counts))
+    yield from _maneuvers(hero, limit, doc, template_provider)
+    yield from _strength(hero, limit, doc, template_provider)
 
 
 _MEASURES = {
