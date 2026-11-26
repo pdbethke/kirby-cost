@@ -29,13 +29,15 @@ from kirby_cost.builder.edits import (
 from kirby_cost.io.build_json import Section
 from kirby_cost.builder.new import Template, new_build
 from kirby_cost.builder.verdict import BuildVerdict, Problem, judge
-from kirby_cost.builder.limits import Limit, LimitError, PowerLevel
+from kirby_cost.builder.limits import (
+    BOOK_DAMAGE_ADVANTAGES, DamageAdvantage, Limit, LimitError, PowerLevel,
+)
 from kirby_cost.builder.purchases import (
     Kind, NotInTemplate, Pick, Purchase, buy, element,
 )
 
 __all__ = [
-    "Add", "BuildVerdict", "Edit", "EditConflict", "Kind", "Limit", "LimitError", "PowerLevel", "Problem", "judge", "NotInTemplate", "Pick",
+    "Add", "BOOK_DAMAGE_ADVANTAGES", "BuildVerdict", "DamageAdvantage", "Edit", "EditConflict", "Kind", "Limit", "LimitError", "PowerLevel", "Problem", "judge", "NotInTemplate", "Pick",
     "Purchase", "Remove", "Replace", "Section", "Template", "apply", "buy",
     "element", "ids", "new_build", "purchases",
 ]

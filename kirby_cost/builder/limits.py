@@ -29,6 +29,9 @@ from dataclasses import dataclass
 from enum import Enum
 
 from kirby_cost.builder.new import Template
+from kirby_cost.engine.damage import (
+    BOOK_DAMAGE_ADVANTAGES, DamageAdvantage, damage_classes_of,
+)
 
 
 class LimitError(ValueError):
@@ -53,6 +56,10 @@ class Limit:
     maximum: int
     #: The characteristic's XMLID for CHARACTERISTIC_MAX; None for any other kind.
     characteristic: str | None
+    #: For DAMAGE_CLASSES, the Advantages that count toward an attack's DCs
+    #: -- the GM's call (6E2 100); `BOOK_DAMAGE_ADVANTAGES` is the book's
+    #: typical list, () counts none. None for any other kind.
+    counts: tuple[DamageAdvantage, ...] | None
 
     def __post_init__(self) -> None:
         if not isinstance(self.kind, Limit.Kind):
@@ -73,6 +80,16 @@ class Limit:
             raise LimitError(
                 f"{self.kind.name} takes no characteristic, "
                 f"got {self.characteristic!r}")
+        if self.kind is Limit.Kind.DAMAGE_CLASSES:
+            if not isinstance(self.counts, tuple) or not all(
+                    isinstance(a, DamageAdvantage) for a in self.counts):
+                raise LimitError(
+                    "DAMAGE_CLASSES needs the Advantages that count toward "
+                    "DCs, a tuple of DamageAdvantage (BOOK_DAMAGE_ADVANTAGES "
+                    "is 6E2 100's typical list; () counts none)")
+        elif self.counts is not None:
+            raise LimitError(
+                f"{self.kind.name} takes no Advantages, got {self.counts!r}")
 
     @property
     def key(self) -> tuple["Limit.Kind", str | None]:
@@ -190,8 +207,32 @@ def _defence(xmlid, resistant):
     return measure_
 
 
+def _parts(obj):
+    """A purchase, or -- for a Compound Power -- each of its parts: every
+    attack in a compound is its own attack, at its own Damage Classes."""
+    parts = getattr(obj, "powers", None) or []
+    if parts:
+        for part in parts:
+            yield from _parts(part)
+    else:
+        yield obj
+
+
+def _damage_classes(hero, limit, doc, template_provider):
+    """Damage Classes per attack (6E2 98-99, `engine.damage.
+    damage_classes_of`), counting the Advantages the limit names. Each
+    framework slot and each part of a Compound Power by its own id; a
+    purchase that does no damage is not measured."""
+    for obj in _measured_purchases(hero):
+        for part in _parts(obj):
+            if getattr(part, "does_damage", False):
+                yield (str(part.id), "Damage Classes",
+                       damage_classes_of(part, limit.counts))
+
+
 _MEASURES = {
     Limit.Kind.ACTIVE_POINTS: _active_points,
+    Limit.Kind.DAMAGE_CLASSES: _damage_classes,
     Limit.Kind.CHARACTERISTIC_MAX: _characteristic,
     Limit.Kind.PD: _defence("PD", False),
     Limit.Kind.ED: _defence("ED", False),
@@ -233,4 +274,5 @@ def measure_all(hero, doc: dict, limits: tuple, *, template_provider):
     return problems
 
 
-__all__ = ["Limit", "LimitError", "PowerLevel", "measure", "measure_all"]
+__all__ = ["BOOK_DAMAGE_ADVANTAGES", "DamageAdvantage", "Limit", "LimitError",
+           "PowerLevel", "measure", "measure_all"]

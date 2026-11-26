@@ -124,3 +124,83 @@ def augment_with_str(dice: Dice, damage_type: str, strength: int) -> Dice:
         return dice
     base = damage_classes(dice, damage_type)
     return add_damage_classes(dice, damage_type, min(str_damage_classes(strength), base))
+
+
+# -- Damage Classes of a purchase (6E2 98-100) --------------------------------
+
+from dataclasses import dataclass as _dataclass
+
+
+@_dataclass(frozen=True)
+class DamageAdvantage:
+    """An Advantage that counts toward an attack's Damage Classes: a
+    modifier XMLID, narrowed (as the book narrows it) to one of its options
+    or to the modifier carrying one adder. None means any."""
+
+    xmlid: str
+    option: str | None
+    adder: str | None
+
+    def __post_init__(self) -> None:
+        for field in ("xmlid", "option", "adder"):
+            value = getattr(self, field)
+            if value is not None:
+                object.__setattr__(self, field, value.upper())
+
+    def matches(self, modifier) -> bool:
+        if (getattr(modifier, "xmlid", "") or "").upper() != self.xmlid:
+            return False
+        if self.option is not None:
+            chosen = getattr(modifier, "selected_option", None)
+            if (getattr(chosen, "xmlid", "") or "").upper() != self.option:
+                return False
+        if self.adder is not None:
+            adders = getattr(modifier, "assigned_adders", None) or []
+            if not any((getattr(a, "xmlid", "") or "").upper() == self.adder
+                       for a in adders):
+                return False
+        return True
+
+
+#: The Advantages 6E2 100 says TYPICALLY "directly affect how the victim
+#: takes damage", and so count toward Damage Classes -- "though the final
+#: decision is up to the GM". A campaign passes this, or its own trimmed or
+#: extended list, to its DAMAGE_CLASSES limit; nothing applies it unasked.
+#: Usable As Attack is Usable On Others' UAA option; Boostable Charges is
+#: Charges with the Boostable adder. MegaScale counts "in some instances",
+#: which only the GM can name, so it is not here: a GM who counts it adds it.
+BOOK_DAMAGE_ADVANTAGES: tuple[DamageAdvantage, ...] = tuple(
+    DamageAdvantage(x, o, a) for x, o, a in (
+        ("AOE", None, None), ("ARMORPIERCING", None, None),
+        ("AVAD", None, None), ("AUTOFIRE", None, None),
+        ("CHARGES", None, "BOOSTABLE"), ("CONTINUOUS", None, None),
+        ("CUMULATIVE", None, None), ("DAMAGEOVERTIME", None, None),
+        ("DOESBODY", None, None), ("DOESKB", None, None),
+        ("DOUBLEKB", None, None), ("INCREASEDSTUNMULTIPLIER", None, None),
+        ("PENETRATING", None, None), ("STICKY", None, None),
+        ("TIMELIMIT", None, None), ("TRANSDIMENSIONAL", None, None),
+        ("TRIGGER", None, None), ("UNCONTROLLED", None, None),
+        ("UOO", "UAA", None), ("VARIABLEADVANTAGE", None, None),
+        ("VARIABLESFX", None, None),
+    ))
+
+
+def damage_classes_of(power, counts: tuple[DamageAdvantage, ...]) -> float:
+    """The Damage Classes of a purchase that does damage (6E2 98-99).
+
+    One DC is 5 Active Points: a Blast is 1 DC a die, a Killing Attack 3, a
+    Mental Blast (10 points a die) 2. Advantages count only when they
+    directly affect how the victim takes damage -- the ``counts`` the GM
+    names (`BOOK_DAMAGE_ADVANTAGES` is the book's typical list): Armor
+    Piercing does, Reduced Endurance does not. So this is the purchase's
+    Active Points with only those Advantages applied (the engine's own
+    `_active_cost_where`, inheritance from a framework included), over 5.
+    A purchase that does no damage (HD's ``DOESDAMAGE``) has none: asking
+    raises rather than answering 0.
+    """
+    if not getattr(power, "does_damage", False):
+        raise ValueError(f"{getattr(power, 'xmlid', power)!r} does no damage, "
+                         "so has no Damage Classes")
+    active = power._active_cost_where(
+        lambda m: any(a.matches(m) for a in counts))
+    return active / 5.0

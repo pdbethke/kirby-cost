@@ -10,10 +10,10 @@ from __future__ import annotations
 import pytest
 
 from kirby_cost.builder import (
-    Kind, Limit, LimitError, Problem, Purchase, Template, apply, buy, judge,
+    BOOK_DAMAGE_ADVANTAGES, Kind, Limit, LimitError, Pick, Problem, Purchase, Template, apply, buy, judge,
     new_build,
 )
-from kirby_cost.io.build_json import to_build_json
+from kirby_cost.io.build_json import build_from_json, to_build_json
 from kirby_cost.io.formats import load_build
 from kirby_cost.template.hdt_provider import HDTTemplateProvider
 from tests.corpus import require_authored_hdc
@@ -44,7 +44,7 @@ def _power(xmlid, levels, *mods):
 
 
 def AP(n):
-    return Limit(Limit.Kind.ACTIVE_POINTS, n, None)
+    return Limit(Limit.Kind.ACTIVE_POINTS, n, None, None)
 
 
 # -- Active Points per power -------------------------------------------------
@@ -105,19 +105,11 @@ def test_an_authored_character_at_his_largest_power_is_sound(provider):
                 if p.kind is Problem.Kind.OVER_LIMIT]
 
 
-def test_a_kind_nothing_yet_measures_is_refused_not_skipped(provider):
-    """Temporary until every kind is measured: an unmeasured kind must
-    never pass a build by being ignored."""
-    doc = _empty(provider)
-    with pytest.raises(LimitError, match="DAMAGE_CLASSES"):
-        judge(doc, limits=(Limit(Limit.Kind.DAMAGE_CLASSES, 10, None),),
-              template_provider=provider)
-
 
 # -- Characteristic maxima (OCV, DCV, SPD, ...) -------------------------------
 
 def CH(xmlid, n):
-    return Limit(Limit.Kind.CHARACTERISTIC_MAX, n, xmlid)
+    return Limit(Limit.Kind.CHARACTERISTIC_MAX, n, xmlid, None)
 
 
 def _set(doc, xmlid, levels):
@@ -164,7 +156,7 @@ def test_the_cap_binds_the_character_in_hero_identity(provider):
 # -- Defences ----------------------------------------------------------------
 
 def D(kind, n):
-    return Limit(kind, n, None)
+    return Limit(kind, n, None, None)
 
 
 def _armoured(provider, pd_levels, ed_levels):
@@ -222,3 +214,77 @@ def test_the_larger_of_hds_two_figures_is_capped(provider):
     assert p.detail == "resistant PD 20; the limit is 19"
     (p,) = _over(ravel, provider, D(Limit.Kind.PD, 26))
     assert p.detail == "PD 27; the limit is 26"
+
+
+# -- Damage Classes (6E2 98-100) -------------------------------------------
+
+def DC(n, counts=BOOK_DAMAGE_ADVANTAGES):
+    return Limit(Limit.Kind.DAMAGE_CLASSES, n, None, counts)
+
+
+def _equipment(xmlid, levels):
+    return Purchase(Kind.EQUIPMENT, xmlid, levels, "", None, (), ())
+
+
+def test_a_blast_is_a_damage_class_a_die(provider):
+    doc = _with(_empty(provider), provider, _power("ENERGYBLAST", 8))
+    assert not _over(doc, provider, DC(8))
+    (p,) = _over(doc, provider, DC(7))
+    assert p.hd_id == doc["powers"][0]["id"]
+    assert p.detail == "Damage Classes 8; the limit is 7"
+
+
+def test_a_killing_die_is_three(provider):
+    doc = _with(_empty(provider), provider, _power("RKA", 2))
+    (p,) = _over(doc, provider, DC(5))
+    assert p.detail == "Damage Classes 6; the limit is 5"
+
+
+def test_a_mental_blast_die_is_two(provider):
+    """6E2 99's table: Mental Blast is 10 Active Points a die, so 2d6 is
+    4 DCs."""
+    doc = _with(_empty(provider), provider, _power("EGOATTACK", 2))
+    (p,) = _over(doc, provider, DC(3))
+    assert p.detail == "Damage Classes 4; the limit is 3"
+
+
+def test_an_advantage_that_changes_the_damage_counts(provider):
+    """6E2 99: Armor Piercing affects how the victim takes damage, so a
+    Blast 8d6 Armor Piercing (50 Active Points) is 10 DCs."""
+    doc = _with(_empty(provider), provider,
+                _power("ENERGYBLAST", 8, Pick("ARMORPIERCING", 1, None)))
+    (p,) = _over(doc, provider, DC(9))
+    assert p.detail == "Damage Classes 10; the limit is 9"
+    assert not _over(doc, provider, DC(10))
+
+
+def test_an_advantage_that_does_not_change_the_damage_does_not(provider):
+    """6E2 99: Reduced Endurance does not count. Blast 8d6, ½ END is 50
+    Active Points and still 8 DCs."""
+    doc = _with(_empty(provider), provider,
+                _power("ENERGYBLAST", 8, Pick("REDUCEDEND", 0, "HALFEND")))
+    assert build_from_json(doc).powers[0].active_cost == 50
+    assert not _over(doc, provider, DC(8))
+
+
+def test_the_gm_decides_which_advantages_count(provider):
+    """6E2 100: 'the final decision is up to the GM'. A GM who counts no
+    Advantages sees the Armor Piercing Blast as its 8 dice."""
+    doc = _with(_empty(provider), provider,
+                _power("ENERGYBLAST", 8, Pick("ARMORPIERCING", 1, None)))
+    assert not _over(doc, provider, DC(8, counts=()))
+
+
+def test_a_weapon_bought_as_equipment_is_an_attack(provider):
+    """Review Focus 3."""
+    rifle = _with(_empty(provider), provider, _equipment("RKA", 3))
+    assert not _over(rifle, provider, DC(10))                # 9 DC
+    big = _with(_empty(provider), provider, _equipment("RKA", 4))
+    (p,) = _over(big, provider, DC(10))
+    assert p.hd_id == big["equipment"][0]["id"]
+    assert p.detail == "Damage Classes 12; the limit is 10"
+
+
+def test_a_power_that_does_no_damage_has_no_damage_classes(provider):
+    doc = _with(_empty(provider), provider, _power("FLIGHT", 20))
+    assert not _over(doc, provider, DC(0))
