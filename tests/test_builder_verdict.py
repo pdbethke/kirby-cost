@@ -40,7 +40,7 @@ def _power(xmlid, levels, *mods):
 
 def test_a_sound_build_has_no_problems(provider):
     doc = _with(_empty(provider), provider, _power("ENERGYBLAST", 8))
-    verdict = judge(doc)
+    verdict = judge(doc, limits=(), template_provider=provider)
     assert verdict.problems == ()
     assert verdict.total_points == 40
     assert verdict.available_points == 360
@@ -49,7 +49,7 @@ def test_a_sound_build_has_no_problems(provider):
 def test_a_modifier_hd_refuses_is_a_problem_in_hds_words(provider):
     doc = _with(_empty(provider), provider,
                 _power("FLIGHT", 4, Pick("AOE", 0, None)))
-    (problem,) = judge(doc).problems
+    (problem,) = judge(doc, limits=(), template_provider=provider).problems
     assert problem.kind is Problem.Kind.ILLEGAL_MODIFIER
     assert problem.xmlid == "AOE"
     assert "targeted on others" in problem.detail
@@ -60,6 +60,6 @@ def test_a_modifier_hd_refuses_is_a_problem_in_hds_words(provider):
 def test_spending_more_than_the_build_has_is_a_problem(provider):
     doc = _with(_empty(provider, base_points=20), provider,
                 _power("ENERGYBLAST", 8))
-    (problem,) = judge(doc).problems
+    (problem,) = judge(doc, limits=(), template_provider=provider).problems
     assert problem.kind is Problem.Kind.OVER_POINTS
     assert "20" in problem.detail and "40" in problem.detail

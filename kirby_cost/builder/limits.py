@@ -15,6 +15,13 @@ measures. OCV, DCV and SPD are 6E characteristics, so their caps are
 `CHARACTERISTIC_MAX` limits naming the characteristic.
 
 NO DEFAULTS: every field is required; ``limits=()`` says "no limits".
+
+Grounds. A GM may limit Active Points in attacks, amount of defence and of
+Resistant Defence, Combat Values, Damage Classes, DEX, INT and SPD (6E2 273,
+pointing to the Character Ability Guidelines table, 6E1 35); a ceiling on
+effect rather than points -- DCs, SPD, CV, defences -- is an Effectiveness
+Ceiling (6E2 285). Each kind's measure cites the passage defining what it
+measures.
 """
 from __future__ import annotations
 
@@ -110,4 +117,68 @@ class PowerLevel:
             seen.add(limit.key)
 
 
-__all__ = ["Limit", "LimitError", "PowerLevel"]
+def _measured_purchases(hero):
+    """Every purchase in powers and equipment that a per-power ceiling
+    measures: each framework slot by itself, the framework never.
+
+    A Multipower, VPP or Elemental Control is a pool of points, not a power
+    (its slots are what is used), so a cap "per power" binds the slots. A
+    Compound Power is one power made of parts, and is measured whole. Slots
+    sit flat in the section with ``parent`` naming their framework, so the
+    walk is one level: skip the `List` containers, keep everything else.
+    """
+    from kirby_cost.objects.list import List
+
+    for section in ("powers", "equipment"):
+        for obj in getattr(hero, section, None) or []:
+            if not isinstance(obj, List):
+                yield obj
+
+
+def _active_points(hero, limit, doc, template_provider):
+    """Active Points per power: the total cost after Adders and Advantages,
+    before Limitations (6E1 121) -- the engine's oracle-verified
+    ``active_cost``."""
+    for obj in _measured_purchases(hero):
+        yield str(obj.id), "Active Points", obj.active_cost
+
+
+_MEASURES = {
+    Limit.Kind.ACTIVE_POINTS: _active_points,
+}
+
+
+def measure(hero, limit: Limit, doc: dict, *, template_provider):
+    """``(hd_id, what, measured)`` for each thing ``limit`` measures on
+    ``hero`` (the loaded ``doc``). ``hd_id`` is None for a whole-character
+    measure. A kind with no measure raises: it is never skipped."""
+    try:
+        fn = _MEASURES[limit.kind]
+    except KeyError:
+        raise LimitError(
+            f"{limit.kind.name}: no measure for this kind yet") from None
+    return list(fn(hero, limit, doc, template_provider))
+
+
+def measure_all(hero, doc: dict, limits: tuple, *, template_provider):
+    """The OVER_LIMIT problems for ``limits`` on ``hero``. A measure AT its
+    maximum is inside it."""
+    from kirby_cost.builder.verdict import Problem
+
+    if not isinstance(limits, tuple):
+        raise LimitError("limits must be a tuple of Limit (() for none), "
+                         f"not {type(limits).__name__}")
+    problems = []
+    for limit in limits:
+        if not isinstance(limit, Limit):
+            raise LimitError(f"not a Limit: {limit!r}")
+        for hd_id, what, measured in measure(
+                hero, limit, doc, template_provider=template_provider):
+            if measured > limit.maximum:
+                problems.append(Problem(
+                    Problem.Kind.OVER_LIMIT, hd_id, None,
+                    f"{what} {measured:g}; the limit is {limit.maximum}"))
+    return problems
+
+
+__all__ = ["Limit", "LimitError", "PowerLevel", "measure", "measure_all"]
