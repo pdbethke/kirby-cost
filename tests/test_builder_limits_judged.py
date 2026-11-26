@@ -10,7 +10,7 @@ from __future__ import annotations
 import pytest
 
 from kirby_cost.builder import (
-    BOOK_DAMAGE_ADVANTAGES, Kind, Limit, LimitError, Pick, Problem, Purchase, Template, apply, buy, judge,
+    BOOK_DAMAGE_ADVANTAGES, DamageAdvantage, Kind, Limit, LimitError, Pick, Problem, Purchase, Template, apply, buy, judge,
     new_build,
 )
 from kirby_cost.io.build_json import build_from_json, to_build_json
@@ -288,3 +288,79 @@ def test_a_weapon_bought_as_equipment_is_an_attack(provider):
 def test_a_power_that_does_no_damage_has_no_damage_classes(provider):
     doc = _with(_empty(provider), provider, _power("FLIGHT", 20))
     assert not _over(doc, provider, DC(0))
+
+
+# -- Final review fixes --------------------------------------------------------
+
+def test_a_template_that_does_not_resolve_cannot_pass_a_characteristic_cap(provider):
+    """A Base6E build whose doc names no template ("" is a statement) or one
+    the provider cannot resolve is checked against what the build HAS, never
+    against the fallback template's list: SPD on it is refused, not 0."""
+    base = _empty(provider, Template.BASE)
+    for name in ("", "builtIn.NoSuch6E.hdt"):
+        doc = {**base, "template": name}
+        with pytest.raises(LimitError, match="SPD"):
+            judge(doc, limits=(CH("SPD", 1),), template_provider=provider)
+
+
+def _str_power_on_base(provider):
+    """STR 50 bought in the characteristics, plus a +0 STR power whose
+    Penetrating applies to the base STR (add_modifiers_to_base): the engine
+    prices the Advantage on all 60 STR."""
+    doc = _set(_empty(provider), "STR", 50)
+    doc = _with(doc, provider, _power("STR", 0, Pick("PENETRATING", 1, None)))
+    from kirby_cost.builder import Replace
+    row = doc["powers"][0]
+    return apply(doc, [Replace(row["id"], {**row, "add_modifiers_to_base": True})])
+
+
+def _every_advantage(obj):
+    mods = list(obj.assigned_modifiers)
+    parent = getattr(obj, "parent", None)
+    if parent is not None:
+        mods += list(parent.assigned_modifiers)
+    return tuple(DamageAdvantage(m.xmlid, None, None) for m in mods)
+
+
+def test_a_characteristic_bought_as_a_power_is_priced_as_the_engine_prices_it(provider):
+    doc = _str_power_on_base(provider)
+    (power,) = build_from_json(doc).powers
+    assert power.active_cost > 0
+    (p,) = _over(doc, provider, DC(0, counts=(DamageAdvantage("PENETRATING", None, None),)))
+    assert p.detail == f"Damage Classes {power.active_cost / 5:g}; the limit is 0"
+
+
+@pytest.mark.parametrize("name", ["Ravel", "Bokor", "PowerLad", "invented STR"])
+def test_counting_every_advantage_gives_back_the_active_points(name, provider):
+    """Parity: with every Advantage counted, DCs x 5 is the engine's own
+    Active Points, for every damaging purchase -- so no purchase's own
+    pricing is bypassed."""
+    from kirby_cost.builder.limits import _measured_purchases, _parts
+    from kirby_cost.engine.damage import damage_classes_of
+    doc = (_str_power_on_base(provider) if name == "invented STR"
+           else _authored(name))
+    hero = build_from_json(doc)
+    checked = 0
+    for obj in _measured_purchases(hero):
+        for part in _parts(obj):
+            if part.does_damage:
+                assert damage_classes_of(part, _every_advantage(part)) * 5 \
+                    == part.active_cost, (part.xmlid, part.id)
+                checked += 1
+    assert checked
+
+
+def test_a_purchase_priced_by_its_own_rule_and_not_the_core_is_refused():
+    """A class with its own active-cost pricing that has not moved onto the
+    shared core would be priced wrong for DCs; it raises instead."""
+    from kirby_cost.engine.damage import damage_classes_of
+
+    class OwnPricing:
+        does_damage = True
+        xmlid = "ODD"
+
+        def _compute_active_cost(self, exclude_xmlid):
+            return 99.0
+
+    with pytest.raises(TypeError, match="ODD"):
+        damage_classes_of(OwnPricing(), BOOK_DAMAGE_ADVANTAGES)

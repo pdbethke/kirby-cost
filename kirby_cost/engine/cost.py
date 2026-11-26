@@ -119,16 +119,17 @@ class CostMixin:
 
     def _compute_active_cost(self, exclude_xmlid: Optional[str] = None) -> float:
         """Active Cost = Total Cost x (1 + Sum of Advantage Values)."""
-        return self._active_cost_where(
-            lambda modifier: not (exclude_xmlid and modifier.xmlid == exclude_xmlid))
+        keep = lambda modifier: not (exclude_xmlid and modifier.xmlid == exclude_xmlid)
+        return self._active_cost_where(keep, keep)
 
-    def _active_cost_where(self, keep) -> float:
-        """Active Cost counting only the Advantages ``keep(modifier)``
-        accepts -- the purchase's own and those it inherits from its parent,
-        by exactly the rules of `_compute_active_cost`, which is this with
-        one excluded xmlid. Damage Classes count only the Advantages that
+    def _active_cost_where(self, keep_own, keep_inherited) -> float:
+        """Active Cost counting only the Advantages the two filters accept:
+        ``keep_own`` for the purchase's own, ``keep_inherited`` for those it
+        inherits from its framework, by exactly the rules of
+        `_compute_active_cost`. Damage Classes count only the Advantages that
         change how the victim takes damage (6E2 99;
-        `engine.damage.damage_classes_of`)."""
+        `engine.damage.damage_classes_of`). A class with its own pricing
+        overrides THIS, so both answers go through that pricing."""
         from kirby_cost.objects.base import GenericObject
         from kirby_cost.objects.frameworks import (
             is_multipower, is_elemental_control,
@@ -141,7 +142,7 @@ class CostMixin:
 
         for modifier in self.assigned_modifiers:
             modifier.parent = self
-            if not keep(modifier):
+            if not keep_own(modifier):
                 continue
             if modifier.total_value > 0.0:
                 modifier_sum += modifier.total_value
@@ -175,7 +176,7 @@ class CostMixin:
                     continue
                 if is_multipower(parent) or is_elemental_control(parent):
                     continue
-                if not keep(modifier):
+                if not keep_inherited(modifier):
                     continue
                 modifier_sum += modifier.total_value
                 has_advantages = True

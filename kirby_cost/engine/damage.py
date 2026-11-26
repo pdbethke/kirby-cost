@@ -167,8 +167,9 @@ class DamageAdvantage:
 #: decision is up to the GM". A campaign passes this, or its own trimmed or
 #: extended list, to its DAMAGE_CLASSES limit; nothing applies it unasked.
 #: Usable As Attack is Usable On Others' UAA option; Boostable Charges is
-#: Charges with the Boostable adder. MegaScale counts "in some instances",
-#: which only the GM can name, so it is not here: a GM who counts it adds it.
+#: Charges with the Boostable adder. The book counts MegaScale only "in some
+#: instances"; it is on this list because it is used often (Peter,
+#: 2026-11-26), and a GM who rules it out for a campaign trims it.
 BOOK_DAMAGE_ADVANTAGES: tuple[DamageAdvantage, ...] = tuple(
     DamageAdvantage(x, o, a) for x, o, a in (
         ("AOE", None, None), ("ARMORPIERCING", None, None),
@@ -177,7 +178,8 @@ BOOK_DAMAGE_ADVANTAGES: tuple[DamageAdvantage, ...] = tuple(
         ("CUMULATIVE", None, None), ("DAMAGEOVERTIME", None, None),
         ("DOESBODY", None, None), ("DOESKB", None, None),
         ("DOUBLEKB", None, None), ("INCREASEDSTUNMULTIPLIER", None, None),
-        ("PENETRATING", None, None), ("STICKY", None, None),
+        ("MEGASCALE", None, None), ("PENETRATING", None, None),
+        ("STICKY", None, None),
         ("TIMELIMIT", None, None), ("TRANSDIMENSIONAL", None, None),
         ("TRIGGER", None, None), ("UNCONTROLLED", None, None),
         ("UOO", "UAA", None), ("VARIABLEADVANTAGE", None, None),
@@ -201,6 +203,13 @@ def damage_classes_of(power, counts: tuple[DamageAdvantage, ...]) -> float:
     if not getattr(power, "does_damage", False):
         raise ValueError(f"{getattr(power, 'xmlid', power)!r} does no damage, "
                          "so has no Damage Classes")
-    active = power._active_cost_where(
-        lambda m: any(a.matches(m) for a in counts))
-    return active / 5.0
+    for cls in type(power).__mro__:
+        if "_active_cost_where" in vars(cls):
+            break
+        if "_compute_active_cost" in vars(cls):
+            raise TypeError(
+                f"{power.xmlid}: {cls.__name__} prices its Active Points by "
+                "its own rule, not through _active_cost_where, so its Damage "
+                "Classes cannot be counted; move its pricing onto that core")
+    keep = lambda m: any(a.matches(m) for a in counts)
+    return power._active_cost_where(keep, keep) / 5.0

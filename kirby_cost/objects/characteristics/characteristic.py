@@ -935,6 +935,13 @@ class Characteristic(CharAffectingObject):
 
 
     def _compute_active_cost(self, exclude_xmlid: str = None) -> float:
+        """Active cost; ``exclude_xmlid`` skips one of the purchase's OWN
+        advantages (inherited ones are never excluded here, as before)."""
+        return self._active_cost_where(
+            lambda m: not (exclude_xmlid and m.xmlid == exclude_xmlid),
+            lambda m: True)
+
+    def _active_cost_where(self, keep_own, keep_inherited) -> float:
         """
         Calculate active cost for a characteristic.
 
@@ -955,7 +962,7 @@ class Characteristic(CharAffectingObject):
 
         for modifier in self.assigned_modifiers:
             modifier.parent = self
-            if exclude_xmlid and modifier.xmlid == exclude_xmlid:
+            if not keep_own(modifier):
                 continue
             if modifier.total_value > 0.0:
                 modifier_sum += modifier.total_value
@@ -980,6 +987,8 @@ class Characteristic(CharAffectingObject):
                     modifier.xmlid not in ("GENERIC_OBJECT", "CUSTOM_MODIFIER", "MODIFIER")):
                     continue
                 if is_multipower(parent) or is_elemental_control(parent):
+                    continue
+                if not keep_inherited(modifier):
                     continue
                 modifier_sum += modifier.total_value
                 has_advantages = True

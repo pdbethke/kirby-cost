@@ -112,6 +112,11 @@ class CustomPower(Power, xmlid="CUSTOMPOWER"):
 
 
     def _compute_active_cost(self, exclude_xmlid: str = None) -> float:
+        """Active cost. ``exclude_xmlid`` has never been honoured here and
+        still is not: every advantage counts."""
+        return self._active_cost_where(lambda m: True, lambda m: True)
+
+    def _active_cost_where(self, keep_own, keep_inherited) -> float:
         """
         Calculate active cost for custom power.
         
@@ -145,6 +150,8 @@ class CustomPower(Power, xmlid="CUSTOMPOWER"):
         has_advantages = False
         
         for mod in self.assigned_modifiers:
+            if not keep_own(mod):
+                continue
             if mod.total_value > 0.0:
                 modifier_sum += mod.total_value
                 has_advantages = True
@@ -173,6 +180,8 @@ class CustomPower(Power, xmlid="CUSTOMPOWER"):
                     mod.xmlid not in ("GENERIC_OBJECT", "CUSTOM_MODIFIER", "MODIFIER")):
                     continue
                 if is_multipower(parent) or is_elemental_control(parent):
+                    continue
+                if not keep_inherited(mod):
                     continue
                 modifier_sum += mod.total_value
                 has_advantages = True

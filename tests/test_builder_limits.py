@@ -99,3 +99,10 @@ def test_the_books_list_names_options_and_adders_where_the_book_does():
     assert DamageAdvantage("CHARGES", None, "BOOSTABLE") in BOOK_DAMAGE_ADVANTAGES
     assert DamageAdvantage("ARMORPIERCING", None, None) in BOOK_DAMAGE_ADVANTAGES
     assert not [a for a in BOOK_DAMAGE_ADVANTAGES if a.xmlid == "REDUCEDEND"]
+
+
+def test_megascale_counts():
+    """6E2 100 counts MegaScale only 'in some instances'; Peter, 2026-11-26:
+    'megascale is often used', so the list counts it and a GM who rules it
+    out for an attack trims it."""
+    assert DamageAdvantage("MEGASCALE", None, None) in BOOK_DAMAGE_ADVANTAGES

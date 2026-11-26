@@ -166,16 +166,18 @@ def _characteristic(hero, limit, doc, template_provider):
     OCV, DCV and SPD are 6E characteristics and are capped this way (6E2 273
     names Combat Values, DEX, INT and SPD among the things a GM limits).
 
-    A characteristic the build's template does not have (SPD on a Base6E)
-    is refused by name: measuring it as 0 would pass any cap."""
+    A characteristic the build does not have (SPD on a Base6E) is refused
+    by name: measuring it as 0 would pass any cap. What the build HAS is
+    read off the build itself, never off the template it names -- a name
+    the provider cannot resolve ("" included) falls back to Main6E, whose
+    list has SPD."""
     from kirby_cost.model.activation import ActivationContext
 
-    template = doc["template"]
-    held = template_provider.for_template(template).characteristics()
+    held = {c.xmlid for c in hero.characteristics}
     if limit.characteristic not in held:
         raise LimitError(
-            f"{limit.characteristic} is limited, but a build on {template} "
-            f"has no {limit.characteristic}")
+            f"{limit.characteristic} is limited, but this build (template "
+            f"{doc['template']!r}) has no {limit.characteristic}")
     yield None, limit.characteristic, hero.temporal_characteristic(
         limit.characteristic, ActivationContext(in_hero_id=True))
 
@@ -222,7 +224,11 @@ def _damage_classes(hero, limit, doc, template_provider):
     """Damage Classes per attack (6E2 98-99, `engine.damage.
     damage_classes_of`), counting the Advantages the limit names. Each
     framework slot and each part of a Compound Power by its own id; a
-    purchase that does no damage is not measured."""
+    purchase that does no damage is not measured.
+
+    NOT YET MEASURED (pending Peter's ruling, 2026-11-26): Martial Arts
+    maneuvers, and STR bought as a characteristic (STR bought as a POWER is
+    measured, as HD marks it DOESDAMAGE). A DC ceiling does not see them."""
     for obj in _measured_purchases(hero):
         for part in _parts(obj):
             if getattr(part, "does_damage", False):
