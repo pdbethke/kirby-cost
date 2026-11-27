@@ -150,12 +150,14 @@ def test_martial_arts_do_not_count_unless_the_gm_counts_them(provider):
 
 def test_extra_dcs_add_to_every_maneuver(provider):
     """6E2 94. Ravel's Joint Lock/Throw (an NND, an attack of its own) goes
-    from 2 to 4; a Martial Strike on his STR 10 from 4 to 6."""
+    from 2 to 4; a Martial Strike from 10 to 12, on his STR 10 with
+    Reinforced String's +30 (an unlimited STR slot) on: STR 40."""
     ravel = to_build_json(load_build(str(require_authored_hdc("Ravel")), format="hdc"))
     doc = _martial(ravel, MARTIAL_STRIKE, EXTRA_2)
     found = _problems(doc, provider, DC(3, (A.MARTIAL,)))
-    assert found[None] == ("Damage Classes 6 (Martial Strike with STR: STR 2 + "
-                           "Martial Strike 2 + Extra DCs 2); the limit is 3")
+    assert found[None] == ("Damage Classes 12 (Martial Strike with STR: STR 8 + "
+                           "Martial Strike 2 + Extra DCs 2; Maleable Sting Body 45: "
+                           "Reinforced String 30); the limit is 3")
     assert found["1648502990626"] == "Damage Classes 4; the limit is 3"
 
 
@@ -272,3 +274,265 @@ def test_a_limited_str_power_is_reported_not_stacked(provider):
     pump = doc["powers"][0]["id"]
     unmeasured = _problems(doc, provider, DC(50, ()), Problem.Kind.UNMEASURED)
     assert "Limited Power" in unmeasured[pump]
+
+
+# -- A framework's points (6E1 401, 404-405, 410, 411, 413) ---------------------
+
+def _framework(doc, row, *, fixed):
+    """Everything bought so far as slots of ``row`` (Fixed or Variable)."""
+    slots = [{**r, "parent": row["id"], **({} if fixed else {"ultra_slot": False})}
+             for r in doc["powers"]]
+    return {**doc, "powers": [row, *slots]}
+
+
+def _multipower(doc, reserve, *, fixed):
+    return _framework(doc, {"id": "20", "xmlid": "MULTIPOWER", "base_cost": float(reserve),
+                            "min_cost": 1.0, "max_cost": 9999.0, "alias": "Multipower",
+                            "name": "Tricks"}, fixed=fixed)
+
+
+def _fists_and_flight(provider, *, fixed):
+    """A 60 reserve: Fists (HA 12d6, 60 Active Points) and Zoom (Flight
+    60m, 60), STR 10, Running 12m (24m Noncombat: v/6 4 with no slot)."""
+    doc = _with(_empty(provider), provider, _power("HANDTOHANDATTACK", 12, name="Fists"),
+                _power("FLIGHT", 60, name="Zoom"))
+    return _multipower(doc, 60, fixed=fixed)
+
+
+def test_slots_of_one_multipower_stack_only_as_far_as_its_reserve(provider):
+    """6E1 405-406: Variable slots split the reserve; the points are
+    allocated once a Phase (6E1 410), so a Move Through's velocity and its
+    attack share them. Each Flight point is 2m Noncombat, a DC per 3; each
+    die of Fists 5 points, so the least of Fists rides the most of Zoom:
+    1d6 (5) + STR 2 + 108m / 6, 54m being the least Flight that buys the
+    18. Both full would be 14 + 20."""
+    doc = _fists_and_flight(provider, fixed=False)
+    fists = doc["powers"][1]["id"]
+    assert _problems(doc, provider, DC(20, (A.VELOCITY,)))[fists] == (
+        "Damage Classes 21 (Move Through with Fists: base 3 + v/6 18; "
+        "Tricks 60: Fists 5 + Zoom 54); the limit is 20")
+
+
+def test_a_fixed_slot_never_gives_up_points(provider):
+    """6E1 404: a Fixed slot takes its full Active Points. Fists fills the
+    reserve, so Zoom is never on beside it; he runs instead."""
+    doc = _fists_and_flight(provider, fixed=True)
+    fists = doc["powers"][1]["id"]
+    assert _problems(doc, provider, DC(17, (A.VELOCITY,)))[fists] == (
+        "Damage Classes 18 (Move Through with Fists: base 14 + v/6 4); the limit is 17")
+
+
+def test_powerlads_rending_cannot_borrow_his_leap_from_brick_tricks(provider):
+    """Rending and Tearing (HKA) and Iron Grasshopper (the Leaping that
+    makes his 140m a Phase) are Fixed slots of one 45 reserve. Without the
+    leap his best is his Running, 16m Noncombat: 9 + STR 8 + 2. His bare
+    STR can still ride the leap."""
+    doc = to_build_json(load_build(str(require_authored_hdc("PowerLad")), format="hdc"))
+    found = _problems(doc, provider, DC(16, (A.STR, A.VELOCITY)))
+    assert found["1727271627360"] == (
+        "Damage Classes 19 (Move Through with Rending and Tearing: base 9 + STR 8 + v/6 2); "
+        "the limit is 16")
+    assert found[None] == (
+        "Damage Classes 31 (Move Through with STR: STR 8 + v/6 23; "
+        "Brick Tricks 45: Iron Grasshopper 44); the limit is 16")
+
+
+def test_ravels_armaments_move_through_on_the_form_outside_his_multipower(provider):
+    """String Slide (26m) is a Fixed 45 slot beside "ARMaments" in a 45
+    reserve; Floating String Form (12m, no Noncombat) is in no framework."""
+    doc = to_build_json(load_build(str(require_authored_hdc("Ravel")), format="hdc"))
+    assert _problems(doc, provider, DC(12, (A.VELOCITY,)))["1648351359965"] == (
+        'Damage Classes 13 (Move Through with "ARMaments" : base 11 + v/6 2); '
+        "the limit is 12")
+
+
+def test_a_vpp_is_measured_as_written_and_reported(provider):
+    """6E1 411: a VPP can build any power up to its Control Cost, so the
+    slots it holds now are not the most it can reach."""
+    doc = _with(_empty(provider), provider, _power("HANDTOHANDATTACK", 6, name="Fists"))
+    doc = _framework(doc, {"id": "20", "xmlid": "VPP", "levels": 30,
+                           "alias": "Variable Power Pool", "name": "Gadgets",
+                           "adders": [{"xmlid": "CONTROLCOST", "levels": 30,
+                                       "level_cost": 1.0, "level_value": 2.0}]},
+                     fixed=True)
+    assert _problems(doc, provider, DC(7, ()))[doc["powers"][1]["id"]] == (
+        "Damage Classes 8; the limit is 7")
+    unmeasured = _problems(doc, provider, DC(20, ()), Problem.Kind.UNMEASURED)
+    assert "Control Cost" in unmeasured["20"]
+
+
+def test_str_from_a_slot_is_there_only_while_the_slot_is_on(provider):
+    """A +20 STR slot that HD folds into the primary STR shares a 30 reserve
+    with an HKA 2d6 (30): both Fixed, so the knife gets STR 10 (2 DCs), not
+    30. Bare STR still has the slot: 30 STR, 6 DCs."""
+    def doc_with(reserve):
+        doc = _with(_empty(provider), provider, _power("HKA", 2, name="Knife"),
+                    _power("STR", 20, name="Pump Up"))
+        doc = {**doc, "powers": [{**r, "affects_primary": True, "affects_total": True}
+                                 if r["xmlid"] == "STR" else r for r in doc["powers"]]}
+        return _multipower(doc, reserve, fixed=True)
+    doc, roomy = doc_with(30), doc_with(50)
+    knife = doc["powers"][1]["id"]
+    found = _problems(doc, provider, DC(5, (A.STR,)))
+    assert found[knife] == "Damage Classes 8 (Knife: base 6 + STR 2); the limit is 5"
+    assert found[None] == "Damage Classes 6 (STR: STR 6; Tricks 30: Pump Up 20); the limit is 5"
+    assert _problems(roomy, provider, DC(5, (A.STR,)))[roomy["powers"][1]["id"]] == (
+        "Damage Classes 12 (Knife: base 6 + STR 6; Tricks 50: Knife 30 + Pump Up 20); "
+        "the limit is 5")
+
+
+def test_skill_levels_in_a_slot_count_only_while_they_fit(provider):
+    """Skill Levels bought as a slot are on or off (6E1 405); a 40 reserve
+    holds the Blast 8d6 (40) or the levels, not both."""
+    def doc_with(reserve):
+        doc = _with(_empty(provider), provider, _power("ENERGYBLAST", 8, name="Bolt"),
+                    _csl("ALL", 4))
+        csl = {**doc["skills"][0]}
+        doc = {**doc, "skills": [], "powers": [*doc["powers"], csl]}
+        return _multipower(doc, reserve, fixed=True)
+    tight, roomy = doc_with(40), doc_with(80)
+    bolt = tight["powers"][1]["id"]
+    assert _problems(tight, provider, DC(7, (A.CSL,)))[bolt] == "Damage Classes 8; the limit is 7"
+    assert _problems(roomy, provider, DC(7, (A.CSL,)))[bolt].startswith(
+        "Damage Classes 10 (Bolt: base 8 + CSLs 2; Tricks 80: Bolt 40 + ")
+
+
+# -- Deadly Blow (6E1 115) -------------------------------------------------------
+
+def _knife(provider, talent_name):
+    """A 2d6 HKA in an Obvious Accessible Focus (a weapon, 6E2 94) and one
+    level of Deadly Blow."""
+    doc = _with(_empty(provider), provider,
+                _power("HKA", 2, Pick("FOCUS", 0, "OAF"), name="Knife"),
+                Purchase(Kind.TALENT, "DEADLYBLOW", 1, talent_name, None, (), ()))
+    return doc
+
+
+def test_deadly_blow_adds_three_a_level_to_a_killing_weapon(provider):
+    doc = _knife(provider, "Deadly Blow: HKA")
+    knife = doc["powers"][0]["id"]
+    assert _problems(doc, provider, DC(8, (A.DEADLY_BLOW,)))[knife] == (
+        "Damage Classes 9 (Knife: base 6 + Deadly Blow 3); the limit is 8")
+    assert knife not in _problems(doc, provider, DC(8, ()))
+
+
+def test_a_deadly_blow_that_names_neither_hka_nor_rka_is_reported(provider):
+    doc = _knife(provider, "Deadly Blow")
+    (talent,) = [t["id"] for t in doc["talents"]]
+    unmeasured = _problems(doc, provider, DC(20, (A.DEADLY_BLOW,)), Problem.Kind.UNMEASURED)
+    assert "HKAs or RKAs" in unmeasured[talent]
+
+
+def test_deadly_blow_in_a_slot_counts_only_while_it_fits(provider):
+    """Bought as a slot, it is on or off (6E1 405): a 30 reserve holds the
+    Knife (30) and nothing else; a 40 one holds both."""
+    def doc_with(reserve):
+        doc = _knife(provider, "Deadly Blow: HKA")
+        doc = {**doc, "talents": [], "powers": [*doc["powers"], *doc["talents"]]}
+        return _multipower(doc, reserve, fixed=True)
+    tight, roomy = doc_with(30), doc_with(40)
+    knife = tight["powers"][1]["id"]
+    assert _problems(tight, provider, DC(5, (A.DEADLY_BLOW,)))[knife] == (
+        "Damage Classes 6; the limit is 5")
+    assert _problems(roomy, provider, DC(5, (A.DEADLY_BLOW,)))[knife].startswith(
+        "Damage Classes 9 (Knife: base 6 + Deadly Blow 3; Tricks 40: Knife 30 + ")
+
+
+def test_deadly_blow_bought_for_hkas_adds_nothing_to_an_rka(provider):
+    """6E1 115: bought for HKAs or RKAs; both means buying it twice."""
+    doc = _with(_empty(provider), provider,
+                _power("RKA", 2, Pick("FOCUS", 0, "OAF"), name="Pistol"),
+                Purchase(Kind.TALENT, "DEADLYBLOW", 1, "Deadly Blow: HKA", None, (), ()))
+    pistol = doc["powers"][0]["id"]
+    assert pistol not in _problems(doc, provider, DC(6, (A.DEADLY_BLOW,)))
+
+
+def test_deadly_blow_needs_a_weapon_not_a_bare_killing_attack(provider):
+    """6E1 115: "Killing Attacks involving weapons". Claws bought as an HKA
+    with no Focus are not one (6E2 94, R12)."""
+    doc = _with(_empty(provider), provider, _power("HKA", 2, name="Claws"),
+                Purchase(Kind.TALENT, "DEADLYBLOW", 1, "Deadly Blow: HKA", None, (), ()))
+    claws = doc["powers"][0]["id"]
+    assert claws not in _problems(doc, provider, DC(6, (A.DEADLY_BLOW,)))
+
+
+def test_a_deadly_blow_for_normal_damage_weapons_is_reported(provider):
+    """6E1 115 lets a character define it for Normal Damage weapons
+    instead; which ones is in its words."""
+    doc = _knife(provider, "Deadly Blow: HKA, Normal Damage weapons")
+    (talent,) = [t["id"] for t in doc["talents"]]
+    unmeasured = _problems(doc, provider, DC(20, (A.DEADLY_BLOW,)), Problem.Kind.UNMEASURED)
+    assert "Normal Damage" in unmeasured[talent]
+
+
+# -- Two or more slots on at once (6E1 404-406) -----------------------------------
+
+def _folded(doc):
+    """Rows marked as HD marks a power that raises its characteristic."""
+    return {**doc, "powers": [{**r, "affects_primary": True, "affects_total": True}
+                              for r in doc["powers"]]}
+
+
+def test_every_slot_feeding_one_total_can_be_on_while_the_reserve_holds(provider):
+    """6E1 404: no number limit on slots on at once, only the reserve's
+    Active Points. Two +10m Running slots (10 each) beside his own 12m:
+    32m, 64m Noncombat, v/6 10, in a 20 reserve; in a 19 one, only one is
+    on: 22m, 44m, v/6 7."""
+    def doc_with(reserve):
+        doc = _with(_empty(provider), provider, _power("RUNNING", 10, name="Sprint"),
+                    _power("RUNNING", 10, name="Dash"))
+        return _multipower(_folded(doc), reserve, fixed=True)
+    assert _problems(doc_with(20), provider, DC(5, (A.VELOCITY,)))[None] == (
+        "Damage Classes 12 (Move Through with STR: STR 2 + v/6 10; "
+        "Tricks 20: Sprint 10 + Dash 10); the limit is 5")
+    assert _problems(doc_with(19), provider, DC(5, (A.VELOCITY,)))[None] == (
+        "Damage Classes 9 (Move Through with STR: STR 2 + v/6 7; Tricks 19: Dash 10); "
+        "the limit is 5")
+
+
+def test_every_str_slot_adds_while_the_reserve_holds_it(provider):
+    """Two +20 STR slots (20 each), whether or not HD folds them into the
+    primary figure: STR 50, 10 DCs, in a 40 reserve; one in a 39 one."""
+    for fold in (True, False):
+        def doc_with(reserve):
+            doc = _with(_empty(provider), provider, _power("STR", 20, name="Pump Up"),
+                        _power("STR", 20, name="Bulk Up"))
+            return _multipower(_folded(doc) if fold else doc, reserve, fixed=True)
+        assert _problems(doc_with(40), provider, DC(5, ()))[None] == (
+            "Damage Classes 10 (STR: STR 10; Tricks 40: Pump Up 20 + Bulk Up 20); "
+            "the limit is 5"), fold
+        assert _problems(doc_with(39), provider, DC(5, ()))[None] == (
+            "Damage Classes 6 (STR: STR 6; Tricks 39: Bulk Up 20); the limit is 5"), fold
+
+
+def test_a_str_slot_adds_to_a_killing_attack_beside_it(provider):
+    """6E2 101: STR adds to an HKA, whatever bought it. Knife (30) and a
+    +20 STR slot HD does not fold into the primary figure (20) in a 50
+    reserve: 6 + STR 30's 6."""
+    doc = _with(_empty(provider), provider, _power("HKA", 2, name="Knife"),
+                _power("STR", 20, name="Pump Up"))
+    doc = _multipower(doc, 50, fixed=True)
+    assert _problems(doc, provider, DC(5, (A.STR,)))[doc["powers"][1]["id"]] == (
+        "Damage Classes 12 (Knife: base 6 + STR 6; Tricks 50: Knife 30 + Pump Up 20); "
+        "the limit is 5")
+
+
+def test_a_str_power_hd_keeps_off_the_primary_figure_is_still_str(provider):
+    """6E2 101: STR adds to an HKA whatever bought it. A +20 STR power in no
+    framework that HD does not fold into primary STR: STR 30 under the
+    Knife (6 + 6), and the power's own punch is that STR, counted once."""
+    doc = _with(_empty(provider), provider, _power("HKA", 2, name="Knife"),
+                _power("STR", 20, name="Pump Up"))
+    doc = {**doc, "powers": [{**r, "affects_primary": False, "affects_total": False}
+                             if r["xmlid"] == "STR" else r for r in doc["powers"]]}
+    knife, pump = doc["powers"][0]["id"], doc["powers"][1]["id"]
+    found = _problems(doc, provider, DC(5, (A.STR,)))
+    assert found[knife] == "Damage Classes 12 (Knife: base 6 + STR 6); the limit is 5"
+    assert found[pump] == "Damage Classes 6; the limit is 5"
+    assert found[None] == "Damage Classes 6; the limit is 5"
+
+
+def test_a_limited_str_power_adds_nothing_to_str(provider):
+    doc = _with(_empty(provider), provider,
+                _power("STR", 20, Pick("LIMITEDPOWER", 0, None), name="Lift Only"))
+    assert None not in _problems(doc, provider, DC(2, ()))

@@ -12,14 +12,20 @@ v/6, 6E2 58), in whole 6m / 10m only (6E2 101). How much a character can bring:
   doubles it again in one mode (6E1 157). HD records the extra doublings as the
   movement's ``IMPROVEDNONCOMBAT`` adder (LEVELS n is x2^(n+1)) and "no
   Noncombat movement" as the ``NONONCOMBAT`` modifier.
+* A movement bought as a Multipower or VPP slot is there only while the slot
+  holds its share of the framework's points (6E1 404-405, 413), so each
+  velocity names the shares it needs (`Velocity.shares`), and a
+  characteristic total carrying slots is offered with every set of them the
+  frameworks can hold at once.
 * Leaping differs (6E1 245): a Noncombat leap covers its multiple of the
   distance, but its duration in Phases equals the number of doublings. Its
   velocity per Phase is that distance over those Phases.
 """
 from __future__ import annotations
 
+import itertools
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 #: Movement a Move Through may use (6E2 72 names what it may not).
 _MOVES = frozenset({"RUNNING", "SWIMMING", "LEAPING", "FLIGHT", "TUNNELING",
@@ -36,6 +42,9 @@ class Velocity:
     xmlid: str
     #: The purchase that carries it (HD ID), None for a characteristic.
     hd_id: str | None
+    #: The framework shares it needs on (`engine.allocation.Share`); () for
+    #: movement in no Multipower or VPP.
+    shares: tuple = field(compare=False)
 
 
 def _modifiers(obj) -> list:
@@ -72,43 +81,73 @@ def phase_velocity(xmlid: str, combat_meters: float, multiplier: int) -> float:
 
 
 def best_move_through_velocity(hero, *, in_hero_id: bool) -> Velocity | None:
-    """The fastest a character can be going when he Move Throughs, or None
-    when he has no movement a Move Through may use.
+    """The fastest a character can be going when he Move Throughs, framework
+    or not, or None when he has no movement a Move Through may use."""
+    found = move_through_velocities(hero, in_hero_id=in_hero_id)
+    return max(found, key=lambda v: v.meters) if found else None
 
-    A movement Power bought as a purchase counts by its own meters; Running,
-    Swimming and Leaping by the characteristic's total (which carries any
-    power bought for it), at the best multiplier any of its purchases has."""
+
+def _in_total(obj) -> bool:
+    return bool(getattr(obj, "affects_primary", False) or getattr(obj, "affects_total", False))
+
+
+def move_through_velocities(hero, *, in_hero_id: bool) -> list[Velocity]:
+    """Every velocity a Move Through may bring, each with the framework
+    shares it needs; none of 0m.
+
+    A movement Power counts by its own meters, a Variable slot at each share
+    (6E1 405). Running, Swimming and Leaping count by the characteristic's
+    total, at the best multiplier any purchase in it has; when the total
+    carries framework slots, it is offered with every set of them that fits
+    on at once, each at each of its shares, none included."""
+    from kirby_cost.engine.allocation import fits, shares
     from kirby_cost.model.activation import ActivationContext
 
-    best: Velocity | None = None
+    out: list[Velocity] = []
 
-    def consider(v: Velocity) -> None:
-        nonlocal best
-        if v.meters > 0 and (best is None or v.meters > best.meters):
-            best = v
+    def add(meters: float, xmlid: str, hd_id, on: tuple) -> None:
+        if meters > 0:
+            out.append(Velocity(meters, xmlid, hd_id, on))
 
     multipliers: dict[str, int] = {}
+    slots: dict[str, list] = {}
     for section in ("powers", "equipment"):
         for obj in getattr(hero, section, None) or []:
             xmlid = (getattr(obj, "xmlid", "") or "").upper()
             if xmlid not in _MOVES or _has_modifier(obj, "MEGASCALE"):
                 continue
-            mult = noncombat_multiplier(obj)
+            held = shares(obj, hero=hero)
             if xmlid in _CHARACTERISTIC_MOVES:
-                multipliers[xmlid] = max(multipliers.get(xmlid, 0), mult)
+                if held and _in_total(obj):
+                    slots.setdefault(xmlid, []).append((obj, held))
+                elif not held:
+                    multipliers[xmlid] = max(multipliers.get(xmlid, 0),
+                                             noncombat_multiplier(obj))
                 continue
-            consider(Velocity(phase_velocity(xmlid, float(obj.levels), mult),
-                              xmlid, str(obj.id)))
+            for share in held or [None]:
+                power = share.power if share else obj
+                add(phase_velocity(xmlid, float(power.levels), noncombat_multiplier(power)),
+                    xmlid, str(obj.id), (share,) if share else ())
     for ch in getattr(hero, "characteristics", None) or []:
         xmlid = (getattr(ch, "xmlid", "") or "").upper()
         if xmlid not in _CHARACTERISTIC_MOVES:
             continue
-        meters = float(hero.temporal_characteristic(
+        total = float(hero.temporal_characteristic(
             xmlid, ActivationContext(in_hero_id=in_hero_id)))
+        mine = slots.get(xmlid, [])
+        bare = total - sum(float(obj.levels) for obj, _ in mine)
         mult = max(noncombat_multiplier(ch), multipliers.get(xmlid, 0))
-        consider(Velocity(phase_velocity(xmlid, meters, mult), xmlid, None))
-    return best
+        # Any set of its slots the frameworks hold at once (6E1 404: no
+        # number limit, only the points), each at any of its shares.
+        for pick in itertools.product(*[[None] + held for _, held in mine]):
+            on = tuple(s for s in pick if s is not None)
+            if not fits(on):
+                continue
+            meters = bare + sum(float(s.power.levels) for s in on)
+            best_mult = max([mult] + [noncombat_multiplier(s.power) for s in on])
+            add(phase_velocity(xmlid, meters, best_mult), xmlid, None, on)
+    return out
 
 
-__all__ = ["Velocity", "best_move_through_velocity", "noncombat_multiplier",
-           "phase_velocity"]
+__all__ = ["Velocity", "best_move_through_velocity", "move_through_velocities",
+           "noncombat_multiplier", "phase_velocity"]

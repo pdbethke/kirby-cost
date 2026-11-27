@@ -246,3 +246,105 @@ def _step_display(power) -> str:
         return f"{power.levels_display()} {power.display}"
     parts = (power.display, power.damage_display, power.defence_levels_display())
     return " ".join(p for p in parts if p)
+
+
+# -- Which slots can be on together (6E1 401, 404-405, 410, 411, 413) ---------
+
+@dataclass(frozen=True)
+class Share:
+    """One slot on at one share of its framework's points.
+
+    ``power`` is what the share buys: the slot itself when on as bought, a
+    re-levelled copy (`LevelFit.power`) when a Variable slot is given less.
+    """
+
+    framework: object
+    slot: object
+    points: int
+    power: object
+
+
+def _framework(obj):
+    """The Multipower or VPP holding ``obj``, or None."""
+    from kirby_cost.objects.frameworks.multipower import Multipower
+    from kirby_cost.objects.frameworks.vpp import VariablePowerPool
+
+    parent = getattr(obj, "parent", None)
+    return parent if isinstance(parent, (Multipower, VariablePowerPool)) else None
+
+
+def pool_of(obj) -> int | None:
+    """The points ``obj``'s framework can have on at once: a Multipower's
+    reserve, its base cost before Advantages (6E1 404); a VPP's Pool, in
+    Real Points (6E1 411). None when ``obj`` is in neither."""
+    from kirby_cost.objects.frameworks.vpp import VariablePowerPool
+
+    fw = _framework(obj)
+    if fw is None:
+        return None
+    if isinstance(fw, VariablePowerPool):
+        return int(round(fw.pool_cost))
+    return int(round(fw.base_cost))
+
+
+def shares(slot, *, hero) -> list[Share]:
+    """Every share of its framework's points ``slot`` can be on at,
+    ascending; [] when it is in no Multipower or VPP.
+
+    * A Fixed Multipower slot is always allocated its full Active Points
+      (6E1 404).
+    * A Variable one may be given any share up to them, and holds what
+      that share buys (6E1 405): one share per step of `ladder` above
+      nothing. A slot with no steps (Skill Levels, a Compound Power) is on
+      as bought.
+    * A VPP power is in the Pool at its Real Points, as built (6E1 413).
+
+    ``hero`` as for `ladder`.
+    """
+    from kirby_cost.objects.frameworks.vpp import VariablePowerPool
+
+    from kirby_cost.util.rounder import round_half_down
+
+    fw = _framework(slot)
+    if fw is None:
+        return []
+    # .5 rounds in the character's favour (6E1 14): a smaller share.
+    if isinstance(fw, VariablePowerPool):
+        return [Share(fw, slot, round_half_down(slot.real_cost_pre_list), slot)]
+    full = Share(fw, slot, round_half_down(slot.active_cost), slot)
+    if slot.ultra:
+        return [full]
+    try:
+        steps = ladder(slot, hero=hero)
+    except NotLadderable:
+        return [full]
+    out = {}
+    for step in steps:
+        points = round_half_down(step.power.active_cost)
+        if 0 < points < full.points:
+            out[points] = Share(fw, slot, points, step.power)
+    return [out[p] for p in sorted(out)] + [full]
+
+
+def fits(on) -> bool:
+    """Whether the shares ``on`` can all be on at once: per framework, their
+    points within its reserve or Pool (6E1 404-405, 413). Slots of different
+    frameworks never compete (6E1 401). A slot named twice is one slot, so
+    it must be named at one share (6E1 410: allocated once a Phase)."""
+    allocated: dict[int, int] = {}
+    for share in on:
+        held = allocated.setdefault(id(share.slot), share.points)
+        if held != share.points:
+            # One slot, one allocation a Phase (6E1 410).
+            return False
+    used: dict[int, int] = {}
+    seen: set[int] = set()
+    for share in on:
+        if id(share.slot) in seen:
+            continue
+        seen.add(id(share.slot))
+        key = id(share.framework)
+        used[key] = used.get(key, 0) + share.points
+        if used[key] > pool_of(share.slot):
+            return False
+    return True

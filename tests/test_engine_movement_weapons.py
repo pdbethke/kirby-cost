@@ -8,7 +8,8 @@ import pytest
 
 from kirby_cost.engine.csl import Reach
 from kirby_cost.engine.movement import (
-    best_move_through_velocity, noncombat_multiplier, phase_velocity,
+    best_move_through_velocity, move_through_velocities, noncombat_multiplier,
+    phase_velocity,
 )
 from kirby_cost.engine.weapons import element_reach, is_weapon
 from kirby_cost.io.formats import load_build
@@ -63,6 +64,29 @@ def test_powerlads_leap_is_read_off_his_leaping_total():
     280m over two Phases."""
     v = best_move_through_velocity(_load("PowerLad"), in_hero_id=True)
     assert (v.xmlid, v.meters, v.hd_id) == ("LEAPING", 140, None)
+
+
+def test_a_velocity_names_the_multipower_slot_it_needs():
+    """6E1 404-405: a slot's movement is there only while its share of the
+    reserve is. Ravel's String Slide is a Fixed slot; Floating String Form
+    is in no framework."""
+    by_name = {}
+    for v in move_through_velocities(_load("Ravel"), in_hero_id=True):
+        by_name[v.hd_id] = v
+    slide, floating = by_name["1669689380740"], by_name["1648500148181"]
+    assert slide.meters == 26 and [s.points for s in slide.shares] == [45]
+    assert floating.meters == 12 and floating.shares == ()
+
+
+def test_powerlads_leap_with_and_without_his_multipower_slot():
+    """His Leaping 70m carries Iron Grasshopper (+69m, x4 Noncombat), a
+    Brick Tricks slot of 44.5 Active Points, a 44-point share (.5 rounds in
+    his favour, 6E1 14). On: 280m over two Phases. Off: his own 1m at the
+    free x2."""
+    leaps = [v for v in move_through_velocities(_load("PowerLad"), in_hero_id=True)
+             if v.xmlid == "LEAPING"]
+    assert sorted((v.meters, tuple(s.points for s in v.shares)) for v in leaps) == [
+        (2.0, ()), (140.0, (44,))]
 
 
 @pytest.mark.parametrize("xmlid", ["TELEPORTATION", "EXTRADIMENSIONALMOVEMENT", "FTL"])
