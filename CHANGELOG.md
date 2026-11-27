@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.9.0 — 2026-11-24
+## 0.9.0 — 2026-11-27
 
 ### Added — `kirby_cost.builder`: make and change builds through the engine
 For a campaign blending its changes over a codex base, and for an AI building NPCs, bases, vehicles and equipment (two-databases spec §4a). Every layer works on the **curated build doc** (`to_build_json` / `build_from_json`), the shape a relational store keeps, so an edit's payload is exactly one purchase's stored rows and blending never converts between shapes. The HDC element tree (`export(format="json")`) stays the import/export transport. Four layers, each usable alone:
