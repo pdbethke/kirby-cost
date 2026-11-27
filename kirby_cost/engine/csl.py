@@ -96,30 +96,44 @@ def _named(text: str, labels) -> bool:
     return False
 
 
+def reaches(breadth: Breadth | None, named: str, labels, ranged: bool) -> Reach:
+    """Whether a level of ``breadth`` whose words are ``named`` (`named_text`)
+    reaches one attack: ``labels``, the names it goes by (its own, its
+    framework's, a maneuver's), and whether it is ``ranged``.
+
+    For a caller that keeps a level as data rather than the build object,
+    such as a fight's recorded state. HTH / Ranged / All reach by range; a
+    narrow level reaches what its words name, and is UNKNOWN when it has no
+    words; an unrecognised breadth (None) is UNKNOWN.
+    """
+    if breadth is None:
+        return Reach.UNKNOWN
+    if breadth is Breadth.ALL:
+        return Reach.YES
+    if breadth is Breadth.HTH:
+        return Reach.NO if ranged else Reach.YES
+    if breadth is Breadth.RANGED:
+        return Reach.YES if ranged else Reach.NO
+    text = (named or "").lower()
+    if not text:
+        return Reach.UNKNOWN
+    return Reach.YES if _named(text, labels) else Reach.NO
+
+
 def reach_on(level, attacks) -> list[Reach]:
     """Whether ``level`` reaches each of ``attacks``, a list of
     ``(labels, ranged)``: the names one attack goes by and whether it is a
-    Ranged attack. One answer per attack, in order.
+    Ranged attack. One answer per attack, in order, by `reaches`.
 
-    HTH / Ranged / All reach by range. A narrow level reaches the attacks
-    its words name; when its words name nothing on the build at all -- none
-    of the attacks given -- every answer is UNKNOWN, since the build cannot
-    say what it was bought for. An unrecognised breadth is UNKNOWN too.
+    Across a whole build a narrow level whose words name none of the
+    attacks given has named nothing the build answers to, so every answer
+    is UNKNOWN, not NO.
     """
-    breadth = breadth_of(level)
-    if breadth is None:
+    breadth, named = breadth_of(level), named_text(level)
+    answers = [reaches(breadth, named, labels, ranged) for labels, ranged in attacks]
+    if breadth in _NARROW and Reach.YES not in answers:
         return [Reach.UNKNOWN for _ in attacks]
-    if breadth is Breadth.ALL:
-        return [Reach.YES for _ in attacks]
-    if breadth is Breadth.HTH:
-        return [Reach.NO if ranged else Reach.YES for _, ranged in attacks]
-    if breadth is Breadth.RANGED:
-        return [Reach.YES if ranged else Reach.NO for _, ranged in attacks]
-    text = named_text(level).lower()
-    hits = [_named(text, labels) for labels, _ in attacks]
-    if not text or not any(hits):
-        return [Reach.UNKNOWN for _ in attacks]
-    return [Reach.YES if hit else Reach.NO for hit in hits]
+    return answers
 
 
-__all__ = ["Breadth", "Reach", "breadth_of", "named_text", "reach_on"]
+__all__ = ["Breadth", "Reach", "breadth_of", "named_text", "reach_on", "reaches"]

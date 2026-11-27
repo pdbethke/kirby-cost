@@ -13,7 +13,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from kirby_cost.engine.csl import Breadth, Reach, breadth_of, named_text, reach_on
+from kirby_cost.engine.csl import Breadth, Reach, breadth_of, named_text, reach_on, reaches
 from tests.corpus import require_authored_hdc
 
 
@@ -93,3 +93,33 @@ def test_powerlads_level_is_read_off_his_build():
     (level,) = [p for p in hero.powers if p.xmlid == "COMBAT_LEVELS"]
     assert breadth_of(level) is Breadth.TIGHT
     assert named_text(level) == "+1 With Punch, Haymaker, and Throw"
+
+
+# -- One attack, from what a fight keeps of a level -----------------------------
+
+@pytest.mark.parametrize("breadth, ranged, want", [
+    (Breadth.ALL, True, Reach.YES), (Breadth.HTH, True, Reach.NO),
+    (Breadth.HTH, False, Reach.YES), (Breadth.RANGED, True, Reach.YES),
+    (Breadth.RANGED, False, Reach.NO),
+])
+def test_one_attack_by_range(breadth, ranged, want):
+    """6E1 72: HTH, Ranged and All reach by the attack's range alone."""
+    assert reaches(breadth, "", ("Bolt",), ranged) is want
+
+
+def test_one_attack_named_or_not():
+    """A narrow level reaches an attack its words name (its own name or its
+    framework's), and not one they do not."""
+    named = "+1 with punch, haymaker, and throw"
+    assert reaches(Breadth.TIGHT, named, ("Punch",), False) is Reach.YES
+    assert reaches(Breadth.TIGHT, named, ("Kick",), False) is Reach.NO
+    assert reaches(Breadth.BROAD, "with power over light and heat multipower",
+                   ("Laser", "Power Over Light And Heat"), True) is Reach.YES
+
+
+def test_one_attack_where_the_words_cannot_say():
+    """No words, or an option that is none of the six: UNKNOWN; the caller
+    decides what that means for it."""
+    assert reaches(Breadth.SINGLE, "", ("Punch",), False) is Reach.UNKNOWN
+    assert reaches(None, "punch", ("Punch",), False) is Reach.UNKNOWN
+    assert reaches(Breadth.SINGLE, "x marks", ("X",), False) is Reach.NO
